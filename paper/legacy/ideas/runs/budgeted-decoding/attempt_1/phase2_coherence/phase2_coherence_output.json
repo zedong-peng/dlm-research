@@ -1,0 +1,364 @@
+{
+  "trace_report": {
+    "formalized_procedure": [
+      {
+        "step": "S0",
+        "consumes": [
+          "canvas x in (V union {MASK})^L",
+          "frozen denoiser F(x,t) -> probability matrix in [0,1]^(L x |V|)",
+          "budget B, remaining budget b, hyperparameters eta and lambda_p"
+        ],
+        "produces": [
+          "validated finite state dimensions and inherited schedule map tau(b)"
+        ],
+        "note": "The written candidate does not state L>=1, B>=1, a schedule-index producer, or a pre-action latency-cost rule."
+      },
+      {
+        "step": "S1",
+        "consumes": [
+          "x[1:L]",
+          "B"
+        ],
+        "produces": [
+          "state (b, M subseteq {1,...,L}, z[1:L], p_prev[L,|V|], p_cur[L,|V|], status[1:L])"
+        ],
+        "note": "Distribution caches and status metadata are required because instability and repair scores depend on evaluation history."
+      },
+      {
+        "step": "S2",
+        "consumes": [
+          "initial state",
+          "one ordinary denoiser evaluation"
+        ],
+        "produces": [
+          "p_cur[L,|V|]",
+          "c_i=max_v p_cur[i,v]",
+          "d_i=1-c_i",
+          "first feasible partial sequence"
+        ],
+        "note": "The written rule says to choose a prefix 'large enough' for the envelope but does not select uniquely among several feasible sizes."
+      },
+      {
+        "step": "S3",
+        "consumes": [
+          "current state and caches",
+          "masked scores u_i=c_i-d_i",
+          "committed repair scores r_j=c_j-p_j(z_j)+d_j"
+        ],
+        "produces": [
+          "commit candidates S",
+          "commit-plus-repair candidates (S,R)",
+          "optional probe candidate",
+          "post-action mask counts"
+        ],
+        "note": "'Mean rank' is ambiguous between an ordinal rank and the score used for ranking; zero-length prefixes also make the stated means undefined, and newly committed positions have no distribution observed under their new status."
+      },
+      {
+        "step": "S4",
+        "consumes": [
+          "candidate table",
+          "E_B(b-c)=ceil(L*(b-c)/B)"
+        ],
+        "produces": [
+          "admissible rows satisfying c<=b and |M_a|<=E_B(b-c)",
+          "Q_b(a)=gain(a)/c+eta*(E_B(b-c)-|M_a|)/L",
+          "one deterministic winning row"
+        ],
+        "note": "For a real-valued measured latency known only after execution, c is neither available for this step nor guaranteed to land b at zero; the induction is valid only after a pre-action discrete charge rule is supplied."
+      },
+      {
+        "step": "S5",
+        "consumes": [
+          "winning commit size |S|",
+          "ordinary denoiser output on current x"
+        ],
+        "produces": [
+          "fresh masked scores",
+          "argmax tokens for S",
+          "M'=M\\S",
+          "b'=b-c"
+        ],
+        "note": "Newly committed positions change status and need a later committed-status evaluation before they can be scored for repair."
+      },
+      {
+        "step": "S6",
+        "consumes": [
+          "winning pair (S,R)",
+          "ordinary denoiser output after remasking R"
+        ],
+        "produces": [
+          "argmax tokens for S",
+          "M'=(M\\S) union R",
+          "b'=b-c"
+        ],
+        "note": "The written count |M|-|S|+|R| requires R to remain masked, but step 6 instead says corrected R positions are revealed in the same call."
+      },
+      {
+        "step": "S7",
+        "consumes": [
+          "unchanged current sequence",
+          "cached ordinary-time p_cur",
+          "one denoiser output q at the adjacent more-corrupted index"
+        ],
+        "produces": [
+          "d_i=JS(p_cur[i],q[i])/log(2)",
+          "unchanged M and z",
+          "b'=b-c"
+        ],
+        "note": "BLOCKING: after S5 or S6, cached p_cur was evaluated before the mask transition, so it is not an ordinary-time distribution for the unchanged sequence consumed by this probe. No prior step produces the claimed same-state reference."
+      },
+      {
+        "step": "S8",
+        "consumes": [
+          "updated state"
+        ],
+        "produces": [
+          "either another S3-S7 iteration or detokenized z when M is empty/b reaches zero"
+        ],
+        "note": "With positive integer charges, c<=b, a nonempty commit action, and the envelope, E_B(0)=0 establishes M=empty at b=0. The written procedure lacks an early-M-empty guard."
+      }
+    ],
+    "dry_run": {
+      "instance": "Hard-call instance with L=4, B=4, b=4, vocabulary size 10, eta=1, lambda_p=1. Interpret 'rank' as its raw score and choose the smallest feasible first prefix solely to make the ambiguous text executable. First-call masked scores are u=(0.8,0.6,0.2,-0.8). Position 4 changes from uniform p=(0.1,...,0.1) to a point mass on the second evaluation; positions 2 and 3 keep their distributions.",
+      "computed_quantities": [
+        {
+          "quantity": "Envelope sequence",
+          "value": "E(3)=3, E(2)=2, E(1)=1, E(0)=0",
+          "arithmetic": "ceil(4*b/4)=b for b in {3,2,1,0}."
+        },
+        {
+          "quantity": "First action",
+          "value": "commit position 1; b=3 and |M|=3",
+          "arithmetic": "The smallest feasible k satisfies 4-k<=E(3)=3, hence k=1."
+        },
+        {
+          "quantity": "Second-call commit Q values",
+          "value": "Q(k=1)=0.600, Q(k=2)=0.650, Q(k=3)=0.500",
+          "arithmetic": "Means are 0.6, (0.6+0.2)/2=0.4, and (0.6+0.2-0.8)/3=0; slack bonuses are 0, 1/4, and 2/4."
+        },
+        {
+          "quantity": "Second-call repair rows with R={1}",
+          "value": "k=1 inadmissible; Q(k=2)=0.300; Q(k=3)=0.275",
+          "arithmetic": "Post-mask counts are 3,2,1 against E(2)=2; with r_1=0.1, gains are (0.6+0.2+0.1)/3=0.3 and (0.6+0.2-0.8+0.1)/4=0.025, with slack 0 and 0.25."
+        },
+        {
+          "quantity": "Selected second action",
+          "value": "commit prefix size 2; positions 2 and 3; b=2 and M={4}",
+          "arithmetic": "0.650 is the largest admissible Q; the fresh scores of positions 2 and 3 are 0.8 and 0.6."
+        },
+        {
+          "quantity": "Position-4 instability after second evaluation",
+          "value": "d_4=0.7583",
+          "arithmetic": "For uniform P over 10 symbols and point-mass Q, JS_bits=0.5*[0.1*log2(0.1/0.55)+0.9*log2(0.1/0.05)]+0.5*log2(1/0.55)=0.7583."
+        },
+        {
+          "quantity": "Third-call action values",
+          "value": "Q_commit=0.4917, Q_repair=0.1209, Q_probe=0.7583",
+          "arithmetic": "u_4=1-0.7583=0.2417; commit adds slack (1-0)/4=0.25; repair with r_1=0 has mean (0.2417+0)/2; probe gain is mean d over M=0.7583."
+        },
+        {
+          "quantity": "Probe reference mismatch",
+          "value": "2 token statuses differ between the cached ordinary input and probe input",
+          "arithmetic": "Cached p_4 was produced with M={2,3,4}; after committing positions 2 and 3 the probe consumes M={4}, so |{2,3,4} symmetric_difference {4}|=2."
+        },
+        {
+          "quantity": "Repair-count contradiction",
+          "value": "claimed |M_a|=2 but step-6 wording yields |M_a|=1",
+          "arithmetic": "With |M|=3, |S|=2, |R|=1, the formula gives 3-2+1=2; remasking R then revealing S and corrected R gives 3+1-2-1=1."
+        },
+        {
+          "quantity": "Final call",
+          "value": "only commit position 4 is admissible; b=0 and |M|=0",
+          "arithmetic": "At b=1, E(0)=0; commit gives |M_a|=0, while probe gives 1>0 and any nonempty repair gives at least 1>0."
+        }
+      ],
+      "anomalies": [
+        "The selected probe's computed d_4=0.7583 is not a same-state paired-time quantity: its two distributions were conditioned on mask sets differing at exactly 2 positions.",
+        "For |M|=3, |S|=2, |R|=1, the repair formula says 2 masks but the written reveal operation leaves 1, a one-mask state-accounting error.",
+        "For the top-two commit row, raw-score gain is (0.6+0.2)/2=0.4 and Q=0.65, whereas ordinal-rank gain is (1+2)/2=1.5 and Q=1.75; the action value is not defined until 'rank' is disambiguated.",
+        "A real-valued latency example B=2.0 and repeated c=0.7 leaves b values 1.3 then 0.6, so a third call cannot satisfy c<=b and the claimed induction never reaches b=0."
+      ]
+    },
+    "degenerate_probes": [
+      {
+        "probe": "Empty canvas L=0",
+        "behavior": "E is numerically zero, but Q divides by L and all stated mean gains are means of empty sets.",
+        "finding": "Undefined division; return the empty output before action scoring."
+      },
+      {
+        "probe": "M is empty while b>0",
+        "behavior": "Probe mean and commit mean are undefined, although decoding is already complete.",
+        "finding": "Missing early terminal guard."
+      },
+      {
+        "probe": "k=0 / empty prefix",
+        "behavior": "The mean commit score is 0/0, and an empty-empty row is a cost-bearing no-op.",
+        "finding": "Enumerate only nonempty commit prefixes and nonempty repair prefixes."
+      },
+      {
+        "probe": "B=0 with a nonempty canvas",
+        "behavior": "E_B(b) divides by zero and no denoiser call can be charged.",
+        "finding": "Reject B<1 before initialization."
+      },
+      {
+        "probe": "All token scores identical",
+        "behavior": "Lower token indices order every prefix and the family tie rule chooses commit before repair before probe; the loop halts.",
+        "finding": null
+      },
+      {
+        "probe": "Ties exactly at the envelope threshold",
+        "behavior": "The <= admissibility test includes the boundary and the stated tie rule is deterministic.",
+        "finding": null
+      },
+      {
+        "probe": "Single-element input L=1,B=1",
+        "behavior": "The first evaluation leaves b=0, E(0)=0 forces the sole token to be committed, and detokenization halts.",
+        "finding": null
+      },
+      {
+        "probe": "Maximum finite model length L=L_max",
+        "behavior": "At mask count m, at most m commit rows, m*(L-m) commit-repair rows, and one probe row are enumerated, bounded by L+floor(L^2/4)+1; execution is finite.",
+        "finding": null
+      },
+      {
+        "probe": "No more-corrupted adjacent schedule index",
+        "behavior": "The probe's required input index does not exist at that boundary.",
+        "finding": "Omit the probe row when the inherited schedule has no more-corrupted neighbor."
+      }
+    ],
+    "claim_step_map": [
+      {
+        "claim": "One common deadline-conditioned value compares commit, repair, and probe.",
+        "established_by": "S3-S4"
+      },
+      {
+        "claim": "No external oracle or learned controller is used.",
+        "established_by": "S1-S4"
+      },
+      {
+        "claim": "The probe measures same-state paired-time instability with one additional evaluation.",
+        "established_by": "UNESTABLISHED"
+      },
+      {
+        "claim": "The envelope guarantees zero masks when an integer budget reaches zero.",
+        "established_by": "S4 and S8"
+      },
+      {
+        "claim": "A probe is possible only after earlier commits create slack.",
+        "established_by": "S4"
+      },
+      {
+        "claim": "A repair is possible only after earlier commitments create slack.",
+        "established_by": "UNESTABLISHED"
+      },
+      {
+        "claim": "There is no hidden set-size choice because every prefix size is enumerated.",
+        "established_by": "S3"
+      },
+      {
+        "claim": "Every decision reads remaining budget.",
+        "established_by": "S4"
+      },
+      {
+        "claim": "Committed tokens remain frozen-model argmax outputs and no logits or parameters change.",
+        "established_by": "S5-S6"
+      }
+    ]
+  },
+  "verdict": "patched",
+  "unrepaired": [
+    {
+      "finding": "The one-call probe cannot establish same-state paired-time instability after a commit or repair: the only cached ordinary-time distribution was produced before that mask transition, so the current sequence has no same-state ordinary-time reference.",
+      "severity": "blocking",
+      "why_not_repaired": "Producing the missing reference requires another denoiser evaluation or a reordered control loop that changes when actions are selected and charged; either is a mechanism redesign, not a patch-only coherence repair."
+    }
+  ],
+  "applied_revisions": [
+    {
+      "scope": "coherence",
+      "op": "replace",
+      "field": "core_mechanism",
+      "value": "The shared object is a deadline-conditioned mask-flow certificate Q_b(a) for each candidate use a of the next denoiser call. Return immediately for L=0; otherwise require L>=1 and an integer budget B>=1, initialize b=B, and inherit a deterministic schedule-index map tau(b) from the frozen base sampler. Under a hard call cap each evaluation costs one integer quantum. Under a latency cap, profile each action family before decoding, define its pre-action integer charge as the ceiling of a conservative measured-latency ratio to one ordinary forward, set ordinary commit cost to one unit by construction, and enumerate only actions with c(a)<=b. The state contains M, committed tokens z_j, current and previous frozen-model distributions, per-token status history, and c_i=max_v p_i(v); no external oracle or learned controller is used. Consecutive-evaluation instability is d_i=JS(p_i^current,p_i^previous)/log(2) while status is unchanged, with d_i=1-c_i at the first evaluation under a status. A newly committed token is repair-ineligible until a later ordinary evaluation observes it while committed. A probe, only when M is nonempty and a more-corrupted adjacent schedule index exists, keeps the sequence fixed, evaluates that adjacent index, and as originally proposed compares it with the cached ordinary-time distribution to overwrite d_i. Let u_i=c_i-d_i for masked positions and r_j=c_j-p_j(z_j)+d_j for repair-eligible committed positions. Enumerate every nonempty commit prefix S and every pair of nonempty commit and repair prefixes (S,R). Commit gain is |S|^-1 sum_{i in S} u_i; repair gain is (|S|+|R|)^-1(sum_{i in S}u_i+sum_{j in R}r_j); probe gain is lambda_p*|M|^-1 sum_{i in M}d_i. The envelope is E_B(b)=ceil(L*b/B). Post-action mask counts are |M|-|S| for commit, |M|-|S|+|R| for repair because R remains masked for later correction, and |M| for probe. Retain only rows with |M_a|<=E_B(b-c(a)), and score them by Q_b(a)=gain(a)/c(a)+eta*(E_B(b-c(a))-|M_a|)/L. The highest-Q row is executed; ties prefer commit, then repair, then probe, then lower token indices. A probe therefore needs pre-existing envelope slack, while a repair may use slack created by its paired commits. Every committed token is the frozen DLM argmax under the newly obtained ordinary distribution. If M becomes empty, stop early; otherwise the always-available nonempty commit row plus integer charging and E_B(0)=0 guarantee no masks when b reaches zero. Lambda_p and eta retain their stated held-out selection rules, and all calls and latency are logged.",
+      "outcome": "applied",
+      "delta_summary": "Repairs the T1 undefined rank, prefix, schedule, status-cache, and pre-action-cost findings; the T2 repair-count error; and the T3 empty-input and boundary failures without repairing the blocking probe reference."
+    },
+    {
+      "scope": "coherence",
+      "op": "replace",
+      "field": "core_mechanism_steps",
+      "value": "1. Validate L and B, return the empty output when L=0, inherit tau(b), initialize b=B, M, z, distribution caches, status history, and the pre-profiled integer action charges. 2. Run the first ordinary frozen-DLM evaluation at tau(b), charge its cost, compute c_i and d_i=1-c_i, and commit the smallest highest-u_i nonempty prefix that satisfies |M|<=E_B(b); mark those positions repair-ineligible until observed by a later committed-status evaluation. 3. If M is empty, detokenize and stop. Otherwise update d_i only from two cached evaluations under unchanged status, set u_i=c_i-d_i and repair-eligible r_j=c_j-p_j(z_j)+d_j, and enumerate all nonempty commit prefixes, all pairs of nonempty commit and repair prefixes, and a probe only when M is nonempty and an adjacent more-corrupted schedule index exists. 4. Compute post-action counts, discard rows with c(a)>b or |M_a|>E_B(b-c(a)), compute the explicitly defined mean-score gains and Q_b(a), and select with the fixed family and token-index tie rule. 5. For commit size |S|, run the ordinary denoiser on the current sequence at tau(b), rerank the positions that were masked on entry using fresh u_i, reveal the top |S| argmax tokens, charge c(a), and update caches and status flags. 6. For repair (S,R), remask the selected repair-eligible R, run the ordinary denoiser, reveal exactly |S| positions drawn from the positions that were masked before this action, leave R masked for a later correction, charge c(a), and update caches and status flags. 7. For probe, keep M and z fixed, run the denoiser at the adjacent more-corrupted index, overwrite d_i with the proposed JS value against the cached ordinary-time distribution, preserve ordinary-time p_i and c_i for scoring, charge c(a), and return to step 3. 8. When b=0, the envelope requires M empty; detokenize z and log the output metric, NFE, wall-clock latency, action trace, and envelope slack.",
+      "outcome": "applied",
+      "delta_summary": "Repairs the executable-step manifestations of the T1 missing guards and producer rules, the T2 one-mask repair discrepancy, and the T3 zero-length action failures while leaving the same-state probe producer absent for audit."
+    },
+    {
+      "scope": "coherence",
+      "op": "replace",
+      "field": "gap_closure[1].how_closed",
+      "value": "Closed by prescribing a linear remaining-mask envelope over positive integer budget quanta, admitting only transitions with c(a)<=b whose post-action mask count lies inside the next envelope, and retaining an always-available nonempty commit action; this guarantees zero masks when the charged budget reaches zero, while a repair leaves its remasked positions inside the certified future workload.",
+      "outcome": "applied",
+      "delta_summary": "Aligns the closure narrative with the T1 discrete-cost requirement and the T2-corrected repair transition rather than claiming the inconsistent same-call repair count."
+    }
+  ],
+  "final_candidate": {
+    "title": "Deadline-Conditioned Mask-Flow Control for Diffusion Language Models",
+    "hook": "At a fixed 32-NFE deadline, spending one denoiser evaluation without revealing any token can increase HumanEval Pass@1, but only after earlier easy commitments have created certified mask-flow slack. A decoder that always uses every call to reveal or roll back tokens therefore wastes some of its tightest-budget compute.",
+    "hook_shape_rationale": "This is shape (a), a surprising empirical reveal: the named metric is HumanEval Pass@1 at exactly 32 NFE, and the non-obvious predicted direction is upward when a no-commit probe is admitted by the completion certificate. Shape (c) was also viable because the method uses no learned controller or rollout tree, but it was rejected because zero added parameters is less discriminating than the claim that an apparently wasted call improves matched-budget task quality.",
+    "gap_closure": [
+      {
+        "gap": "No retrieved frontier leaf supplies a common horizon-aware value for the competing uses of one additional unit of latency: resolving currently masked positions, reconsidering an earlier commitment, or reducing uncertainty before acting.",
+        "main_pattern": "generative_process_redesign",
+        "sub_pattern": "C23 (Liberate a Fixed Generative Component)",
+        "companion_pattern": null,
+        "how_closed": "Closed by making the inherited evaluation schedule a state-dependent design variable and scoring commit, repair, and paired-time probe calls in one deadline-conditioned mask-flow certificate."
+      },
+      {
+        "gap": "Under a hard deadline, no retrieved frontier leaf ensures that unanticipated conservative steps or recovery steps do not consume the calls needed to finish the remaining masked positions with the best attainable terminal sequence quality.",
+        "main_pattern": "structural_prior_encoding",
+        "sub_pattern": "C20 (Encode Structure by Construction)",
+        "companion_pattern": null,
+        "how_closed": "Closed by prescribing a linear remaining-mask envelope over positive integer budget quanta, admitting only transitions with c(a)<=b whose post-action mask count lies inside the next envelope, and retaining an always-available nonempty commit action; this guarantees zero masks when the charged budget reaches zero, while a repair leaves its remasked positions inside the certified future workload."
+      },
+      {
+        "gap": "No retrieved frontier leaf tests whether the remaining global inference budget must stay an external stopping parameter rather than become part of the state used by every token-action decision.",
+        "main_pattern": "assumption_audit_and_pivot",
+        "sub_pattern": "C11 (Audit and Pivot an Assumption)",
+        "companion_pattern": "generative_process_redesign",
+        "how_closed": "The C11 pivot replaces the external-only budget assumption with an inductive completion certificate, while the generative-process-redesign companion ships the executable frozen-model decoder whose every commit, repair, or probe decision reads remaining budget."
+      }
+    ],
+    "core_mechanism": "The shared object is a deadline-conditioned mask-flow certificate Q_b(a) for each candidate use a of the next denoiser call. Return immediately for L=0; otherwise require L>=1 and an integer budget B>=1, initialize b=B, and inherit a deterministic schedule-index map tau(b) from the frozen base sampler. Under a hard call cap each evaluation costs one integer quantum. Under a latency cap, profile each action family before decoding, define its pre-action integer charge as the ceiling of a conservative measured-latency ratio to one ordinary forward, set ordinary commit cost to one unit by construction, and enumerate only actions with c(a)<=b. The state contains M, committed tokens z_j, current and previous frozen-model distributions, per-token status history, and c_i=max_v p_i(v); no external oracle or learned controller is used. Consecutive-evaluation instability is d_i=JS(p_i^current,p_i^previous)/log(2) while status is unchanged, with d_i=1-c_i at the first evaluation under a status. A newly committed token is repair-ineligible until a later ordinary evaluation observes it while committed. A probe, only when M is nonempty and a more-corrupted adjacent schedule index exists, keeps the sequence fixed, evaluates that adjacent index, and as originally proposed compares it with the cached ordinary-time distribution to overwrite d_i. Let u_i=c_i-d_i for masked positions and r_j=c_j-p_j(z_j)+d_j for repair-eligible committed positions. Enumerate every nonempty commit prefix S and every pair of nonempty commit and repair prefixes (S,R). Commit gain is |S|^-1 sum_{i in S} u_i; repair gain is (|S|+|R|)^-1(sum_{i in S}u_i+sum_{j in R}r_j); probe gain is lambda_p*|M|^-1 sum_{i in M}d_i. The envelope is E_B(b)=ceil(L*b/B). Post-action mask counts are |M|-|S| for commit, |M|-|S|+|R| for repair because R remains masked for later correction, and |M| for probe. Retain only rows with |M_a|<=E_B(b-c(a)), and score them by Q_b(a)=gain(a)/c(a)+eta*(E_B(b-c(a))-|M_a|)/L. The highest-Q row is executed; ties prefer commit, then repair, then probe, then lower token indices. A probe therefore needs pre-existing envelope slack, while a repair may use slack created by its paired commits. Every committed token is the frozen DLM argmax under the newly obtained ordinary distribution. If M becomes empty, stop early; otherwise the always-available nonempty commit row plus integer charging and E_B(0)=0 guarantee no masks when b reaches zero. Lambda_p and eta retain their stated held-out selection rules, and all calls and latency are logged.",
+    "core_mechanism_reasoning": "All three gaps concern the same evolving mask set under the same remaining horizon, so a shared certificate is stronger and simpler than separate stopping, rollback, and lookahead modules. I rejected a finite-horizon MDP or generic value-of-computation function, static knapsack selection, full-trajectory MCTS, and learned adaptive halting because those land on occupied lineage nodes and require values, rollouts, or training unavailable here; the mask-envelope invariant plus paired-time DLM disagreement is the unoccupied source. The anchor moved from the provisional operator-substitution parent to C23 because none of that parent's sub-clusters offered a method-grade surrogate for this sequential decoding object, whereas C23 directly redesigns a frozen refinement schedule without changing the backbone.",
+    "core_mechanism_steps": "1. Validate L and B, return the empty output when L=0, inherit tau(b), initialize b=B, M, z, distribution caches, status history, and the pre-profiled integer action charges. 2. Run the first ordinary frozen-DLM evaluation at tau(b), charge its cost, compute c_i and d_i=1-c_i, and commit the smallest highest-u_i nonempty prefix that satisfies |M|<=E_B(b); mark those positions repair-ineligible until observed by a later committed-status evaluation. 3. If M is empty, detokenize and stop. Otherwise update d_i only from two cached evaluations under unchanged status, set u_i=c_i-d_i and repair-eligible r_j=c_j-p_j(z_j)+d_j, and enumerate all nonempty commit prefixes, all pairs of nonempty commit and repair prefixes, and a probe only when M is nonempty and an adjacent more-corrupted schedule index exists. 4. Compute post-action counts, discard rows with c(a)>b or |M_a|>E_B(b-c(a)), compute the explicitly defined mean-score gains and Q_b(a), and select with the fixed family and token-index tie rule. 5. For commit size |S|, run the ordinary denoiser on the current sequence at tau(b), rerank the positions that were masked on entry using fresh u_i, reveal the top |S| argmax tokens, charge c(a), and update caches and status flags. 6. For repair (S,R), remask the selected repair-eligible R, run the ordinary denoiser, reveal exactly |S| positions drawn from the positions that were masked before this action, leave R masked for a later correction, charge c(a), and update caches and status flags. 7. For probe, keep M and z fixed, run the denoiser at the adjacent more-corrupted index, overwrite d_i with the proposed JS value against the cached ordinary-time distribution, preserve ordinary-time p_i and c_i for scoring, charge c(a), and return to step 3. 8. When b=0, the envelope requires M empty; detokenize z and log the output metric, NFE, wall-clock latency, action trace, and envelope slack.",
+    "falsification_prediction": "Run LLaDA-8B on HumanEval with a hard 32-NFE cap, comparing this controller with matched-NFE Saber, ADAS, Fast-dLLM, and a mask-envelope-only ablation, and measure Pass@1, unfinished-mask rate, and wall-clock latency including probes. If the mechanism works, Pass@1 increases over the strongest matched-NFE baseline while unfinished-mask rate remains exactly zero, with the gain concentrated on traces where a certified-slack probe occurs. The one named load-bearing variable is paired-time instability d_i; as a negative control, independently permute d_i across token positions after every probe while leaving its marginal distribution, envelope, action counts, and all other scores unchanged. Under that intervention, downstream HumanEval Pass@1 should return to the mask-envelope-only baseline rather than merely changing d_i itself; failure to collapse falsifies the claim that paired-time instability makes discretionary calls useful.",
+    "compute_budget": "72 80GB-class GPU-days for two open 7B-8B DLMs across GSM8K, MATH500, HumanEval, MBPP, and LiveCodeBench at 8/16/32/64-NFE and matched-latency settings, including the 32-prompt hyperparameter split, three seeds, ablations, and two iteration rounds; $0 paid-API cost. This is tight but feasible within the stated approximately 150 GPU-day, five-month envelope and uses at most 8 concurrent GPUs.",
+    "differentiation_from_lit": [
+      {
+        "paper_id": "semanticscholar:4c95b1cef66cda6693fa6ab192698703dd3c070f",
+        "delta": "Saber derives per-step new-error and degradation bounds for a history-based unmasking threshold and a fixed rollback quota, whereas this candidate constructs a remaining-budget mask envelope and one certificate that decides commitment, correction, and no-commit probing while guaranteeing all masks are resolved by the deadline."
+      },
+      {
+        "paper_id": "semanticscholar:9ccbb820261b9141e46de121ed26ae3e3b16772b",
+        "delta": "MEDAL pays for full DLM rollouts to score information gain only during a fixed-length MCTS initialization and then reverts to confidence unmasking, whereas this candidate uses local paired-time disagreement without rollouts throughout the trajectory and charges every repair or probe against the same completion envelope."
+      },
+      {
+        "paper_id": "arxiv:2606.10829v2",
+        "delta": "ADAS constructs a dependency-aware reveal subset while deliberately leaving the base sampler's stopping rule unchanged, whereas this candidate makes remaining budget part of the state and can allocate an admissible call to reveal, repair, or a no-commit uncertainty probe."
+      }
+    ],
+    "almost_prior_paper_id": "semanticscholar:4c95b1cef66cda6693fa6ab192698703dd3c070f",
+    "what_step_was_missed": "Saber would have needed to replace its history-only threshold and per-step rollback quota with a remaining-budget mask-count invariant, then score unmasking, remasking, and an explicitly charged same-state probe through that invariant rather than tuning the three uses of compute separately.",
+    "signature_terms": [
+      "remaining-budget mask-flow certificate",
+      "paired-time instability decoding",
+      "deadline-feasible commit repair probe",
+      "training-free horizon action scoring"
+    ],
+    "alias_terms": [
+      "control barrier computation allocation",
+      "anytime metareasoning safe fallback",
+      "budget-feasible active sensing policy",
+      "receding-horizon resource shielding"
+    ]
+  },
+  "falsification_rewritten": false
+}

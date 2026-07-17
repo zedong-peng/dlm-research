@@ -1,0 +1,51 @@
+{
+  "selected_gaps": [
+    {
+      "gap": "No retrieved frontier leaf supplies a common horizon-aware value for the competing uses of one additional unit of latency: resolving currently masked positions, reconsidering an earlier commitment, or reducing uncertainty before acting.",
+      "chosen_pattern_id": "architectural_operator_substitution",
+      "anchor_alternates": [
+        "algebraic_equivalence_unification",
+        "generative_process_redesign"
+      ],
+      "companion_pattern": null,
+      "companion_rationale": "",
+      "selection_rationale": "This is the most load-bearing gap because a common comparison across commitment, reconsideration, and further inference is the missing decision primitive behind the stated bottleneck, and it directly demands a runnable method. Architectural operator substitution can replace prohibitively expensive full-trajectory terminal evaluation with a cheap inference-time surrogate while explicitly preserving the cross-action ordering that the controller needs; the surrogate must be masked-diffusion-specific rather than a generic constrained-DP, static-knapsack, MCTS, adaptive-halting, or value-of-computation artifact already occupied in the method lineage."
+    },
+    {
+      "gap": "Under a hard deadline, no retrieved frontier leaf ensures that unanticipated conservative steps or recovery steps do not consume the calls needed to finish the remaining masked positions with the best attainable terminal sequence quality.",
+      "chosen_pattern_id": "structural_prior_encoding",
+      "anchor_alternates": [],
+      "companion_pattern": null,
+      "companion_rationale": "",
+      "selection_rationale": "This gap shares the anchor's central horizon-level object: the same quantity used to compare actions must also certify that an action leaves a feasible completion path under the hard deadline. Structural prior encoding closes it by building the completion-feasibility invariant into action admissibility, rather than reverting to a separately tuned rollback quota, a static knapsack selection, or a generic external stopping rule."
+    },
+    {
+      "gap": "No retrieved frontier leaf tests whether the remaining global inference budget must stay an external stopping parameter rather than become part of the state used by every token-action decision.",
+      "chosen_pattern_id": "assumption_audit_and_pivot",
+      "anchor_alternates": [],
+      "companion_pattern": "generative_process_redesign",
+      "companion_rationale": "Assumption audit exposes whether external-only budget handling is load-bearing but does not itself ship the committed method; generative process redesign owns the runnable inference procedure that makes remaining budget an internal design variable for every action.",
+      "selection_rationale": "This gap shares the anchor's horizon-level object and asks whether that object must enter each decision state, so it is one methodological argument rather than a separate audit paper. Assumption audit and pivot directly overturns the external-stopping convention, while its attested generative-process-redesign companion turns the pivot into a training-free executable decoder without reducing to classical adaptive halting."
+    }
+  ],
+  "coherence_thread_type": "shared_object",
+  "deliverable_coverage": "method - anchor gap -> architectural_operator_substitution yields the runnable cross-action value surrogate; the assumption-audit sibling is paired with generative_process_redesign so its pivot also ships as an executable decoder.",
+  "pattern_saturation": {
+    "architectural_operator_substitution": {
+      "share": 0.28,
+      "saturation_band": "mid_frequency",
+      "selection_note": ""
+    },
+    "structural_prior_encoding": {
+      "share": 0.14,
+      "saturation_band": "mid_frequency",
+      "selection_note": ""
+    },
+    "assumption_audit_and_pivot": {
+      "share": 0.14,
+      "saturation_band": "mid_frequency",
+      "selection_note": ""
+    }
+  },
+  "deferred_gaps": []
+}

@@ -1,0 +1,1163 @@
+                                                        Attention-Discounted Adaptive Sampler
+                                                        for Masked Diffusion Language Models
+
+
+                                               Yusuf Sahin          Ahmed Rockey Saikia            Volkan Cevher            Paolo Favaro
+                                             University of Bern            EPFL                        EPFL                University of Bern
+                                             Bern, Switzerland      Lausanne, Switzerland       Lausanne, Switzerland      Bern, Switzerland
+
+
+
+                                                                                        Abstract
+
+                                                     Masked diffusion language models can reduce inference steps by revealing multiple
+                                                     tokens per denoising iteration, but this parallelism is fragile: positions that are
+                                                     individually confident may be unsafe to commit together when their predictions
+
+
+
+
+arXiv:2606.10829v2 [cs.CL] 14 Jul 2026
+                                                     are coupled. Existing training-free samplers such as Top-k, Fast-dLLM, and EB-
+                                                     Sampler mainly control how many tokens to reveal, while often ranking candidates
+                                                     by token-wise scores that ignore interactions within the selected set. We pro-
+                                                     pose ADAS, a training-free reranking rule for parallel masked diffusion decoding.
+                                                     ADAS leaves the base sampler’s stopping rule unchanged and modifies only subset
+                                                     construction: it greedily discounts a candidate when it attends strongly to already
+                                                     selected positions whose predictions remain uncertain. Unlike graph-constrained
+                                                     methods that turn attention into hard compatibility constraints, ADAS keeps atten-
+                                                     tion continuous and uses it as a soft marginal penalty. Across LLaDA-8B-Base
+                                                     and Dream-7B-Base on GSM8K, MATH500, HumanEval, and MBPP, plugging
+                                                     ADAS into Top-k, Fast-dLLM, and EB-Sampler improves low-NFE performance
+                                                     at matched denoiser evaluations by 9.11 and 10.46 percentage points on average,
+                                                     respectively, with 3.1% per-forward runtime overhead. These results show that soft
+                                                     attention-discounted reranking is a simple and modular way to improve quality in
+                                                     highly parallel decoding for masked diffusion language models.
+
+
+                                         1     Introduction
+
+                                         Masked diffusion language models (MDLMs) [Sahoo et al., 2024, Shi et al., 2024] promise a different
+                                         speed–quality tradeoff from causal autoregressive models: each denoising step can reveal a subset
+                                         of positions rather than a single next token. This parallelism is especially appealing for reasoning
+                                         and code-generation tasks, where long outputs make inference latency costly. The central decoding
+                                         question is therefore not only what token to place at each masked position, but also which positions
+                                         can be safely committed in the same step.
+                                         This second question is where aggressive parallel decoding becomes fragile. Many practical samplers
+                                         rank candidate positions by token-wise quantities such as confidence, margin, or entropy, and then
+                                         use a stopping rule or budget to decide how many positions to reveal. Such rules are effective
+                                         when only a few tokens are unmasked at once, but they implicitly treat high-scoring candidates as
+                                         compatible. In our controlled diagnostic, forcing the model to predict two coupled literals together
+                                         drops accuracy from 71% to 30%, showing that joint commitment can be much harder than the
+                                         individual predictions suggest.
+                                         Recent work has made this failure mode increasingly visible. Some methods treat diffusion decoding
+                                         as planning or search [Peng et al., 2025, Lee et al., 2025]; others control the amount of parallelism
+                                         through schedules [Luxembourg et al., 2025, Israel et al., 2025] or learned unmasking policies [Jazbec
+                                         et al., 2025, Hong et al., 2025, Bao et al., 2025]. The theoretical lens of Ben-Hamu et al. [2025] also
+
+                                         Preprint.
+separates model error from joint dependence error, clarifying that good marginal predictions are not
+sufficient when several positions are committed simultaneously.
+We take this perspective one step further. Widely used decoders often differ in the constraint imposed
+on the selected subset, but still rely on a token-wise objective for constructing that subset. Top-k
+fixes the cardinality, Fast-dLLM uses a confidence-threshold condition, and EB-Sampler enforces an
+entropy budget. These mechanisms decide when to stop adding tokens; they do not, by themselves,
+make the marginal value of a candidate depend on which other positions have already been selected.
+Our proposal is to make subset construction dependency-aware while leaving the stopping rule intact.
+We introduce ADAS, a training-free Attention-Discounted Adaptive Sampler that greedily builds
+the set of positions to unmask. Starting from standard token confidence scores, ADAS discounts a
+remaining candidate when it attends strongly to already selected, uncertain positions. Equivalently,
+ADAS performs greedy construction under a non-additive subset utility: confidence supplies an
+individual marginal-value proxy, while attention supplies a pairwise-compatibility proxy.
+This design deliberately separates ranking from budget control. ADAS does not train a planner,
+add a verifier, perform lookahead search, or redesign the sampler’s stopping criterion. Instead,
+it upgrades the greedy ranking step inside existing decoders, so the same attention-discounted
+update can be used with fixed-cardinality, confidence-threshold, or entropy-budget rules. This places
+ADAS in a complementary position to learned unmasking policies [Jazbec et al., 2025, Hong et al.,
+2025, Asano et al., 2026], lookahead methods [Lee et al., 2025], and schedule- or verifier-based
+approaches [Luxembourg et al., 2025, Israel et al., 2025].
+Empirically, the benefit appears exactly where the motivation predicts: the low-NFE, highly parallel
+regime in which token-wise ranking is most brittle. Across mathematical reasoning and code-
+generation benchmarks, adding the ADAS score update consistently improves Top-k, EB-Sampler,
+and Fast-dLLM at matched denoiser-evaluation budgets. Averaged across stopping criteria, ADAS
+improves matched-NFE performance by 9.11 points on LLaDA-8B-Base and 10.46 points on Dream-
+7B-Base, with positive gains on 80 of 90 matched operating points.
+Our contributions are as follows.
+
+       • We diagnose joint dependence in parallel MDLM decoding: forcing coupled positions to
+         be predicted together drops controlled-task accuracy from 71% to 30%, and masked-token
+         self-attention separates dependent from non-dependent pairs.
+       • We introduce ADAS, a training-free attention-discounted greedy selector that decouples
+         ranking from stopping, plugs into Top-k, Fast-dLLM, and EB-Sampler, and adds only 3.1%
+         runtime overhead per model forward.
+       • Across two MDLMs and four reasoning/code benchmarks, ADAS improves matched-NFE
+         performance by 9.11 and 10.46 points on average.
+
+2   Related work
+Recent work on masked diffusion decoding has shown that generation quality depends strongly
+on the order and grouping of positions unmasked at each step. Several approaches therefore treat
+decoding as an explicit planning or policy-learning problem. Peng et al. [2025] formulate sampling
+as planner-guided decoding, Asano et al. [2026] separate where-to-unmask from what-to-unmask
+and learn a supervised planner, Lee et al. [2025] use lookahead search over candidate decoding
+trajectories, and Jazbec et al. [2025], Hong et al. [2025], Bao et al. [2025] learn unmasking policies or
+filters that improve over hand-designed heuristics. These methods show that token-wise confidence
+order is often not enough, especially outside weakly parallel regimes.
+A complementary line of work improves the speed–quality tradeoff of diffusion decoding through
+better inference schedules or auxiliary signals. Luxembourg et al. [2025] propose a structural
+scheduler that reduces harmful interactions through dilated grouping, while Israel et al. [2025] use an
+auxiliary autoregressive model to adapt the amount of parallelism during decoding. Ben-Hamu et al.
+[2025] provide a useful theoretical framing by decomposing decoding error into model error and joint
+dependence error, motivating adaptive multi-token unmasking rules such as EB-Sampler. Kim et al.
+[2026b] propose KLASS, a training-free sampler that combines token confidence with temporal KL
+divergence between consecutive denoising distributions to select stable tokens for unmasking.
+
+
+                                                   2
+The closest related method is DAPD [Kim et al., 2026a], which also uses self-attention to estimate
+dependencies among masked positions. DAPD builds an attention-induced dependency graph by
+symmetrizing pairwise attention scores, thresholding them into binary edges, and selecting an
+independent set of masked positions to decode in parallel. Its decoding rule is therefore graph-
+constrained: an attention edge acts as a hard conflict, and the selected parallel batch must satisfy an
+approximate independence condition.
+ADAS uses the same broad source of information—self-attention—but instantiates a different decod-
+ing principle. It does not construct a binary graph, threshold attention, or impose independent-set
+constraints. Instead, ADAS keeps attention continuous and uses it as a marginal penalty inside greedy
+subset construction. Thus, ADAS does not declare two positions incompatible. A strongly coupled
+candidate can still be selected when its confidence gain outweighs the estimated commitment risk.
+This soft formulation is important because attention is an imperfect proxy for harmful dependence:
+not every high-attention pair should be forbidden, and not every low-attention pair is guaranteed
+independent.
+The two methods also differ in their integration point. DAPD is a standalone dependency-aware
+decoder that defines its own parallel batches through graph coloring. ADAS is a sampler-agnostic
+reranking module: it leaves the stopping rule, budget, and admissibility condition of Top-k, Fast-
+dLLM, or EB-Sampler unchanged, and only changes the order in which candidates are proposed.
+In short, DAPD uses attention to construct a graph of forbidden simultaneous updates; ADAS uses
+attention to compute a soft marginal discount inside existing samplers.
+
+
+3     Preliminaries
+
+3.1   Notation
+
+Let V = {1, . . . , K} ⊎ {m} denote a finite vocabulary augmented with a special mask token m. A
+sequence is denoted by x ∈ V d , where d is the sequence length. A position i is masked if xi = m
+and unmasked otherwise. For a partially masked sequence, let M ⊆ {1, . . . , d} be the set of masked
+positions, and let M̄ denote its complement. We write xM̄ for the observed tokens. We use q(· | xM̄ )
+to denote the true conditional distribution over masked positions given the currently revealed context
+and pθ (· | xM̄ ) to denote the model’s conditional distribution.
+
+3.2   Masked Diffusion Language Models
+
+Masked diffusion language models [Sahoo et al., 2024, Shi et al., 2024] generate text through iterative
+denoising. Starting from a highly masked sequence, the model repeatedly predicts token distributions
+at masked positions and progressively unmasks a subset of them until no masks remain. A decoding
+step therefore involves two coupled decisions: what token to place at a selected position, and where
+to unmask next.
+At a decoding step, an MDLM with parameters θ predicts, for each masked position i ∈ M, a
+conditional distribution pθ (xi | xM̄ ). Many existing decoding strategies then assign each masked
+position a token-wise score derived from this distribution, and construct a subset S ⊆ M of positions
+to unmask according to a sampler-specific stopping rule. A common choice is the confidence score
+
+                                        ci = max
+                                              i
+                                                 pθ (xi | xM̄ ),                                      (1)
+                                               x
+
+
+namely the probability assigned to the most likely token value at position i. Different samplers mainly
+differ in how the subset S is constrained, e.g., by fixing its size, thresholding confidence, or enforcing
+an entropy budget.
+
+3.3   Model error and joint dependence error
+
+A central difficulty in parallel decoding is that the model provides token-wise conditional marginals
+for masked positions, while decoding multiple positions in the same step requires reasoning about
+their joint behavior. As emphasized by Ben-Hamu et al. [2025], the error incurred by unmasking a
+
+
+                                                    3
+subset S ⊆ M can be decomposed into a model error term and a joint dependence error term:
+          X
+            DKL q(xi | xM̄ ), pθ (xi | xM̄ ) + DKL q(xS | xM̄ ), i∈S q(xi | xM̄ )
+                                                                 Q               
+
+           i∈S
+           |                 {z                  }       |                                          {z                  }
+                          model error                                                      joint dependence error
+
+The model error captures inaccuracies in the model’s token-wise predictions, while the joint depen-
+dence error measures the discrepancy introduced by treating the selected positions as conditionally
+independent. The latter is the multi-information of the true conditional distribution q over S: it is
+model-independent and characterizes the intrinsic coupling among positions selected for simultaneous
+commitment.
+Since q is unobserved at decoding time, ADAS uses the denoiser self-attention Aij as a model-side
+proxy for coupling strength. When this proxy is informative, discounting candidates that attend
+strongly to already selected, uncertain positions should reduce the expected dependence cost of the
+next parallel commitment. Section 4 tests this proxy assumption.
+
+4   Controlled dependency diagnostics
+Before introducing the Attention-Discounted Adaptive Sampler (ADAS), we test the two assump-
+tions behind attention-guided parallel unmasking: jointly unmasking dependent positions is harder
+than jointly unmasking independent positions, and self-attention provides a useful proxy for such
+dependencies.
+We use synthetic arithmetic predicates with known dependency structure. The full predicate set is
+      E = {A + B + C = D, A · B · C = D, min{A, B, C} = D, max{A, B, C} = D} .
+
+For the first diagnostic, we use only the sum and product
+predicates, since these directly test whether simultane-                                          Attention-Dependency Relationship
+ously predicting two coupled numeric literals is harder
+                                                                                          0.016
+than predicting two literals from separate equations.
+Each example contains three predicates, and exactly two                                   0.014
+numeric literals are masked. In the dependent-pair con-
+
+
+
+
+                                                               Pairwise attention score
+                                                                                          0.012
+dition, both masked literals occur in the same predicate;
+in the independent-pair condition, they occur in differ-                                  0.010
+ent predicates. We then force Dream-7B-Base to pre-
+                                                                                          0.008
+dict both masked literals in a single forward pass, with-
+out confidence ordering, adaptive stopping, or attention-                                 0.006
+discounting. We use constraint-satisfaction scoring, so
+                                                                                          0.004
+a completion is counted as correct whenever the result-
+ing equation is valid, even if the predicted literals differ                              0.002
+from the originally sampled values. Dependent pairs are
+                                                                                          0.000
+substantially harder to recover than independent pairs:
+                                                                                                     Dependent      Non-dependent
+accuracy drops from 71% to 30%.
+For the second diagnostic, we use the full predicate set Figure 1: Distribution of pairwise attention
+E, including the sum, product, minimum, and maximum values for dependent and non-dependent
+predicates. This diagnostic tests whether self-attention masked-token pairs in the synthetic depen-
+reflects known dependency structure across a broader dency diagnostic, computed using LLaDA-
+set of arithmetic relations. Using the known-dependency 8B-Base. Dependent pairs receive consis-
+construction described in Appendix E, we compare at- tently higher attention than non-dependent
+tention values between masked-token pairs from the pairs, suggesting that attention tracks the
+same predicate and pairs from different predicates. As underlying dependency structure.
+shown in Figure 1, dependent pairs attend more to each
+other than non-dependent pairs. Quantitatively, mean
+attention is higher for dependent pairs on both LLaDA-8B-Base (0.007261 vs. 0.001919) and Dream-
+7B-Base (0.009517 vs. 0.004842). These diagnostics support the central premise of ADAS without
+treating attention as a perfect dependence measure: highly coupled positions are risky to unmask
+together, and attention provides a practical training-free proxy for this coupling.
+
+
+                                                     4
+5     Method
+
+5.1   Problem statement
+
+Consider a masked diffusion decoding step with current set of masked positions M. The goal is to
+select a subset S ⊆ M of positions to unmask in parallel. In most existing samplers, this selection
+problem is implicitly decomposed into two parts: a token-wise utility used to rank candidate positions,
+and a stopping criterion that determines when enough positions have been selected.
+A common choice is to use the confidence scores ci introduced in Eq. (1) to construct S so as to
+maximize an additive objective of the form
+                                                        X
+                                           U (S) =            ci ,                                   (2)
+                                                        i∈S
+
+
+subject to a sampler-specific constraint. Different decoding rules mainly differ in this constraint. For
+example, Top-k enforces a fixed cardinality constraint |S| = k, Fast-dLLM uses a confidence-based
+stopping condition, and EB-Sampler uses an entropy-based bound.
+Our starting point is that this token-wise objective ignores dependencies among positions selected
+in the same step. A candidate’s reliability should depend not only on its own token-wise score, but
+also on the uncertainty of the positions with which it is jointly committed and the strength of their
+interactions. We therefore retain the general subset-selection view above, but replace the purely
+additive token-wise objective with a dependency-aware utility that accounts for pairwise interactions.
+
+
+5.2   Attention-Discounted Adaptive Sampler (ADAS)
+
+ADAS replaces token-wise candidate ranking with dependency-aware greedy subset construction,
+while leaving the sampler’s stopping rule unchanged. At each decoding step, let M be the set
+of masked positions and let ci denote the usual confidence score for position i ∈ M. Let A ∈
+[0, 1]|M|×|M| be an attention-based interaction matrix over masked positions, where Aij measures
+attention from position i to position j. In our implementation, A is obtained from the denoiser’s final
+self-attention layer by averaging attention scores across heads, following the ablation in Appendix C.
+Given an already selected set S, ADAS scores a remaining candidate i ∈ M \ S by the marginal
+utility
+                                                          X
+                                u(i | S, A) = ci − α            Ais (1 − cs ),                       (3)
+                                                          s∈S
+
+
+where α ≥ 0 controls the strength of the attention discount. The first term favors positions with
+high token-wise confidence. The second term discounts candidates that attend strongly to selected
+positions whose predictions are still uncertain. Thus, a candidate is penalized not simply for being
+coupled to another selected position, but for being coupled to one whose commitment is less reliable.
+Equivalently, ADAS greedily constructs a set under the dependency-aware utility
+                                           X              X
+                              U (S, A) =         ci − α           Aij (1 − cj ).                     (4)
+                                           i∈S            i,j∈S
+
+
+This utility is not submodular in general, and we do not claim an approximation guarantee. Instead,
+we use it as a lightweight ranking rule motivated by the local surrogate view that attention-weighted
+uncertainty approximates the incremental risk of jointly committing dependent positions.
+At each iteration, ADAS selects the remaining candidate with largest current marginal utility and
+checks whether adding it satisfies the base sampler’s admissibility rule. If the enlarged set is
+admissible, the candidate is added; otherwise, construction stops and the selected positions are
+unmasked in parallel.
+
+
+                                                    5
+Algorithm 1 Attention-Discounted Adaptive Sampler (ADAS)
+Require: M, scores {ci }, attention A, weight α, admissibility rule Adm
+  S←∅
+  while M \ S ̸= ∅ do                               
+      i⋆ ← arg maxi∈M\S ci − α s∈S Ais (1 − cs )
+                                   P
+      if not Adm(S ∪ {i⋆ }) then
+          break
+      end if
+      S ← S ∪ {i⋆ }
+  end while
+  return S
+
+
+In our experiments, ADAS is combined with three admissibility rules:
+                        |S ∪ {i⋆ }| ≤ k,
+                  Top-k :                                                                            (5)
+                                                   
+            Fast-dLLM : |S ∪ {i⋆ }| 1 − min ⋆ cs < f,                                                (6)
+                                         s∈S∪{i }
+                           X
+                                  H pθ (xs | xM̄ ) − max⋆ H pθ (xs | xM̄ ) < γ.
+                                                                         
+           EB-Sampler :                                                                              (7)
+                                                           s∈S∪{i }
+                            s∈S∪{i⋆ }
+
+Here k, f , and γ are the fixed-cardinality, confidence, and entropy-budget thresholds, respectively.
+These rules determine when subset construction stops; ADAS only changes how candidates are
+ranked before that stopping decision.
+The attention discount can be updated incrementally. After adding a selected position s, each
+remaining candidate’s score is decreased by αAis (1 − cs ), giving O(|S| |M|) selection cost for a
+final subset S. This overhead is small relative to denoiser forward passes; we measure it in Section 6.3
+and ablate α and the uncertainty term in Appendix C.
+
+
+6     Experiments
+
+6.1   Experimental setup
+
+We evaluate ADAS on four benchmarks spanning mathematical reasoning and code generation:
+GSM8K [Cobbe et al., 2021], MATH500 [Hendrycks et al., 2021], MBPP [Austin et al., 2021], and
+HumanEval [Chen et al., 2021]. We use two strong open-weight masked diffusion language models,
+Dream-7B-Base [Ye et al., 2025] and LLaDA-8B-Base [Nie et al., 2025].
+Our goal is to test whether attention-discounted subset construction helps precisely where parallel un-
+masking is most useful but most error-prone. We therefore instantiate ADAS with three representative
+stopping criteria: Top-k, Fast-dLLM, and EB-Sampler, yielding three variants we denote Top-k+AD,
+Fast-dLLM+AD, and EB+AD. Each variant is compared against its corresponding baseline over a
+range of parallel decoding settings.
+We further evaluate KLASS [Kim et al., 2026b] and DAPD [Kim et al., 2026a] as additional training-
+free baselines.
+
+6.2   Main results
+
+Figures 2 and 3 summarize the main speed–quality tradeoff. Moving to the right corresponds to
+revealing more tokens per denoising step, and therefore to lower NFE. The central question is whether
+the sampler can preserve quality in this highly parallel regime, where jointly selected dependent
+positions are most likely to induce errors.
+In each figure, the first three rows compare EB-Sampler, Fast-dLLM, and Top-k with their ADAS
+variants; the final row compares ADAS-augmented samplers with KLASS and DAPD. Together,
+these plots test two claims: ADAS should improve its own base sampler, and the resulting decoders
+should remain competitive with recent training-free samplers.
+
+
+                                                   6
+                                                                         Dream 7B: Decoding Accuracy by Stopping Rule
+                                                                          EB                       Fast-DLLM                             Top-k                          KLASS
+                                                                          EB + AD                  Fast-DLLM + AD                        Top-k + AD                     DAPD
+
+
+                                                      GSM8K                                   HumanEval                                       MATH500                                      MBPP
+
+Entropy budget
+                                    75                                                                                         40
+
+                                                                                40                                                                                        40
+                                    50
+                                                                                                                               20
+
+ Accuracy (%)
+                                                                                20                                                                                        20
+                                    25
+
+                                                                                 0
+                                              4       8        12    16    20             5       10       15        20             0      8        16        24               0       8        16        24         32
+                                                                                                                               40
+
+ Fast-DLLM                          50                                          40                                                                                        40
+                                                                                                                               20
+
+Accuracy (%)
+                                                                                20                                                                                        20
+
+                                     0                                                                                          0                                          0
+                                                  8       16        24    32              5       10       15    20                     10     20        30    40                  8       16        24        32
+                                                                                                                               40
+
+
+
+
+Prior baselines vs AD Fixed Top-k
+                                    50                                          40                                                                                        40
+                                                                                                                               20
+                                                                                                                                                                          20
+                                                                                20
+                                     0                                                                                          0                                          0
+                                               4          8         12    16                  4        8        12        16              4     8         12       16                  4        8         12        16
+
+
+
+
+    Accuracy (%)     Accuracy (%)
+                                                                                                                               40
+
+                                                                                40                                                                                        40
+                                    50
+                                                                                                                               20
+                                                                                20                                                                                        20
+
+                                     0                                                                                          0                                          0
+                                         0    5       10       15    20              0    5       10       15        20             0     10    20       30        40          0       8    16        24            32
+                                             # Parallel Tokens                           # Parallel Tokens                              # Parallel Tokens                          # Parallel Tokens
+
+
+Figure 2: Effect of attention-discounted selection on Dream-7B-Base. Rows correspond to entropy-
+bounded decoding, Fast-dLLM, fixed Top-k, and comparison against KLASS and DAPD; columns
+correspond to GSM8K, HumanEval, MATH500, and MBPP. The same pattern observed for LLaDA-
+8B-Base persists: attention-discounted selection is most beneficial when many tokens are revealed in
+parallel, where the original samplers degrade sharply.
+
+
+Across both models, ADAS consistently improves robustness in the high-parallelism regime. For
+the adaptive stopping rules EB and fast-dLLM, the baseline curves often deteriorate rapidly as the
+entropy budget increases, whereas their attention-discounted variants degrade more gradually.
+Fixed Top-k decoding shows that the benefit is not tied to adaptive stopping criteria. Since k
+directly controls the number of tokens unmasked at each step, this setting isolates the effect of subset
+construction. Across both base models, Top-k+AD improves or preserves performance at larger
+k, where vanilla Top-k suffers the largest degradation. Thus, reranking candidates by attention-
+discounted utility selects safer groups of tokens even when the subset size is fixed in advance.
+The comparison with prior training-free baselines further supports this interpretation. In the bottom
+row of each figure, the ADAS-augmented decoders generally remain competitive with or above
+KLASS and DAPD at moderate and large parallel-token counts. Both baselines often degrade rapidly
+as parallelism increases, whereas ADAS tends to degrade more smoothly. One possible explanation
+for the KLASS trend is that temporal-stability signals become less reliable when many tokens are
+committed at once, since consecutive denoising distributions can shift substantially. The DAPD trend
+suggests that hard attention-derived constraints may be brittle in some high-parallel regimes. Overall,
+these results indicate that soft attention-discounted reranking is a robust way to reduce harmful joint
+commitments among dependent positions.
+To summarize the low-NFE regime quantitatively, we compute average gains at matched NFE. For
+each baseline operating point where the decoder unmasks at least four tokens on average per step, we
+linearly interpolate the corresponding ADAS curve at the same NFE and measure the score difference.
+Table 1 reports these gains for both LLaDA-8B-Base and Dream-7B-Base across the three original
+stopping rules, with each entry shown as LLaDA gain / Dream gain.
+
+
+                                                                                                                          7
+                                                                           LLaDA 8B: Decoding Accuracy by Stopping Rule
+                                                                            EB                       Fast-DLLM                             Top-k                       KLASS
+                                                                            EB + AD                  Fast-DLLM + AD                        Top-k + AD                  DAPD
+
+
+                                                       GSM8K                                   HumanEval                                        MATH500                                    MBPP
+                                                                                                                                 30
+
+Entropy budget
+                                                                                                                                                                           40
+                                                                                 30
+                                     50                                                                                          20
+                                                                                 20                                                                                        20
+
+ Accuracy (%)
+                                     25                                                                                          10
+                                                                                 10
+
+                                               4        8        12    16             0        8        16        24                  0     6     12        18    24            0     6    12    18        24
+                                                                                                                                                                           40
+
+ Fast-DLLM
+                                                                                 30
+                                     50                                                                                          20
+                                                                                 20                                                                                        20
+
+Accuracy (%)
+                                     25
+                                                                                 10
+                                                                                                                                  0
+                                                8           16        24                  10       20       30    40        50              15         30        45             0     20    40    60
+                                                                                                                                                                           40
+
+
+
+
+Prior baselines vs AD Fixed Top-k
+                                     50                                                                                          20
+                                                                                 20                                                                                        20
+
+
+                                      0                                           0                                               0                                         0
+                                                4           8     12        16              4           8        12     16                  4     8         12        16              4     8     12        16
+                                                                                                                                                                           40
+
+
+
+
+    Accuracy (%)      Accuracy (%)
+                                                                                 30
+                                     50                                                                                          20
+                                                                                 20                                                                                        20
+                                                                                                                                 10
+                                                                                 10
+                                      0                                                                                                                                     0
+                                          0        8        16        24              0         15          30         45             0      15        30        45             0     20    40        60
+                                              # Parallel Tokens                           # Parallel Tokens                               # Parallel Tokens                         # Parallel Tokens
+
+
+Figure 3: Effect of attention-discounted selection on LLaDA-8B-Base. Rows correspond to entropy-
+bounded decoding, Fast-dLLM, fixed Top-k, and comparison against KLASS and DAPD; columns
+correspond to GSM8K, HumanEval, MATH500, and MBPP. Across stopping rules and datasets,
+attention-discounted selection preserves substantially higher accuracy in the highly parallel regime,
+while matching the original samplers more closely when the number of parallel tokens is small.
+
+
+Table 1: Matched-NFE absolute gains of attention-discounted selection in the low-NFE regime. Each
+entry reports LLaDA-8B-Base gain / Dream-7B-Base gain in percentage points. We average over
+baseline points with at least four parallel tokens per step and compare each baseline to the interpolated
+ADAS score at the same NFE.
+                                      Dataset                                         EB                         Fast-dLLM                        Top-k                    Avg. over methods
+                                      GSM8K                                  +9.22 / +14.31                  +6.92 / +6.36                  +11.90 / +5.88                   +9.35 / +8.85
+                                      MATH500                                 +6.49 / +4.84                  +5.70 / +2.15                  +10.73 / +6.93                   +7.64 / +4.64
+                                      HumanEval                              +10.45 / +15.63                 +6.90 / +12.03                 +9.55 / +10.77                  +8.97 / +12.81
+                                      MBPP                                   +10.37 / +15.01                 +7.39 / +12.04                 +13.67 / +19.60                 +10.48 / +15.55
+                                      Avg. over datasets                     +9.13 / +12.45                  +6.73 / +8.14                  +11.46 / +10.80                 +9.11 / +10.46
+
+
+
+The matched-NFE summary confirms the visual trend across both base models. Averaged over all
+datasets and stopping criteria, the gains are +9.11 points for LLaDA-8B-Base and +10.46 points for
+Dream-7B-Base.
+The improvement is consistent across entropy-based, confidence-based, and fixed-budget stopping
+rules, indicating that the benefit comes from attention-discounted subset construction rather than from
+a particular stopping criterion. Gains are especially strong on code-generation benchmarks, where
+simultaneously finalizing coupled positions can more easily lead to inconsistent outputs. MATH500
+shows smaller but still positive matched-NFE gains, suggesting that some mathematical-reasoning
+errors may be governed by longer sequential chains rather than pairwise incompatibilities within a
+single parallel update.
+
+
+                                                                                                                        8
+To check that the effect is not driven by a few favorable thresholds, we also bootstrap matched gains
+across operating points. Across 90 points, ADAS has mean gain +9.27 with 95% CI [+7.74, +10.84],
+improving in 80 cases and regressing in 10. Appendix D gives the full breakdown.
+
+6.3   Analysis of runtime overhead
+
+ADAS reads the last-layer attention matrix and greedily updates token scores when constructing the
+subset to unmask. In our implementation, accessing these weights requires disabling FlashAttention
+only in the final denoiser layer. To isolate this cost from schedule differences, we compare each
+ADAS variant against its vanilla decoder at matched operating points, using the same stopping rule
+and similar NFE.
+Across all full-dataset runs used in our paper plots, we measure wall-clock generation time normalized
+by generated samples and denoiser forwards. Adding ADAS costs 3.1% per model forward on average,
+including attention extraction and greedy reranking.
+
+7     Discussion and limitations
+We proposed ADAS, a training-free attention-guided subset selection rule for parallel decoding in
+masked diffusion language models. The key idea is to move beyond purely token-wise scoring and
+incorporate pairwise compatibility between candidate positions using the model’s own self-attention.
+Across multiple benchmarks, models, and stopping criteria, we found that this simple attention-
+discounted reranking strategy consistently improves decoding quality in highly parallel regimes,
+where token-wise heuristics are most vulnerable to joint dependence error.
+Several limitations remain. Self-attention is only a proxy for stochastic dependence: strong attention
+does not always imply harmful joint updates, nor does weak attention guarantee compatibility. Our
+experiments cover two open-weight base MDLMs and four reasoning/code benchmarks, so broader
+dependency signals, samplers, model scales, and task domains remain important future tests. Our
+robustness intervals summarize variation across matched operating points rather than repeated seeds
+or per-example uncertainty.
+Natural next steps include richer attention-derived dependency signals, head-specific or multi-layer
+aggregation, and combinations with learned planners, lookahead methods, or auxiliary verifiers. More
+broadly, our results suggest that improving parallel decoding requires not only better stopping rules,
+but also better objectives for composing the subset of positions revealed at each step.
+The broader impacts of ADAS are mostly inherited from the underlying language models. ADAS
+may improve the inference efficiency and output quality of existing masked diffusion language
+models, which can reduce decoding cost and make these models more practical to use. At the same
+time, faster or higher-quality generation could indirectly increase misuse risks already associated
+with language models, such as automated spam, low-quality content generation, or other harmful
+downstream applications. ADAS does not introduce a new model, dataset, or deployed system, so
+these risks are inherited from the underlying models rather than specific to a newly released artifact.
+
+References
+Hikaru Asano, Tadashi Kozuno, Kuniaki Saito, and Yukino Baba. Where-to-unmask: Ground-truth-
+  guided unmasking order learning for masked diffusion language models, 2026. URL https:
+  //arxiv.org/abs/2602.09501.
+Jacob Austin, Augustus Odena, Maxwell Nye, Maarten Bosma, Henryk Michalewski, David Dohan,
+  Ellen Jiang, Carrie Cai, Michael Terry, Quoc Le, and Charles Sutton. Program synthesis with large
+  language models, 2021. URL https://arxiv.org/abs/2108.07732.
+Wenrui Bao, Zhiben Chen, Dan Xu, and Yuzhang Shang. Learning to parallel: Accelerating diffusion
+ large language models via learnable parallel decoding, 2025. URL https://arxiv.org/abs/
+ 2509.25188.
+Heli Ben-Hamu, Itai Gat, Daniel Severo, Niklas Nolte, and Brian Karrer. Accelerated sampling from
+  masked diffusion models via entropy bounded unmasking, 2025. URL https://arxiv.org/
+  abs/2505.24857.
+
+
+                                                  9
+Mark Chen, Jerry Tworek, Heewoo Jun, Qiming Yuan, Henrique Ponde de Oliveira Pinto, Jared
+ Kaplan, Harri Edwards, Yuri Burda, Nicholas Joseph, Greg Brockman, Alex Ray, Raul Puri,
+ Gretchen Krueger, Michael Petrov, Heidy Khlaaf, Girish Sastry, Pamela Mishkin, Brooke Chan,
+ Scott Gray, Nick Ryder, Mikhail Pavlov, Alethea Power, Lukasz Kaiser, Mohammad Bavarian,
+ Clemens Winter, Philippe Tillet, Felipe Petroski Such, Dave Cummings, Matthias Plappert, Fotios
+ Chantzis, Elizabeth Barnes, Ariel Herbert-Voss, William Hebgen Guss, Alex Nichol, Alex Paino,
+ Nikolas Tezak, Jie Tang, Igor Babuschkin, Suchir Balaji, Shantanu Jain, William Saunders,
+ Christopher Hesse, Andrew N. Carr, Jan Leike, Josh Achiam, Vedant Misra, Evan Morikawa,
+ Alec Radford, Matthew Knight, Miles Brundage, Mira Murati, Katie Mayer, Peter Welinder, Bob
+ McGrew, Dario Amodei, Sam McCandlish, Ilya Sutskever, and Wojciech Zaremba. Evaluating
+ large language models trained on code, 2021. URL https://arxiv.org/abs/2107.03374.
+Karl Cobbe, Vineet Kosaraju, Mohammad Bavarian, Mark Chen, Heewoo Jun, Lukasz Kaiser,
+  Matthias Plappert, Jerry Tworek, Jacob Hilton, Reiichiro Nakano, Christopher Hesse, and John
+  Schulman. Training verifiers to solve math word problems, 2021. URL https://arxiv.org/
+  abs/2110.14168.
+Dan Hendrycks, Collin Burns, Saurav Kadavath, Akul Arora, Steven Basart, Eric Tang, Dawn Song,
+  and Jacob Steinhardt. Measuring mathematical problem solving with the math dataset, 2021. URL
+  https://arxiv.org/abs/2103.03874.
+Chunsan Hong, Seonho An, Min-Soo Kim, and Jong Chul Ye. Improving discrete diffusion unmasking
+  policies beyond explicit reference policies, 2025. URL https://arxiv.org/abs/2510.05725.
+Daniel Israel, Guy Van den Broeck, and Aditya Grover. Accelerating diffusion llms via adaptive
+  parallel decoding, 2025. URL https://arxiv.org/abs/2506.00413.
+Metod Jazbec, Theo X. Olausson, Louis Béthune, Pierre Ablin, Michael Kirchhof, João Monteiro,
+ Victor Turrisi, Jason Ramapuram, and Marco Cuturi. Learning unmasking policies for diffusion
+ language models, 2025. URL https://arxiv.org/abs/2512.09106.
+Bumjun Kim, Dongjae Jeon, Moongyu Jeon, and Albert No. Dependency-aware parallel decoding
+  via attention for diffusion LLMs, 2026a. URL https://arxiv.org/abs/2603.12996.
+Seo Hyun Kim, Sunwoo Hong, Hojung Jung, Youngrok Park, and Se-Young Yun. Klass: Kl-guided
+  fast inference in masked diffusion models, 2026b. URL https://arxiv.org/abs/2511.05664.
+Sanghyun Lee, Seungryong Kim, Jongho Park, and Dongmin Park. Lookahead unmasking elicits
+  accurate decoding in diffusion language models, 2025. URL https://arxiv.org/abs/2511.
+  05563.
+Omer Luxembourg, Haim Permuter, and Eliya Nachmani. Plan for speed: Dilated scheduling for
+ masked diffusion language models, 2025. URL https://arxiv.org/abs/2506.19037.
+Shen Nie, Fengqi Zhu, Zebin You, Xiaolu Zhang, Jingyang Ou, Jun Hu, Jun Zhou, Yankai Lin,
+  Ji-Rong Wen, and Chongxuan Li. Large language diffusion models, 2025. URL https://arxiv.
+  org/abs/2502.09992.
+Fred Zhangzhi Peng, Zachary Bezemek, Sawan Patel, Jarrid Rector-Brooks, Sherwood Yao,
+  Avishek Joey Bose, Alexander Tong, and Pranam Chatterjee. Path planning for masked diffusion
+  model sampling, 2025. URL https://arxiv.org/abs/2502.03540.
+Subham Sekhar Sahoo, Marianne Arriola, Yair Schiff, Aaron Gokaslan, Edgar Marroquin, Justin T
+  Chiu, Alexander Rush, and Volodymyr Kuleshov. Simple and effective masked diffusion language
+  models, 2024. URL https://arxiv.org/abs/2406.07524.
+Jiaxin Shi, Kehang Han, Zhe Wang, Arnaud Doucet, and Michalis Titsias. Simplified and generalized
+   masked diffusion for discrete data. In The Thirty-eighth Annual Conference on Neural Information
+   Processing Systems, 2024. URL https://openreview.net/forum?id=xcqSOfHt4g.
+Jiacheng Ye, Zhihui Xie, Lin Zheng, Jiahui Gao, Zirui Wu, Xin Jiang, Zhenguo Li, and Lingpeng
+   Kong. Dream 7b: Diffusion large language models, 2025. URL https://arxiv.org/abs/
+   2508.15487.
+
+
+                                                10
+A    Evaluation details
+We evaluate on GSM8K, HumanEval, MBPP, and MATH500 with two diffusion LLMs: Dream
+7B and LLaDA 8B. We use 8-shot prompting for GSM8K, 4-shot prompting for MATH500, 3-
+shot prompting for MBPP, and 0-shot prompting for HumanEval. For batched inference, we pad
+each prompt to the model’s maximum sequence length used for the corresponding task. We use a
+maximum generation length of 256 for GSM8K and 512 for HumanEval, MBPP, and MATH500. We
+use temperature 0 for all evaluations.
+
+Code availability. We provide anonymized reproduction code and instructions in the supplemental
+material. The code will be made public after the review process.
+
+Decoding controls. For the entropy-budget (EB) and Fast-dLLM families, we sweep the budget
+parameters γ and f . For the fixed-subset Top-k family, we sweep the subset size k directly.
+
+                Table 2: Hyperparameter ranges used for the three decoder families.
+                     Method family         Sweep values
+                     EB / EB+AD            γ ∈ {10−3 , 10−2 , 10−1 , 0.3, 1, 3, 10, 20}
+                     Fast-dLLM             f ∈ {0.3, 1, 2, 3, 5, 8, 12}
+                     Fast-dLLM+AD          f ∈ {0.3, 1, 2, 3, 5, 8, 12, 20}
+                     Top-k / Top-k+AD      k ∈ {1, 2, 4, 8, 16}
+
+For EB and Fast-dLLM, larger threshold permits more aggressive parallel unmasking. For Top-k, the
+level of parallelism is controlled directly by k, i.e., the number of tokens unmasked per denoising step.
+We include the extra f = 20 point for Fast-dLLM+AD only to probe the very high-parallel regime
+reached by the vanilla decoder at smaller thresholds; matched-NFE summaries use interpolation at
+baseline operating points rather than threshold-wise comparisons.
+
+Compute resources. All evaluations were run as batched inference jobs on one 4 × GH200 GPU
+node per operating point. We used padding to the task maximum sequence length for batched
+inference. Dream 7B used batch size 4 per GPU, and LLaDA 8B used batch size 2 per GPU.
+
+Table 3: Actual wall-clock duration by model and dataset, aggregated over the completed full-dataset
+operating points used in the paper figures.
+
+                              Model        Dataset         Min–max hrs/run
+                              Dream 7B     GSM8K                   0.13–2.21
+                              Dream 7B     HumanEval               0.06–0.57
+                              Dream 7B     MATH500                 0.08–2.00
+                              Dream 7B     MBPP                    0.10–2.15
+                              LLaDA 8B     GSM8K                   0.26–4.86
+                              LLaDA 8B     HumanEval               0.07–1.26
+                              LLaDA 8B     MATH500                 0.14–3.67
+                              LLaDA 8B     MBPP                    0.15–4.27
+
+
+Hyperparameters for KLASS and DAPD. For KLASS and DAPD, we did not perform per-task
+accuracy tuning. Instead, we first ran small pilot evaluations to identify threshold values that place
+each method in the same broad low-NFE regime as our main curves, and then reused the same
+hyperparameter grids for all models and datasets. For KLASS, which accepts tokens satisfying both
+a confidence and KL criterion, we evaluated
+               (θconf , θKL ) ∈ {(0.70, 1.00), (0.198, 0.51), (0.18, 0.60), (0.16, 0.70)}.
+For DAPD, using the masked max-normalized attention dependency score, we evaluated
+       (τmin , τmax ) ∈ {(0.002, 0.02), (0.005, 0.05), (0.01, 0.10), (0.02, 0.20), (0.05, 0.50)}.
+These settings were chosen to span a range of parallelism levels rather than to maximize accuracy on
+any individual benchmark.
+
+
+                                                     11
+B    Theoretical motivation for the ADAS utility
+We provide a local derivation motivating the ADAS utility. The argument is not meant to establish
+a global guarantee for an arbitrary transformer; rather, it shows that under a standard first-order
+approximation of the denoiser around the current decoding state, the natural dependence penalty has
+the same form as the ADAS discount.
+Fix the current partially unmasked sequence xM̄ . For each masked position s, let
+              ps (a) = pθ (xs = a | xM̄ ),         x̂s = arg max ps (a),             cs = ps (x̂s ).
+                                                                  a∈V
+
+Let Zs = ϕs (X s ) be the representation inserted at position s, and let ẑs = ϕs (x̂s ). Since the
+vocabulary is finite, define
+                              Dϕ2 = max max ∥ϕs (a) − ϕs (b)∥22 .
+                                        s∈M a,b∈V
+Then                                       X
+                           E ∥Zs − ẑs ∥22 =  ps (a)∥ϕs (a) − ϕs (x̂s )∥22
+                            
+
+                                                a∈V
+                                                      X
+                                             ≤ Dϕ2             ps (a)
+                                                      a̸=x̂s
+
+                                             = Dϕ2 (1 − cs ).
+Thus 1 − cs upper-bounds the representation uncertainty of the selected source token s.
+Now consider appending a candidate position i after an already selected set S. Let ℓi (zS ) denote the
+logits at position i when the selected positions are filled with representations zS = {zs : s ∈ S}.
+Around the current decoding state ẑS , a first-order expansion gives
+                                                       X
+                                ℓi (zS ) ≈ ℓi (ẑS ) +   Jis (zs − ẑs ),
+                                                         s∈S
+
+where Jis is the Jacobian of the logits at position i with respect to the representation at position s.
+For a self-attention layer, the direct message from source s to target i is weighted by the attention
+coefficient Ais . We therefore use the empirical attention matrix as a tractable proxy for the relative
+sensitivity of i to perturbations at s, and write the local approximation
+                                             ∥Jis ∥22 ≈ L2i Ais ,
+where Li absorbs the remaining local linear maps, residual transformations, and normalization factors.
+This approximation says that source positions receiving larger attention from i have larger local
+influence on the logits at i.
+Using this approximation,
+                                                                           
+                                                                          2
+                                                        X
+                        E ∥ℓi (ZS ) − ℓi (ẑS )∥22 ≈ E
+                                                 
+                                                          Jis (Zs − ẑs ) 
+                                                                s∈S                   2
+                                                               X
+                                                    ≲ L2i            Ais E ∥Zs − ẑs ∥22
+                                                                                        
+
+                                                               s∈S
+                                                                  X
+                                                    ≤ L2i Dϕ2           Ais (1 − cs ).
+                                                                  s∈S
+
+Finally, for softmax probabilities, local logit perturbations induce KL changes that are second order
+in the perturbation size:
+                                                                  1
+                          DKL (softmax(ℓi + δ) ∥ softmax(ℓi )) ≤    ∥δ∥22 .
+                                                                  2
+Therefore, the incremental dependence risk of adding candidate i after S is locally controlled by a
+quantity proportional to               X
+                                            Ais (1 − cs ).
+                                             s∈S
+
+
+                                                      12
+This motivates the risk-adjusted marginal utility
+                                                         X
+                                u(i | S, A) = ci − α           Ais (1 − cs ),
+                                                         s∈S
+
+where α ≥ 0 absorbs the constants in the local approximation and controls the strength of the
+dependence penalty.
+
+C    Hyperparameter and ablation studies
+Attention-discount strength We ablate the attention-discount strength α on LLaDA-8B Hu-
+manEval under three decoding families: fixed Top-k, AD+EB, and Fast-dLLM+AD. For fixed Top-k,
+we test k ∈ {8, 16}. For AD+EB, we use two entropy-budget settings chosen to match these operating
+regimes approximately: γ = 10 (low NFE) and γ = 3 (medium NFE). For AD Fast-dLLM, we
+similarly use f = 5 and f = 2. In all cases, we sweep
+                                        α ∈ {1, 5, 10, 20, 40, 80},
+and compare against the corresponding no-AD baseline, which we denote as α = 0.
+
+Table 4: Pass@1 accuracy (%) for the α sweep on LLaDA HumanEval across fixed Top-k, AD+EB,
+and AD Fast-dLLM. The no-AD baseline is shown as α = 0.
+      Setting                   α=0       α=1       α=5        α = 10     α = 20      α = 40   α = 80
+      Top-k, k = 16              1.83       4.88     7.32        5.49      5.49       4.88     4.88
+      Top-k, k = 8              5.49       9.15     18.90       18.29      21.34      20.12    18.90
+      AD+EB, γ = 10             9.76       9.15     20.12       23.78      23.78      23.17    23.78
+      AD+EB, γ = 3              21.34      20.73    23.17       22.56      26.22      26.83    22.56
+      Fast-dLLM+AD, f = 5        9.76       9.15    21.95       23.78      24.39      24.39    21.95
+      Fast-dLLM+AD, f = 2       28.05      29.27    27.44       28.05      30.49      33.54    33.54
+      Average over 6 settings     –        13.72    19.82       20.33      21.95      22.15    20.93
+
+
+The best α depends on the decoding regime when viewed per setting. For example, fixed Top-k
+prefers smaller values in some cases, whereas the adaptive stopping-rule methods are more favorable
+to larger values. However, when averaging across all six matched settings in Table 4, α = 40
+achieves the highest overall accuracy. Relative to an oracle that selects the best α separately for
+each row, the global default loses only 0.72 points on average and at most 2.44 points in the worst
+case. We therefore use α = 40 as a single global default in the main experiments, avoiding task- or
+regime-specific retuning while remaining competitive across the tested settings.
+
+Ablation on the uncertainty weighting term. We additionally ablate the uncertainty factor used
+inside the attention discount. The default ADAS utility discounts a candidate position according to
+the uncertainty of the already selected position, using the factor 1 − cs . We compare this choice
+against a variant that replaces 1 − cs with a global average uncertainty over the currently masked
+positions, denoted 1 − cmask . This ablation is conducted on LLaDA-8B-Base with HumanEval under
+Top-k+AD decoding at k = 8.
+
+Table 5: Ablation of the uncertainty weighting term in the attention discount on LLaDA-8B-Base
+HumanEval with Top-k+AD decoding at k = 8. The default selected-token uncertainty 1 − cs
+outperforms using the average uncertainty over masked positions 1 − cmask .
+
+                   Uncertainty weighting term                                   Pass@1 (%)
+                   Selected-token uncertainty 1 − cs                              20.12
+                   Average masked-position uncertainty 1 − cmask                  17.07
+
+The selected-token uncertainty weighting improves Pass@1 by 3.05 absolute points over the global
+masked-position uncertainty variant. This suggests that the discount benefits from conditioning on
+the uncertainty of the specific selected position rather than using a single global uncertainty scalar.
+
+
+                                                    13
+Effect of attention source We ablate which layer is used to construct the attention matrix in ADAS.
+We use LLaDA-8B-Base on HumanEval with fixed Top-k decoding at k = 8, so all variants use the
+same number of denoising steps. The no-ADAS baseline ranks tokens only by confidence, while the
+ADAS variants use mean attention over heads from the specified transformer layer.
+
+Table 6: Attention-source ablation for ADAS on LLaDA-8B HumanEval with fixed Top-k decoding
+at k = 8. Final-layer attention performs best, suggesting that later attention patterns provide the most
+useful dependency signal for selecting tokens to unmask in parallel.
+
+                          Selection rule                          Pass@1 (%)
+                          Top-k confidence, no ADAS                   5.49
+                          Top-k+AD with first-layer attention         9.76
+                          Top-k+AD with middle-layer attention       15.24
+                          Top-k+AD with final-layer attention        20.12
+
+
+
+
+D    Robustness across operating points
+
+We perform an additional robustness analysis over matched operating points. Each operating point
+corresponds to a model–dataset–stopping-rule–hyperparameter configuration. This analysis is in-
+tended to assess whether the observed gains are stable across the evaluated settings, rather than driven
+by a small number of favorable thresholds or tasks.
+For each vanilla baseline point in the low-NFE regime, defined as having at least four parallel tokens
+per denoising step on average, we linearly interpolate the corresponding ADAS curve at the same
+NFE and compute the matched gain
+
+                             ∆ = scoreADAS (NFE) − scorebase (NFE).
+
+Baseline points outside the interpolation range of the corresponding ADAS curve are excluded.
+We then bootstrap the matched gains over operating points with 10,000 resamples and report the
+mean gain and 95% confidence interval. Because operating points from the same model, dataset,
+or decoding family are correlated, this should be interpreted as a robustness summary across the
+evaluated configurations, not as a paired per-example significance test.
+
+Table 7: Robustness of ADAS gains across matched operating points. Gains are absolute accu-
+racy/pass@1 differences in percentage points after matching by NFE. Confidence intervals are
+obtained by bootstrapping operating points with 10,000 resamples.
+
+          Method family    Matched points    Mean gain        95% CI          Positive / negative
+          EB-Sampler             28            +10.42     [+7.30, +13.67]            24 / 4
+          Fast-dLLM              38            +7.24       [+5.42, +9.14]            34 / 4
+          Top-k                  24            +11.13     [+8.31, +13.97]            22 / 2
+          All                    90            +9.27      [+7.74, +10.84]           80 / 10
+
+
+
+Table 8: Robustness of ADAS gains across datasets under the same matched-operating-point analysis
+as Table 7.
+           Dataset        Matched points    Mean gain       95% CI           Positive / negative
+           GSM8K                19           +8.60       [+4.71, +12.48]           14 / 5
+           HumanEval            22           +10.33      [+8.10, +12.50]           21 / 1
+           MATH500              24           +5.73        [+3.84, +7.64]           21 / 3
+           MBPP                 25           +12.24      [+8.99, +15.59]           24 / 1
+
+
+
+
+                                                  14
+E     Construction of the known dependency samples
+
+
+    Dataset Construction
+    Assume the set of equation types
+           E = {A + B + C = D, A · B · C = D, min{A, B, C} = D, max{A, B, C} = D}
+    is given, together with the number of predicates n and masking ratio r.
+    1. Sample predicate indices. We sample a sequence
+                                π = (π1 , . . . , πn ),       πi ∈ {0, . . . , |E| − 1},
+    and construct the i-th predicate from the equation type E[πi ].
+    2. Instantiate the predicates. Each predicate contains four integer slots (A, B, C, D), so the full
+    sequence contains 4n integer variables. We sample positive integers for A, B, C and compute D
+    according to the selected equation type.
+    3. Mask integer variables. We randomly mask
+                                                           r · 4n
+    of the integer positions in the sequence. Only the integers are masked; the operators and relation symbols
+    (+, ·, min, max, =) are never masked.
+
+Figure 4: Illustration of the toy data-generation process. The construction yields a masked sequence
+containing masked-token pairs with known dependency structure.
+
+
+Table 9: Attention-dependency relationship on the shared toy dataset. Reported values are mean
+pairwise attention for dependent and non-dependent masked pairs aggregated as mean of attention
+heads from the last layer.
+                               Model                      Dep. Attn.   Non-Dep. Attn.
+                               LLaDA-8B-Base              0.007261       0.001919
+                               Dream-7B-Base              0.009517       0.004842
+
+
+
+F     Detailed results
+
+
+
+
+                                                             15
+Table 10: Results on Dream-7B-Base with EB stopping rule. Each cell reports score on the first line
+and average NFE over samples on the second line. For GSM8K and MATH500, score is accuracy;
+for HumanEval and MBPP, score is Pass@1.
+                        GSM8K          HumanEval           MATH500                 MBPP
+         γ       EB       EB + AD    EB      EB + AD    EB      EB + AD    EB       EB + AD
+               75.06       75.06    53.66     53.66    40.00     40.00    53.80      53.80
+       0.001
+                240.50     240.37   453.44    453.06   386.65    384.99   432.49      431.56
+
+               75.13       75.13    54.27     54.27    39.40     39.20    53.60      53.60
+        0.01
+                209.23     208.93   372.90    372.83   269.48    266.06   305.49      302.70
+
+               74.60       74.30    54.27     54.88    39.80     40.00    53.00      53.00
+        0.1
+                166.87     165.76   289.84    287.95   168.08    163.52   179.38      174.84
+
+               74.68       74.45    52.44     53.66    38.80     39.20    53.80      53.40
+        0.3
+                143.42     142.59   237.53    236.08   131.00    122.17   131.58      126.62
+
+               69.98       67.32    46.34     45.73    34.80     33.00    50.40      47.80
+         1
+                110.42     104.99   172.41    162.49   91.65     89.23     86.70      82.90
+
+               57.09       50.64    30.49     35.37    24.40     25.20    36.60      43.20
+         3
+                70.41      61.00    116.12    85.06    62.27     60.81     55.71      54.47
+
+               28.66       33.28    12.20     25.61    9.60      20.20    11.80      35.00
+         10
+                34.29      24.21    54.01     36.43    34.24     27.88     36.50      26.77
+
+                7.96       23.20    3.05      20.12    3.60      9.00      4.20      31.00
+         20
+                17.66      13.36    32.32     22.63    20.12     17.85     22.82      16.43
+
+
+
+
+Table 11: Results on LLaDA-8B-Base with EB stopping rule. Each cell reports score on the first line
+and average NFE over samples on the second line. For GSM8K and MATH500, score is accuracy;
+for HumanEval and MBPP, score is Pass@1.
+                        GSM8K          HumanEval           MATH500                 MBPP
+         γ       EB       EB + AD    EB      EB + AD    EB      EB + AD    EB       EB + AD
+               69.90       69.90    35.37     35.37    28.40     28.40    38.80      38.80
+       0.001
+                237.17     236.92   457.12    456.04   460.24    459.09   475.93      475.47
+
+               69.83       69.83    35.37     35.37    28.20     28.00    38.80      38.80
+        0.01
+                190.83     189.83   326.08    321.84   336.50    332.56   338.33      334.52
+
+               70.81       70.96    35.98     35.98    27.80     28.00    39.20      39.20
+        0.1
+                136.13     134.03   190.35    178.60   209.92    203.39   197.32      191.63
+
+               70.20       70.28    34.76     34.15    28.80     28.40    39.40      39.20
+        0.3
+                110.54     107.93   135.54    126.72   164.38    157.04   144.04      136.83
+
+               67.40       67.17    29.27     29.88    29.00     25.80    36.80      38.40
+         1
+                78.10      73.56    87.19     75.84    109.11    98.88     95.70      86.68
+
+               60.20       55.12    21.34     26.83    21.40     26.00    28.40      34.40
+         3
+                50.36      44.89    59.38     43.71    69.33     68.29     63.66      55.08
+
+               38.21       41.17    9.76      23.17    10.80     18.80    11.20      26.00
+         10
+                29.82      22.14    32.90     23.95    36.02     32.59     33.34      29.61
+
+               13.72       32.83    4.88      21.95    3.20      18.60     5.00      21.20
+         20
+                17.70      14.24    23.41     17.90    20.86     20.09     20.60      19.75
+
+
+
+
+                                                 16
+Table 12: Results on Dream-7B-Base with Fast-dLLM stopping rule. Each cell reports score on the
+first line and average NFE over samples on the second line. For GSM8K and MATH500, score is
+accuracy; for HumanEval and MBPP, score is Pass@1.
+                      GSM8K          HumanEval            MATH500                 MBPP
+         f     FD       FD + AD    FD      FD + AD     FD      FD + AD    FD       FD + AD
+              74.45      74.98    55.49     55.49     40.40     40.60    54.00      54.00
+        0.3
+              167.07     167.59   273.27    275.57    146.80    148.19   138.66      139.72
+
+              73.01      73.31    50.61     51.22     38.20     38.40    51.00      51.60
+         1
+              132.59     134.97   201.44    205.78    104.11    107.50   90.36       92.76
+
+              63.31      65.05    36.59     42.07     31.60     32.80    38.00      45.40
+         2
+              95.36      98.78    139.48    147.07    75.19     78.06    63.20       65.30
+
+              51.86      52.84    23.17     34.15     22.40     27.40    29.40      40.20
+         3
+              55.60      58.71    85.32     84.87     56.29     62.73    48.96       53.23
+
+              27.90      40.94    14.63     26.83     9.60      22.40    15.20      36.40
+         5
+              29.12      32.49    46.10     49.23     30.52     40.51    33.78       35.64
+
+              7.96       26.91    7.93      22.56     4.00      10.80    8.00       32.40
+         8
+              14.47      18.96    29.98     32.28     17.73     27.31    21.09       22.91
+
+              1.74       11.07    6.10      18.29     0.80      9.00     2.40       27.80
+        12
+               8.17      11.04    21.65     22.38     11.92     19.72    13.87       16.16
+
+
+
+
+Table 13: Results on LLaDA-8B-Base with Fast-dLLM stopping rule. Each cell reports score on
+the first line and average NFE over samples on the second line. For GSM8K and MATH500, score is
+accuracy; for HumanEval and MBPP, score is Pass@1.
+                      GSM8K          HumanEval            MATH500                 MBPP
+         f     FD       FD + AD    FD      FD + AD     FD      FD + AD    FD       FD + AD
+              69.98      69.98    35.37     35.37     28.40     28.20    38.60      38.60
+        0.3
+              125.16     126.02   132.63    134.80    182.54    184.13   153.71      154.44
+
+              69.22      69.29    35.37     35.37     27.20     27.60    39.00      39.40
+         1
+              91.28      93.16    86.65     87.59     128.43    131.62   101.49      102.71
+
+              64.22      63.84    28.05     33.54     24.40     27.80    30.80      37.00
+         2
+              62.60      65.10    60.01     64.59     85.34     94.18    67.83       71.91
+
+              55.57      56.18    18.90     27.44     19.80     25.80    21.00      32.60
+         3
+              46.39      47.26    47.09     44.57     63.04     79.03    48.29       58.54
+
+              39.04      45.49    9.76      24.39     12.20     19.60    10.40      28.60
+         5
+              30.29      31.37    29.43     34.63     33.48     49.76    29.45       43.96
+
+              15.62      40.64    4.88      17.07     2.40      19.60    6.40       25.20
+         8
+              16.29      21.56    19.46     26.01     18.20     34.05    17.98       31.80
+
+              4.32       32.37    3.05      10.37     0.20      14.60    2.60       19.20
+        12
+               8.96      15.12    13.44     10.68     11.32     21.99    13.03       23.37
+
+                                                                6.20                 6.40
+        20
+                                                                 9.96                 6.76
+
+
+
+
+                                                 17
+Table 14: Results on Dream-7B-Base with Top-k stopping rule. Each cell reports score on the
+first line and average NFE over samples on the second line. For GSM8K and MATH500, score is
+accuracy; for HumanEval and MBPP, score is Pass@1.
+                 GSM8K              HumanEval                   MATH500                 MBPP
+    k   Top-k     Top-k + AD   Top-k    Top-k + AD      Top-k     Top-k + AD   Top-k     Top-k + AD
+        74.91       74.91      55.49      55.49         40.80       40.80      54.00       54.00
+    1
+        256.00      256.00     512.00     512.00        512.00      512.00     512.00      512.00
+
+        64.67       58.15      42.68      43.29         31.40       32.60      44.60       46.40
+    2
+        128.00      128.00     256.00     256.00        256.00      256.00     256.00      256.00
+
+        48.45       46.47      20.73      35.98         16.20       25.00      29.20       40.20
+    4
+         64.00       64.00     128.00     128.00        128.00      128.00     128.00      128.00
+
+        13.80       28.81      12.20      21.95         3.60        11.40      11.40       34.40
+    8
+         32.00       32.00     64.00       64.00        64.00        64.00     64.00        64.00
+
+         0.91        5.53      7.93       15.24         1.20         5.40      2.00        26.80
+   16
+         16.00       16.00     32.00       32.00        32.00        32.00     32.00        32.00
+
+
+
+
+Table 15: Results on LLaDA-8B-Base with Top-k stopping rule. Each cell reports score on the
+first line and average NFE over samples on the second line. For GSM8K and MATH500, score is
+accuracy; for HumanEval and MBPP, score is Pass@1.
+                 GSM8K              HumanEval                   MATH500                 MBPP
+    k   Top-k     Top-k + AD   Top-k    Top-k + AD      Top-k     Top-k + AD   Top-k     Top-k + AD
+        69.98       69.98      35.37      35.37         28.40       28.40      38.80       38.80
+    1
+        256.00      256.00     512.00     512.00        512.00      512.00     512.00      512.00
+
+        64.22       59.67      25.61      26.83         22.80       24.40      28.80       36.80
+    2
+        128.00      128.00     256.00     256.00        256.00      256.00     256.00      256.00
+
+        53.90       50.11      13.41      24.39         17.00       23.00      17.60       29.80
+    4
+         64.00       64.00     128.00     128.00        128.00      128.00     128.00      128.00
+
+        22.67       42.46      5.49       20.12         3.40        19.20      7.00        25.20
+    8
+         32.00       32.00     64.00       64.00        64.00        64.00     64.00        64.00
+
+         2.20       21.91      1.83        4.88         0.20        10.60      1.60        12.20
+   16
+         16.00       16.00     32.00       32.00        32.00        32.00     32.00        32.00
+
+
+
+
+                                                   18
+

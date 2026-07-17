@@ -1,0 +1,360 @@
+[
+ {
+  "title": "Predict-then-Diffuse: Adaptive Response Length for Compute-Budgeted Inference in Diffusion LLMs",
+  "title_norm": "predict then diffuse adaptive response length for compute budgeted inference in ",
+  "abstract": "Diffusion-based Large Language Models (D-LLMs) represent a promising frontier in generative AI, offering fully parallel token generation that can lead to significant throughput advantages and superior GPU utilization over the traditional autoregressive paradigm. However, this parallelism is constrained by the requirement of a fixed-size response length prior to generation. This architectural limitation imposes a severe trade-off: oversized response length results in computational waste on semantically meaningless padding tokens, while undersized response length causes output truncation requiring costly re-computations that introduce unpredictable latency spikes. To tackle this issue, we propose Predict-then-Diffuse, a simple and model-agnostic framework that enables compute-budgeted inference per input query by first estimating the response length and then using it to run inference with D-LLM. At its core lies an Adaptive Response Length Predictor (AdaRLP), which estimates the optimal response length given an input query. As a measure against under-estimating the response length and re-running inference with a higher value, we introduce a data-driven safety mechanism based on a small increase of the predicted length. As a whole, our framework avoids wasting computation on padding tokens, at the same time preserving output quality. Experimental validation on multiple datasets demonstrates that Predict-then-Diffuse significantly reduces computational costs (FLOP) compared to the default D-LLM inference mechanism, while being robust to skewed data distributions.",
+  "tldr": "Predict-then-Diffuse, a simple and model-agnostic framework that enables compute-budgeted inference per input query by first estimating the response length and then using it to run inference with D-LLM, and introduces a data-driven safety mechanism based on a small increase of the predicted length.",
+  "year": 2026,
+  "venue": "arXiv.org",
+  "publication_types": [
+   "JournalArticle"
+  ],
+  "authors": [
+   "M. Rottoli",
+   "Subhankar Roy",
+   "S. Paraboschi"
+  ],
+  "citations": 0,
+  "source": "semanticscholar",
+  "source_id": "81f6858d2554b87fc3e639cdbef402a6e4656abb",
+  "paper_id": "dblp:journals/corr/abs-2605-04215",
+  "doi": "10.48550/arXiv.2605.04215",
+  "arxiv_id": "2605.04215",
+  "dblp_key": "journals/corr/abs-2605-04215",
+  "paper_url": "https://www.semanticscholar.org/paper/81f6858d2554b87fc3e639cdbef402a6e4656abb",
+  "published_iso": "2026-05-05"
+ },
+ {
+  "title": "Accelerating Diffusion Language Model Inference via Efficient KV Caching and Guided Diffusion",
+  "title_norm": "accelerating diffusion language model inference via efficient kv caching and gui",
+  "abstract": "Diffusion language models offer parallel token generation and inherent bidirectionality, promising more efficient and powerful sequence modeling compared to autoregressive approaches. However, state-of-the-art diffusion models (e.g., Dream 7B, LLaDA 8B) suffer from slow inference. While they match the quality of similarly sized autoregressive (AR) models (e.g., Qwen2.5 7B, Llama3 8B), their iterative denoising requires multiple full-sequence forward passes, resulting in high computational costs and latency, particularly for long input prompts and long-context scenarios. Furthermore, parallel token generation introduces token incoherence problems, and current sampling heuristics suffer from significant quality drops with decreasing denoising steps. We address these limitations with two training-free techniques. First, we propose FreeCache, a Key-Value (KV) approximation caching technique that reuses stable KV projections across denoising steps, effectively reducing the computational cost of DLM inference. Second, we introduce Guided Diffusion, a training-free method that uses a lightweight pretrained autoregressive model to supervise token unmasking, dramatically reducing the total number of denoising iterations without sacrificing quality. We conduct extensive evaluations on open-source reasoning benchmarks, and our combined methods deliver an average of 12.14x end-to-end speedup across various tasks with negligible accuracy degradation. For the first time, diffusion language models achieve a comparable and even faster latency as the widely adopted autoregressive models. Our work successfully paved the way for scaling up the diffusion language model to a broader scope of applications across different domains.",
+  "tldr": "FreeCache, a Key-Value approximation caching technique that reuses stable KV projections across denoising steps, effectively reducing the computational cost of DLM inference and Guided Diffusion, a training-free method that uses a lightweight pretrained autoregressive model to supervise token unmasking, dramatically reducing the total number of denoising iterations without sacrificing quality.",
+  "year": 2025,
+  "venue": "arXiv.org",
+  "publication_types": [
+   "JournalArticle"
+  ],
+  "authors": [
+   "Zhanqiu Hu",
+   "Jian Meng",
+   "Yash Akhauri",
+   "Mohamed S. Abdelfattah",
+   "Jae-sun Seo",
+   "Zhiru Zhang"
+  ],
+  "citations": 62,
+  "source": "semanticscholar",
+  "source_id": "d116105534980a0e5619c98a66a3b101ea48ed2a",
+  "paper_id": "dblp:journals/corr/abs-2505-21467",
+  "doi": "10.48550/arXiv.2505.21467",
+  "arxiv_id": "2505.21467",
+  "dblp_key": "journals/corr/abs-2505-21467",
+  "paper_url": "https://www.semanticscholar.org/paper/d116105534980a0e5619c98a66a3b101ea48ed2a",
+  "published_iso": "2025-05-27"
+ },
+ {
+  "title": "Diffusion Language Model Inference with Monte Carlo Tree Search",
+  "title_norm": "diffusion language model inference with monte carlo tree search",
+  "abstract": "Diffusion language models (DLMs) have recently emerged as a compelling alternative to autoregressive generation, offering parallel generation and improved global coherence. During inference, DLMs generate text by iteratively denoising masked sequences in parallel; however, determining which positions to unmask and which tokens to commit forms a large combinatorial search problem. Existing inference methods approximate this search using heuristics, which often yield suboptimal decoding paths; other approaches instead rely on additional training to guide token selection. To introduce a principled search mechanism for DLMs inference, we introduce MEDAL, an inference-time scaling framework that integrates Monte Carlo Tree SEarch initialization for Diffusion LAnguage Model inference. We employ Monte Carlo Tree Search at the initialization stage to explore promising unmasking trajectories, providing a robust starting point for subsequent refinement. This design enables efficient inference-time scaling, allowing generation quality to improve as the search budget increases, without additional training. Across multiple benchmarks, MEDAL achieves up to 22.0% improvement over existing inference strategies, establishing a new paradigm for search-based inference in DLMs.",
+  "tldr": "This work introduces MEDAL, an inference-time scaling framework that integrates Monte Carlo Tree SEarch initialization for Diffusion LAnguage Model inference, and employs Monte Carlo Tree Search at the initialization stage to explore promising unmasking trajectories, enabling efficient inference-time scaling.",
+  "year": 2025,
+  "venue": "Conference of the European Chapter of the Association for Computational Linguistics",
+  "publication_types": [
+   "JournalArticle",
+   "Conference"
+  ],
+  "authors": [
+   "Zhen Huang",
+   "Kiran Ramnath",
+   "Yueyan Chen",
+   "Aosong Feng",
+   "Sangmin Woo",
+   "Balasubramaniam Srinivasan"
+  ],
+  "citations": 3,
+  "source": "semanticscholar",
+  "source_id": "9ccbb820261b9141e46de121ed26ae3e3b16772b",
+  "paper_id": "dblp:journals/corr/abs-2512-12168",
+  "doi": "10.48550/arXiv.2512.12168",
+  "arxiv_id": "2512.12168",
+  "dblp_key": "journals/corr/abs-2512-12168",
+  "paper_url": "https://www.semanticscholar.org/paper/9ccbb820261b9141e46de121ed26ae3e3b16772b",
+  "published_iso": "2025-12-13"
+ },
+ {
+  "title": "Seed Diffusion: A Large-Scale Diffusion Language Model with High-Speed Inference",
+  "title_norm": "seed diffusion a large scale diffusion language model with high speed inference",
+  "abstract": "We present Seed Diffusion Preview, a large-scale language model based on discrete-state diffusion, offering remarkably fast inference speed. Thanks to non-sequential, parallel generation, discrete diffusion models provide a notable speedup to mitigate the inherent latency of token-by-token decoding, as demonstrated recently (e.g., Mercury Coder, Gemini Diffusion). Seed Diffusion Preview achieves an inference speed of 2,146 token/s over H20 GPUs while maintaining competitive performance across a sweep of standard code evaluation benchmarks, significantly faster than contemporary Mercury and Gemini Diffusion, establishing new state of the art on the speed-quality Pareto frontier for code models.",
+  "tldr": "Seed Diffusion Preview achieves an inference speed of 2,146 token/s over H20 GPUs while maintaining competitive performance across a sweep of standard code evaluation benchmarks, significantly faster than contemporary Mercury and Gemini Diffusion, establishing new state of the art on the speed-quality Pareto frontier for code models.",
+  "year": 2025,
+  "venue": "arXiv.org",
+  "publication_types": [
+   "JournalArticle",
+   "Review"
+  ],
+  "authors": [
+   "Yuxuan Song",
+   "Zheng Zhang",
+   "Cheng Luo",
+   "Peng Gao",
+   "Fan Xia",
+   "Hao Luo"
+  ],
+  "citations": 154,
+  "source": "semanticscholar",
+  "source_id": "44bd8de6318a1adf67703876875218af77193b72",
+  "paper_id": "dblp:journals/corr/abs-2508-02193",
+  "doi": "10.48550/arXiv.2508.02193",
+  "arxiv_id": "2508.02193",
+  "dblp_key": "journals/corr/abs-2508-02193",
+  "paper_url": "https://www.semanticscholar.org/paper/44bd8de6318a1adf67703876875218af77193b72",
+  "published_iso": "2025-08-04"
+ },
+ {
+  "title": "LaViDa: A Large Diffusion Language Model for Multimodal Understanding",
+  "title_norm": "lavida a large diffusion language model for multimodal understanding",
+  "abstract": "Modern Vision-Language Models (VLMs) can solve a wide range of tasks requiring visual reasoning. In real-world scenarios, desirable properties for VLMs include fast inference and controllable generation (e.g., constraining outputs to adhere to a desired format). However, existing autoregressive (AR) VLMs like LLaVA struggle in these aspects. Discrete diffusion models (DMs) offer a promising alternative, enabling parallel decoding for faster inference and bidirectional context for controllable generation through text-infilling. While effective in language-only settings, DMs' potential for multimodal tasks is underexplored. We introduce LaViDa, a family of VLMs built on DMs. We build LaViDa by equipping DMs with a vision encoder and jointly fine-tune the combined parts for multimodal instruction following. To address challenges encountered, LaViDa incorporates novel techniques such as complementary masking for effective training, prefix KV cache for efficient inference, and timestep shifting for high-quality sampling. Experiments show that LaViDa achieves competitive or superior performance to AR VLMs on multi-modal benchmarks such as MMMU, while offering unique advantages of DMs, including flexible speed-quality tradeoff, controllability, and bidirectional reasoning. On COCO captioning, LaViDa surpasses Open-LLaVa-Next-8B by +4.1 CIDEr with 1.92x speedup. On bidirectional tasks, it achieves +59% improvement on Constrained Poem Completion. These results demonstrate LaViDa as a strong alternative to AR VLMs. Code and models will be released in the camera-ready version.",
+  "tldr": "LaViDa, a family of VLMs built on DMs achieves competitive or superior performance to AR VLMs on multi-modal benchmarks such as MMMU, while offering unique advantages of DMs, including flexible speed-quality tradeoff, controllability, and bidirectional reasoning.",
+  "year": 2025,
+  "venue": "Neural Information Processing Systems",
+  "publication_types": [
+   "JournalArticle"
+  ],
+  "authors": [
+   "Shufan Li",
+   "Konstantinos Kallidromitis",
+   "Hritik Bansal",
+   "Akash Gokul",
+   "Yusuke Kato",
+   "Kazuki Kozuka"
+  ],
+  "citations": 69,
+  "source": "semanticscholar",
+  "source_id": "5105e734fc2a95f6710e0bbb93a829b7e0bbf6bc",
+  "paper_id": "dblp:journals/corr/abs-2505-16839",
+  "doi": "10.48550/arXiv.2505.16839",
+  "arxiv_id": "2505.16839",
+  "dblp_key": "journals/corr/abs-2505-16839",
+  "paper_url": "https://www.semanticscholar.org/paper/5105e734fc2a95f6710e0bbb93a829b7e0bbf6bc",
+  "published_iso": "2025-05-22"
+ },
+ {
+  "title": "BlockBatch: Multi-Scale Consensus Decoding for Efficient Diffusion Language Model Inference",
+  "title_norm": "blockbatch multi scale consensus decoding for efficient diffusion language model",
+  "abstract": "Diffusion language models (dLLMs) generate text by iteratively denoising multiple token positions in parallel, offering an attractive alternative to strictly autoregressive decoding. In practice, however, block-wise dLLM inference exposes a difficult granularity trade-off: small blocks preserve local conditioning but require many denoising steps, whereas large blocks expose more parallelism but can make premature commitments and accumulate cache error. Existing acceleration methods typically choose a single block size per request, leaving the complementarity among block sizes unused. We show that block size itself is a useful branching dimension. Different block sizes induce related but non-identical KV-cache trajectories: branches often share an initial prefix, bifurcate at semantically decisive positions, and later agree on syntactically lightweight tokens. Motivated by this structure, we propose BlockBatch, a training-free online inference framework that executes multiple block-size branches for the same request inside a batched forward pass. BlockBatch coordinates these branches through confidence-gated token merging, leader-based synchronization, and periodic full-sequence refreshes that re-anchor local block updates to a globally consistent KV state. Across 3 representative dLLMs and 4 datasets, BlockBatch reduces denoising NFEs by 26.6\\% on average and achieves a 1.33$\\times$ average end-to-end speedup over Fast-dLLM while preserving accuracy. These results identify block-size diversity as a practical and previously underexplored axis for branch-parallel dLLM inference.",
+  "tldr": "BlockBatch is proposed, a training-free online inference framework that executes multiple block-size branches for the same request inside a batched forward pass and identifies block-size diversity as a practical and previously underexplored axis for branch-parallel dLLM inference.",
+  "year": 2026,
+  "venue": "arXiv.org",
+  "publication_types": [
+   "JournalArticle"
+  ],
+  "authors": [
+   "Xiaoyou Wu",
+   "Cheng-Jhih Shih",
+   "Bin Ji",
+   "Yong Liu",
+   "Y. Lin"
+  ],
+  "citations": 0,
+  "source": "semanticscholar",
+  "source_id": "b2f74b9493f1dd63ae20ece94aaf85b9d170c0cf",
+  "paper_id": "dblp:journals/corr/abs-2605-29233",
+  "doi": "10.48550/arXiv.2605.29233",
+  "arxiv_id": "2605.29233",
+  "dblp_key": "journals/corr/abs-2605-29233",
+  "paper_url": "https://www.semanticscholar.org/paper/b2f74b9493f1dd63ae20ece94aaf85b9d170c0cf",
+  "published_iso": "2026-05-28"
+ },
+ {
+  "title": "Saber: An Efficient Sampling with Adaptive Acceleration and Backtracking Enhanced Remasking for Diffusion Language Model",
+  "title_norm": "saber an efficient sampling with adaptive acceleration and backtracking enhanced",
+  "abstract": "Diffusion language models (DLMs) are emerging as a compelling alternative to the dominant autoregressive paradigm, offering inherent advantages in parallel generation and bidirectional context modeling. However, for the tasks with strict structural constraints such as code generation, DLMs face a critical trade-off between inference speed and output quality, where accelerating generation by reducing sampling steps often leads to catastrophic performance collapse. We find that the fundamental reasons are: 1) the generation difficulty is non-uniform in the structured sequence decoding steps, making DLM's static acceleration strategy suboptimal; 2) the context of tokens generated by DLM evolves continuously, causing early high-confidence predictions to turn into irreversible errors. In this paper, we introduce efficient Sampling with Adaptive acceleration and Backtracking Enhanced Remasking (i.e., Saber), a novel training-free sampling algorithm for DLMs that first achieves both better inference speed and output quality in code generation. Saber dynamically adjusts the number of tokens unmasked per step based on the model's evolving confidence, and utilizes a backtracking mechanism to revert tokens whose confidence drops as new context emerges, with its effectiveness supported by theoretical analysis. Extensive experiments on multiple mainstream code generation benchmarks show that Saber boosts Pass@1 accuracy by an average of 1.9\\% over mainstream DLM sampling methods, while achieving an average 251.4\\% inference speedup. By leveraging the inherent advantages of DLMs, our work significantly narrows the performance gap with autoregressive models in code generation.",
+  "tldr": "Efficient Sampling with Adaptive acceleration and Backtracking Enhanced Remasking (i.e., Saber) is introduced, a novel training-free sampling algorithm for DLMs that first achieves both better inference speed and output quality in code generation.",
+  "year": 2025,
+  "venue": "arXiv.org",
+  "publication_types": [
+   "JournalArticle"
+  ],
+  "authors": [
+   "Yihong Dong",
+   "Zhaoyu Ma",
+   "Xue Jiang",
+   "Zhiyuan Fan",
+   "Jiaru Qian",
+   "Yongming Li"
+  ],
+  "citations": 12,
+  "source": "semanticscholar",
+  "source_id": "4c95b1cef66cda6693fa6ab192698703dd3c070f",
+  "paper_id": "dblp:journals/corr/abs-2510-18165",
+  "doi": "10.48550/arXiv.2510.18165",
+  "arxiv_id": "2510.18165",
+  "dblp_key": "journals/corr/abs-2510-18165",
+  "paper_url": "https://www.semanticscholar.org/paper/4c95b1cef66cda6693fa6ab192698703dd3c070f",
+  "published_iso": "2025-10-20"
+ },
+ {
+  "title": "Set Block Decoding is a Language Model Inference Accelerator",
+  "title_norm": "set block decoding is a language model inference accelerator",
+  "abstract": "Autoregressive next token prediction language models offer powerful capabilities but face significant challenges in practical deployment due to the high computational and memory costs of inference, particularly during the decoding stage. We introduce Set Block Decoding (SBD), a simple and flexible paradigm that accelerates generation by integrating standard next token prediction (NTP) and masked token prediction (MATP) within a single architecture. SBD allows the model to sample multiple, not necessarily consecutive, future tokens in parallel, a key distinction from previous acceleration methods. This flexibility allows the use of advanced solvers from the discrete diffusion literature, offering significant speedups without sacrificing accuracy. SBD requires no architectural changes or extra training hyperparameters, maintains compatibility with exact KV-caching, and can be implemented by fine-tuning existing next token prediction models. By fine-tuning Llama-3.1 8B and Qwen-3 8B, we demonstrate that SBD enables a 3-5x reduction in the number of forward passes required for generation while achieving same performance as equivalent NTP training.",
+  "tldr": "This work introduces Set Block Decoding (SBD), a simple and flexible paradigm that accelerates generation by integrating standard next token prediction (NTP) and masked token prediction (MATP) within a single architecture.",
+  "year": 2025,
+  "venue": "arXiv.org",
+  "publication_types": [
+   "JournalArticle"
+  ],
+  "authors": [
+   "Itai Gat",
+   "Heli Ben-Hamu",
+   "Marton Havasi",
+   "Daniel Haziza",
+   "J. Reizenstein",
+   "Gabriel Synnaeve"
+  ],
+  "citations": 16,
+  "source": "semanticscholar",
+  "source_id": "5abdf3cdca85a6c57c33552b067a3e4d9cb5ffbc",
+  "paper_id": "dblp:journals/corr/abs-2509-04185",
+  "doi": "10.48550/arXiv.2509.04185",
+  "arxiv_id": "2509.04185",
+  "dblp_key": "journals/corr/abs-2509-04185",
+  "paper_url": "https://www.semanticscholar.org/paper/5abdf3cdca85a6c57c33552b067a3e4d9cb5ffbc",
+  "published_iso": "2025-09-04"
+ },
+ {
+  "title": "Dimple: Discrete Diffusion Multimodal Large Language Model with Parallel Decoding",
+  "title_norm": "dimple discrete diffusion multimodal large language model with parallel decoding",
+  "abstract": "In this work, we propose Dimple, the first Discrete Diffusion Multimodal Large Language Model (DMLLM). We observe that training with a purely discrete diffusion approach leads to significant training instability, suboptimal performance, and severe length bias issues. To address these challenges, we design a novel training paradigm that combines an initial autoregressive phase with a subsequent diffusion phase. This approach yields the Dimple-7B model, trained on the same dataset and using a similar training pipeline as LLaVA-NEXT. Dimple-7B ultimately surpasses LLaVA-NEXT in performance by 3.9%, demonstrating that DMLLM can achieve performance comparable to that of autoregressive models. To improve inference efficiency, we propose a decoding strategy termed confident decoding, which dynamically adjusts the number of tokens generated at each step, significantly reducing the number of generation iterations. In autoregressive models, the number of forward iterations during generation equals the response length. With confident decoding, however, the number of iterations needed by Dimple is even only $\\frac{\\text{response length}}{3}$. We also re-implement the prefilling technique in autoregressive models and demonstrate that it does not significantly impact performance on most benchmark evaluations, while offering a speedup of 1.5x to 7x. Additionally, we explore Dimple's capability to precisely control its response using structure priors. These priors enable structured responses in a manner distinct from instruction-based or chain-of-thought prompting, and allow fine-grained control over response format and length, which is difficult to achieve in autoregressive models. Overall, this work validates the feasibility and advantages of DMLLM and enhances its inference efficiency and controllability. Code and models are available at https://github.com/yu-rp/Dimple.",
+  "tldr": "Dimple is proposed, the first Discrete Diffusion Multimodal Large Language Model (DMLLM), which validates the feasibility and advantages of DMLLM and enhances its inference efficiency and controllability.",
+  "year": 2025,
+  "venue": "arXiv.org",
+  "publication_types": [
+   "JournalArticle"
+  ],
+  "authors": [
+   "Runpeng Yu",
+   "Xinyin Ma",
+   "Xinchao Wang"
+  ],
+  "citations": 92,
+  "source": "semanticscholar",
+  "source_id": "83e3bb785cc56093b9cdac84e9bcacdb0f092d44",
+  "paper_id": "dblp:journals/corr/abs-2505-16990",
+  "doi": "10.48550/arXiv.2505.16990",
+  "arxiv_id": "2505.16990",
+  "dblp_key": "journals/corr/abs-2505-16990",
+  "paper_url": "https://www.semanticscholar.org/paper/83e3bb785cc56093b9cdac84e9bcacdb0f092d44",
+  "published_iso": "2025-05-22"
+ },
+ {
+  "title": "LLaDA-MoE: A Sparse MoE Diffusion Language Model",
+  "title_norm": "llada moe a sparse moe diffusion language model",
+  "abstract": "We introduce LLaDA-MoE, a large language diffusion model with the Mixture-of-Experts (MoE) architecture, trained from scratch on approximately 20T tokens. LLaDA-MoE achieves competitive performance with significantly reduced computational overhead by maintaining a 7B-parameter capacity while activating only 1.4B parameters during inference. Our empirical evaluation reveals that LLaDA-MoE achieves state-of-the-art performance among diffusion language models with larger parameters, surpassing previous diffusion language models LLaDA, LLaDA 1.5, and Dream across multiple benchmarks. The instruct-tuned model LLaDA-MoE-7B-A1B-Instruct demonstrates capabilities comparable to Qwen2.5-3B-Instruct in knowledge understanding, code generation, mathematical reasoning, agent and alignment tasks, despite using fewer active parameters. Our results show that integrating a sparse MoE architecture into the training objective of masked diffusion language models still brings out MoE's strengths under efficient inference with few active parameters, and opens ample room for further exploration of diffusion language models. LLaDA-MoE models are available at Huggingface.",
+  "tldr": "This work introduces LLaDA-MoE, a large language diffusion model with the Mixture-of-Experts (MoE) architecture, trained from scratch on approximately 20T tokens, and shows that integrating a sparse MoE architecture into the training objective of masked diffusion language models still brings out MoE's strengths under efficient inference with few active parameters.",
+  "year": 2025,
+  "venue": "arXiv.org",
+  "publication_types": [
+   "JournalArticle"
+  ],
+  "authors": [
+   "Fengqi Zhu",
+   "Zebin You",
+   "Yipeng Xing",
+   "Zenan Huang",
+   "Lin Liu",
+   "Yihong Zhuang"
+  ],
+  "citations": 42,
+  "source": "semanticscholar",
+  "source_id": "47bcd99521b23e6a9749f64913edf6fa213347dc",
+  "paper_id": "dblp:journals/corr/abs-2509-24389",
+  "doi": "10.48550/arXiv.2509.24389",
+  "arxiv_id": "2509.24389",
+  "dblp_key": "journals/corr/abs-2509-24389",
+  "paper_url": "https://www.semanticscholar.org/paper/47bcd99521b23e6a9749f64913edf6fa213347dc",
+  "published_iso": "2025-09-29"
+ },
+ {
+  "title": "Theoretical Benefit and Limitation of Diffusion Language Model",
+  "title_norm": "theoretical benefit and limitation of diffusion language model",
+  "abstract": "Diffusion language models have emerged as a promising approach for text generation. One would naturally expect this method to be an efficient replacement for autoregressive models since multiple tokens can be sampled in parallel during each diffusion step. However, its efficiency-accuracy trade-off is not yet well understood. In this paper, we present a rigorous theoretical analysis of a widely used type of diffusion language model, the Masked Diffusion Model (MDM), and find that its effectiveness heavily depends on the target evaluation metric. Under mild conditions, we prove that when using perplexity as the metric, MDMs can achieve near-optimal perplexity in sampling steps regardless of sequence length, demonstrating that efficiency can be achieved without sacrificing performance. However, when using the sequence error rate--which is important for understanding the\"correctness\"of a sequence, such as a reasoning chain--we show that the required sampling steps must scale linearly with sequence length to obtain\"correct\"sequences, thereby eliminating MDM's efficiency advantage over autoregressive models. Our analysis establishes the first theoretical foundation for understanding the benefits and limitations of MDMs. All theoretical findings are supported by empirical studies.",
+  "tldr": "A rigorous theoretical analysis of a widely used type of diffusion language model, the Masked Diffusion Model, finds that its effectiveness heavily depends on the target evaluation metric, and establishes the first theoretical foundation for understanding the benefits and limitations of MDMs.",
+  "year": 2025,
+  "venue": "arXiv.org",
+  "publication_types": [
+   "JournalArticle"
+  ],
+  "authors": [
+   "Guhao Feng",
+   "Yihan Geng",
+   "Jian Guan",
+   "Wei Wu",
+   "Liwei Wang",
+   "Di He"
+  ],
+  "citations": 49,
+  "source": "semanticscholar",
+  "source_id": "410d8f0451384237b054b3f06cd8eab1c9f72104",
+  "paper_id": "dblp:journals/corr/abs-2502-09622",
+  "doi": "10.48550/arXiv.2502.09622",
+  "arxiv_id": "2502.09622",
+  "dblp_key": "journals/corr/abs-2502-09622",
+  "paper_url": "https://www.semanticscholar.org/paper/410d8f0451384237b054b3f06cd8eab1c9f72104",
+  "published_iso": "2025-02-13"
+ },
+ {
+  "title": "Window-Diffusion: Accelerating Diffusion Language Model Inference with Windowed Token Pruning and Caching",
+  "title_norm": "window diffusion accelerating diffusion language model inference with windowed t",
+  "abstract": "Diffusion language models (DLMs) generate text through iterative denoising, but inference requires full-sequence attention at every iteration, resulting in substantial redundant computation on masked tokens. Block-wise diffusion can reduce this cost, yet it typically relies on retraining and constrained update orders, limiting its direct applicability to pretrained DLMs. Our token-level analysis reveals pronounced structural locality in DLM inference. Decoding is driven by a small set of prefix-localized active tokens; the influence of distant undecoded context diminishes rapidly, and decoded tokens exhibit stage-wise temporal stability, enabling reuse of intermediate representations except for a brief post-decode transient. Motivated by these observations, we propose \\textbf{\\placeholder}\\footnote{The source code is available at https://github.com/vhicrgit/Window-Diffusion.}, a window-based token pruning and caching method for inference. We maintain a local computation window that slides rightward as denoising progresses, and partition undecoded tokens into: (i) \\textit{active tokens} that are computed online, (ii) \\textit{buffer tokens} whose KV states are cached and periodically refreshed, and (iii) \\textit{far-field tokens} that are pruned outside the window. Computation is restricted to active and buffer tokens within the window, while far-field tokens are omitted at each stage. Experiments on LLaDA and Dream show that, under matched compute budgets, our method achieves up to $99\\times$ inference speedup while largely preserving generation performance.",
+  "tldr": "The token-level analysis reveals pronounced structural locality in DLM inference, and proposes a window-based token pruning and caching method for inference that achieves up to $99\\times inference speedup while largely preserving generation performance.",
+  "year": 2026,
+  "venue": "arXiv.org",
+  "publication_types": [
+   "JournalArticle"
+  ],
+  "authors": [
+   "Fengrui Zuo",
+   "Zhiwei Ke",
+   "Yiming Liu",
+   "Wenqi Lou",
+   "Chao Wang",
+   "Xuehai Zhou"
+  ],
+  "citations": 0,
+  "source": "semanticscholar",
+  "source_id": "1d5c429a4b3b5811cd59c3a3243e1b9aae5f5de2",
+  "paper_id": "dblp:journals/corr/abs-2601-20332",
+  "doi": "10.48550/arXiv.2601.20332",
+  "arxiv_id": "2601.20332",
+  "dblp_key": "journals/corr/abs-2601-20332",
+  "paper_url": "https://www.semanticscholar.org/paper/1d5c429a4b3b5811cd59c3a3243e1b9aae5f5de2",
+  "published_iso": "2026-01-28"
+ },
+ {
+  "title": "TESS 2: A Large-Scale Generalist Diffusion Language Model",
+  "title_norm": "tess 2 a large scale generalist diffusion language model",
+  "abstract": "We introduce TESS 2, a general instruction-following diffusion language model that outperforms contemporary instruction-tuned diffusion models, as well as matches and sometimes exceeds strong autoregressive (AR) models. We train TESS 2 by first adapting a strong AR model via continued pretraining with the usual cross-entropy as diffusion loss, and then performing further instruction tuning. We find that adaptation training as well as the choice of the base model is crucial for training good instruction-following diffusion models. We further propose reward guidance, a novel and modular inference-time guidance procedure to align model outputs without needing to train the underlying model. Finally, we show that TESS 2 further improves with increased inference-time compute, highlighting the utility of diffusion LMs in having fine-grained controllability over the amount of compute used at inference time. Code and models are available at https://github.com/hamishivi/tess-2.",
+  "tldr": "It is found that adaptation training as well as the choice of the base model is crucial for training good instruction-following diffusion models, and reward guidance is proposed, a novel and modular inference-time guidance procedure to align model outputs without needing to train the underlying model.",
+  "year": 2025,
+  "venue": "Annual Meeting of the Association for Computational Linguistics",
+  "publication_types": [
+   "JournalArticle",
+   "Conference"
+  ],
+  "authors": [
+   "Jaesung Tae",
+   "Hamish Ivison",
+   "Sachin Kumar",
+   "Arman Cohan"
+  ],
+  "citations": 25,
+  "source": "semanticscholar",
+  "source_id": "bec64abca5c370a0d4c09bb499b146601622e6f6",
+  "paper_id": "dblp:journals/corr/abs-2502-13917",
+  "doi": "10.48550/arXiv.2502.13917",
+  "arxiv_id": "2502.13917",
+  "dblp_key": "journals/corr/abs-2502-13917",
+  "paper_url": "https://www.semanticscholar.org/paper/bec64abca5c370a0d4c09bb499b146601622e6f6",
+  "published_iso": "2025-02-19"
+ }
+]

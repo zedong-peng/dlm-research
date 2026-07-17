@@ -1,0 +1,125 @@
+{
+  "gap_closure_reject_check": {
+    "entries": [
+      {
+        "gap": "Under a hard deadline, no retrieved frontier leaf ensures that unanticipated conservative steps or recovery steps do not consume the calls needed to finish the remaining masked positions with the best attainable terminal sequence quality.",
+        "main_pattern": "generative_process_redesign",
+        "sub_pattern": "C24 (Liberate a Fixed Generative Component)",
+        "tactical_failure_mode_quoted": "Papers attempting this tactic fail most often by attaching a different conditioning encoder, latent space, or control channel to an existing refinement backbone and presenting the swap itself as the contribution, without isolating it. The recurring structural shortcut is the missing ablation that holds backbone, data, and compute fixed while toggling only the new interface — so reviewers cannot tell whether the gain comes from the redesigned conditioning pathway or from a stronger borrowed encoder, more data, or more compute.",
+        "reject_lessons_evaluated": [
+          {
+            "lesson_quoted": "Eliminating two inherited bottlenecks at once is only compelling if the combined system clearly beats systems that removed each in isolation; marginal gains plus a regression in primary quality read as recombination, not a new method.",
+            "candidate_match": "no",
+            "reasoning": "The planned matched-call Saber, ADAS, Fast-dLLM, Top-k, and no-exchange comparisons isolate the combined projection from progress-only and separately budgeted repair alternatives, and the prediction requires a Pass@1 gain rather than accepting a quality regression."
+          },
+          {
+            "lesson_quoted": "Swapping the conditioning encoder for a more powerful one is not a new model class if the output quality still trails incumbents and the encoder's advantage is never ablated against the prior encoder under matched conditions.",
+            "candidate_match": "no",
+            "reasoning": "The candidate adds no conditioning encoder and keeps the denoiser, weights, logits, training data, and call count fixed."
+          },
+          {
+            "lesson_quoted": "A controllable pipeline assembled from frozen pretrained modules needs an ablation proving that the new control surface — not the off-the-shelf components — drives the gain, or it collapses into prior synthetic-data and adapter work.",
+            "candidate_match": "no",
+            "reasoning": "The mechanism uses one frozen DLM rather than an assembly of pretrained modules, and its no-exchange control preserves the same mask-count path and calls while disabling the proposed repair surface."
+          },
+          {
+            "lesson_quoted": "Claiming a unified or foundation-model reframe obligates you to actually demonstrate the unification (multi-domain pretraining plus transfer); per-setting retraining under a single architecture does not substantiate the claim.",
+            "candidate_match": "no",
+            "reasoning": "Neither the hook nor the mechanism claims a unified model class, foundation model, multi-domain pretraining, or transfer."
+          },
+          {
+            "lesson_quoted": "Importing a representation from a semantically adjacent domain as the conditioning signal fails when that space is orthogonal to the geometry or dynamics that actually determine the output being synthesized.",
+            "candidate_match": "no",
+            "reasoning": "The controller uses the DLM's own current-canvas token probabilities and mask statuses, not a representation imported from another domain."
+          }
+        ],
+        "verdict": "clear"
+      },
+      {
+        "gap": "No retrieved frontier leaf tests whether the remaining global inference budget must stay an external stopping parameter rather than become part of the state used by every token-action decision.",
+        "main_pattern": "generative_process_redesign",
+        "sub_pattern": "C24 (Liberate a Fixed Generative Component)",
+        "tactical_failure_mode_quoted": "Papers attempting this tactic fail most often by attaching a different conditioning encoder, latent space, or control channel to an existing refinement backbone and presenting the swap itself as the contribution, without isolating it. The recurring structural shortcut is the missing ablation that holds backbone, data, and compute fixed while toggling only the new interface — so reviewers cannot tell whether the gain comes from the redesigned conditioning pathway or from a stronger borrowed encoder, more data, or more compute.",
+        "reject_lessons_evaluated": [
+          {
+            "lesson_quoted": "Eliminating two inherited bottlenecks at once is only compelling if the combined system clearly beats systems that removed each in isolation; marginal gains plus a regression in primary quality read as recombination, not a new method.",
+            "candidate_match": "no",
+            "reasoning": "The same budget-indexed projection closes both gaps, while the full-versus-no-exchange ablation and matched-call adaptive baselines test whether coupling budget state to repair adds quality beyond either leg alone."
+          },
+          {
+            "lesson_quoted": "Swapping the conditioning encoder for a more powerful one is not a new model class if the output quality still trails incumbents and the encoder's advantage is never ablated against the prior encoder under matched conditions.",
+            "candidate_match": "no",
+            "reasoning": "Remaining budget changes only the prescribed committed-set cardinality; no encoder, denoiser parameter, or auxiliary model is changed."
+          },
+          {
+            "lesson_quoted": "A controllable pipeline assembled from frozen pretrained modules needs an ablation proving that the new control surface — not the off-the-shelf components — drives the gain, or it collapses into prior synthetic-data and adapter work.",
+            "candidate_match": "no",
+            "reasoning": "The budget-indexed canvas is the sole new control surface, and the no-exchange variant holds the model, schedule, calls, and masked-position ranking fixed while removing its repair action."
+          },
+          {
+            "lesson_quoted": "Claiming a unified or foundation-model reframe obligates you to actually demonstrate the unification (multi-domain pretraining plus transfer); per-setting retraining under a single architecture does not substantiate the claim.",
+            "candidate_match": "no",
+            "reasoning": "The proposal is explicitly a training-free decoder for two existing masked DLMs and makes no unification or foundation-model claim."
+          },
+          {
+            "lesson_quoted": "Importing a representation from a semantically adjacent domain as the conditioning signal fails when that space is orthogonal to the geometry or dynamics that actually determine the output being synthesized.",
+            "candidate_match": "no",
+            "reasoning": "The conditioning state is the model's native corrupted token canvas plus calls remaining, not an external semantic representation."
+          }
+        ],
+        "verdict": "clear"
+      }
+    ],
+    "verdict": "clear",
+    "reasoning": "Both C24 entries are implemented with the same isolated budget-indexed canvas projection. The most relevant reject lesson, \"Eliminating two inherited bottlenecks at once is only compelling if the combined system clearly beats systems that removed each in isolation; marginal gains plus a regression in primary quality read as recombination, not a new method,\" is addressed by the no-exchange control and matched-call progress/repair baselines together with an explicit Pass@1 improvement prediction."
+  },
+  "recipe_application_check": {
+    "entries": [
+      {
+        "gap": "Under a hard deadline, no retrieved frontier leaf ensures that unanticipated conservative steps or recovery steps do not consume the calls needed to finish the remaining masked positions with the best attainable terminal sequence quality.",
+        "sub_pattern": "C24 (Liberate a Fixed Generative Component)",
+        "tactical_pattern_quoted": "The shared move is to hold an iterative-refinement generative backbone (diffusion, flow-matching, masked-token, or coarse-to-fine autoregressive prediction) fixed and treat its conditioning interface or operating representation space as the free variable. Concretely, papers do one of three things: change what the procedure conditions on (replace categorical labels with masked surrounding context, a differentiable measured-response objective, a self-supervised feature vector, or pinned start/end states); change how the condition enters (swap one-way frozen injection for bidirectional co-evolving dual streams, route conditioning across spatial regions and refinement stages, restrict the signal to an interval of steps, or partition it by functional subcomponent); or move refinement out of raw output space into a redesigned latent space (disentangled, contrastive, periodic-parameter, or SSL-feature).",
+        "instantiation_in_core_mechanism": "Steps 2, 5, and 6 keep the masked-DLM backbone fixed but make the next canvas's committed-set cardinality a function of calls remaining, then jointly commit and remask across position statuses before that redesigned canvas conditions the next forward.",
+        "verdict": "applied"
+      },
+      {
+        "gap": "No retrieved frontier leaf tests whether the remaining global inference budget must stay an external stopping parameter rather than become part of the state used by every token-action decision.",
+        "sub_pattern": "C24 (Liberate a Fixed Generative Component)",
+        "tactical_pattern_quoted": "The shared move is to hold an iterative-refinement generative backbone (diffusion, flow-matching, masked-token, or coarse-to-fine autoregressive prediction) fixed and treat its conditioning interface or operating representation space as the free variable. Concretely, papers do one of three things: change what the procedure conditions on (replace categorical labels with masked surrounding context, a differentiable measured-response objective, a self-supervised feature vector, or pinned start/end states); change how the condition enters (swap one-way frozen injection for bidirectional co-evolving dual streams, route conditioning across spatial regions and refinement stages, restrict the signal to an interval of steps, or partition it by functional subcomponent); or move refinement out of raw output space into a redesigned latent space (disentangled, contrastive, periodic-parameter, or SSL-feature).",
+        "instantiation_in_core_mechanism": "Step 2 maps calls remaining b to K_{b-1}, and Steps 5-7 use that budget-indexed target in every retain, commit, and remask projection, so the projected canvas carrying the remaining-horizon decision becomes the conditioning state for the next frozen-denoiser forward.",
+        "verdict": "applied"
+      }
+    ],
+    "verdict": "applied",
+    "reasoning": "Both entries instantiate C24's distinctive interface move: the frozen iterative backbone is unchanged, while the corrupted-canvas conditioning trajectory is redesigned into a budget-indexed cross-status projection."
+  },
+  "anti_pattern_check": {
+    "composition_set": [
+      "generative_process_redesign"
+    ],
+    "matched_pattern_id": null,
+    "required_mitigation_quoted": null,
+    "mitigation_substantively_delivered": "n/a",
+    "reasoning": "The set contains only generative_process_redesign, so none of the three heterogeneous_decomposition pairs is present."
+  },
+  "paper_pointed_threat": {
+    "threat_paper_id": "semanticscholar:4c95b1cef66cda6693fa6ab192698703dd3c070f",
+    "threat_source": "lit_table",
+    "threat_channel": null,
+    "subsumption_argument": "Saber is the closest retrieved competitor because it already combines adaptive unmasking with backtracking-enhanced remasking to repair irreversible early commitments in a training-free diffusion-language-model sampler. The candidate's contribution therefore stands or falls on whether one fixed-cardinality cross-status projection, at identical denoiser-call and measured-latency budgets, achieves better terminal Pass@1 and guaranteed zero masks than Saber's separately controlled unmask threshold and rollback quota; the retrieved description does not itself disclose that exact unified projection.",
+    "addressable_via": "not_needed",
+    "parametric_family_concern": "Mask-Predict/MaskGIT-style confidence-based iterative refinement and low-confidence token remasking; a scoop-check should query \"iterative mask-predict low-confidence remasking\" and \"MaskGIT confidence schedule token remasking\" before investing."
+  },
+  "falsification_structure_check": {
+    "minimal_experiment_named": "yes",
+    "outcome_metric_named": "yes",
+    "load_bearing_variable": "the exchange count r_b",
+    "negative_control_target": "outcome_metric",
+    "verdict": "sound",
+    "reasoning": "The paragraph names LLaDA-8B on HumanEval at B in {16,32,64}, matched-call comparisons, and higher Pass@1 as the downstream direction. Pinning earlier commitments forces r_b=0 while holding the mask path and calls fixed, and predicts downstream Pass@1 returns to the no-exchange baseline rather than merely predicting r_b itself."
+  },
+  "verdict": "advance",
+  "verdict_layer": "soft_judgment",
+  "verdict_rationale": "The gap_closure_reject_check is clear because the candidate directly addresses C24's lesson that \"Eliminating two inherited bottlenecks at once is only compelling if the combined system clearly beats systems that removed each in isolation\" with a no-exchange control and matched-call baselines, and recipe_application_check.entries[0].verdict is applied through the budget-indexed canvas interface. No anti-pattern pair or exact-mechanism retrieved collision triggers the hard floor; Saber's adaptive unmasking plus backtracking is the closest threat, but the candidate already makes its distinct fixed-cardinality projection stand or fall in a matched-budget comparison, and the falsification structure is sound.",
+  "revision_targets": []
+}

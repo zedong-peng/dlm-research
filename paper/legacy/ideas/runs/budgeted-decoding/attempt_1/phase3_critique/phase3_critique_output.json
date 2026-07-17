@@ -1,0 +1,163 @@
+{
+  "gap_closure_reject_check": {
+    "entries": [
+      {
+        "gap": "No retrieved frontier leaf supplies a common horizon-aware value for the competing uses of one additional unit of latency: resolving currently masked positions, reconsidering an earlier commitment, or reducing uncertainty before acting.",
+        "main_pattern": "generative_process_redesign",
+        "sub_pattern": "C23 (Liberate a Fixed Generative Component)",
+        "tactical_failure_mode_quoted": "The recurring failure is treating \"I re-specified component X\" as self-evident novelty: a single local swap is made (a context-derived starting distribution, one x0-approximation traded for another, a seed reparameterization) that is locally reasonable but neither re-derives the chain nor demonstrates a regime the dominant accelerated alternative cannot already reach. These attempts consistently fail to beat — or even compare against — the strongest existing fast-sampling method (consistency models, distillation, fast solvers), so the contribution reads as dominated rather than enabling.",
+        "reject_lessons_evaluated": [
+          {
+            "lesson_quoted": "Re-specifying the chain's starting distribution is sound but worthless if a dominant accelerator already reaches one or two steps — failing to beat the strongest fast-sampling alternative dooms the move regardless of its elegance.",
+            "candidate_match": "no",
+            "reasoning": "The candidate does not replace the starting distribution and its falsification experiment names matched-NFE DLM accelerators as baselines."
+          },
+          {
+            "lesson_quoted": "Substituting one in-support approximation for another without theoretical depth or a failure-regime analysis reads as a narrow heuristic swap rather than a contribution.",
+            "candidate_match": "borderline",
+            "reasoning": "The Q_b action score is heuristic and lacks a quality or regret analysis, although it is an action-allocation controller rather than a direct substitution between two in-support approximations."
+          },
+          {
+            "lesson_quoted": "A redesign that silently depends on an extra artifact — access to a simulator/dynamics model, or a separately trained auxiliary network — has its claimed efficiency cancelled by the hidden cost once a reviewer surfaces it.",
+            "candidate_match": "no",
+            "reasoning": "The mechanism uses a frozen DLM, distribution caches, and pre-profiled action charges without a simulator or separately trained auxiliary model."
+          },
+          {
+            "lesson_quoted": "Collapsing a staged procedure into a single differentiable mapping is technically clean but gets rejected when the novelty is thin against recent methods and the gains are demonstrated only on weak or dated benchmarks.",
+            "candidate_match": "no",
+            "reasoning": "The candidate remains an explicit staged decoder and proposes current code and reasoning benchmarks rather than a single differentiable mapping."
+          }
+        ],
+        "verdict": "borderline"
+      },
+      {
+        "gap": "Under a hard deadline, no retrieved frontier leaf ensures that unanticipated conservative steps or recovery steps do not consume the calls needed to finish the remaining masked positions with the best attainable terminal sequence quality.",
+        "main_pattern": "structural_prior_encoding",
+        "sub_pattern": "C20 (Encode Structure by Construction)",
+        "tactical_failure_mode_quoted": "Papers attempting this tactic fail when the corruption-structure prior is asserted but never isolated as the actual source of gains. The recurring shape takes three forms: the \"structure\" is really a generic architecture or a powerful pretrained backbone doing the work, so same-capacity ablations cannot attribute any improvement to the prior; or the structural reformulation is theoretically clean — an equivalence proof, a physical decomposition — but the empirical delta over the base method is marginal while the advertised generality (plug-in, universal, attack-agnostic) is demonstrated on a single backbone or dataset; or the physical/derivational grounding is presented without rigor and with missing baselines, missing citations, or undersized evaluation.",
+        "reject_lessons_evaluated": [
+          {
+            "lesson_quoted": "Claiming an architecture carries a domain-matched structural prior while shipping a generic off-the-shelf encoder-decoder collapses the move into ordinary supervised denoising that ablations and weak-baseline comparisons quickly expose.",
+            "candidate_match": "no",
+            "reasoning": "The claimed object is an explicit deadline envelope around a frozen decoder, not a new generic encoder-decoder architecture."
+          },
+          {
+            "lesson_quoted": "An elegant equivalence proof (corruption-recovery equals descent on an energy landscape) earns nothing when the empirical gain over the base method is marginal and the advertised plug-in generality is shown on only a single backbone.",
+            "candidate_match": "no",
+            "reasoning": "No equivalence proof or plug-in-universality claim is made, and the compute plan covers two frozen DLMs."
+          },
+          {
+            "lesson_quoted": "Deriving partition labels from a first-principles physical model is undercut when the derivations lack rigor, baselines and ablations are missing, and citation hygiene fails.",
+            "candidate_match": "no",
+            "reasoning": "The method derives no physical partition labels and specifies matched baselines plus a mask-envelope-only ablation."
+          },
+          {
+            "lesson_quoted": "If the structural signal you minimize rides on a powerful pretrained backbone, failing to isolate the prior's contribution from sheer backbone capacity leaves reviewers unable to credit the idea and unconvinced by the motivation for the chosen backbone.",
+            "candidate_match": "no",
+            "reasoning": "The frozen backbone is held fixed across comparisons, and the mask-envelope-only and instability-permutation controls are designed to isolate controller components from backbone capacity."
+          }
+        ],
+        "verdict": "clear"
+      },
+      {
+        "gap": "No retrieved frontier leaf tests whether the remaining global inference budget must stay an external stopping parameter rather than become part of the state used by every token-action decision.",
+        "main_pattern": "assumption_audit_and_pivot",
+        "sub_pattern": "C11 (Audit and Pivot an Assumption)",
+        "tactical_failure_mode_quoted": "The dominant failure is substituting one selection rule for another that performs better empirically while omitting the theorem that explains when and why it wins — reviewers read this as a straightforward engineering combination without structural insight, even when the empirical gains are real. A second shape is pivoting an assumption the community regards as a reasonable modeling choice rather than a genuine restriction (removing an anchor or a repeated-query requirement that practitioners consider natural, or predicting an unmotivated quantity), which leaves both motivation and novelty in doubt.",
+        "reject_lessons_evaluated": [
+          {
+            "lesson_quoted": "Substituting one selection heuristic for another without a theorem stating when and why it wins reads as an engineering combination, not a contribution, no matter how clean the empirical gain.",
+            "candidate_match": "yes",
+            "reasoning": "Q_b replaces existing commit or rollback criteria with a greedy commit-repair-probe selector, but the completion envelope proves only mask exhaustion and supplies no theorem comparing terminal quality or regret with the pre-pivot baseline."
+          },
+          {
+            "lesson_quoted": "Pivoting an assumption the community treats as a reasonable modeling choice — rather than first proving it a genuine restriction — leaves both motivation and novelty in doubt.",
+            "candidate_match": "borderline",
+            "reasoning": "The candidate asserts that external-only budget handling is restrictive, but does not formally establish that restriction beyond the planned empirical comparison."
+          },
+          {
+            "lesson_quoted": "A re-derived guarantee whose binding constant is dataset-dependent and cannot be controlled by the practitioner is vacuous in the worst case and fails to convince.",
+            "candidate_match": "no",
+            "reasoning": "The completion guarantee depends on practitioner-controlled L and B rather than a dataset-dependent constant."
+          },
+          {
+            "lesson_quoted": "Building the entire analysis on a regularity condition (such as continuity or a Lipschitz bound) that the selection mechanism provably violates contradicts and undermines the formal claims.",
+            "candidate_match": "no",
+            "reasoning": "The candidate invokes no continuity or Lipschitz regularity premise for its discrete selector."
+          },
+          {
+            "lesson_quoted": "Improving a bound by a marginal factor with no matching lower bound fails to demonstrate that the improvement is significant or near-optimal enough to clear the bar.",
+            "candidate_match": "no",
+            "reasoning": "The candidate does not claim a marginal improvement to an existing numerical bound."
+          },
+          {
+            "lesson_quoted": "Unlocking a new capability by violating an assumption while ignoring a protective property it guarded — detectability, validity, identifiability — invites rejection on the overlooked side effect rather than the headline result.",
+            "candidate_match": "yes",
+            "reasoning": "The proposed one-call probe cannot identify same-state paired-time instability after a commit or repair because its only cached ordinary-time reference predates that mask transition, invalidating the load-bearing d_i quantity."
+          }
+        ],
+        "verdict": "triggered"
+      }
+    ],
+    "verdict": "triggered",
+    "reasoning": "The assumption-audit gap triggered C11: the candidate introduces a new Q_b selection heuristic without the comparative performance certificate the cluster requires. More decisively, the lesson about ignoring identifiability applies because the one-call probe compares its post-transition adjacent-time distribution with a pre-transition ordinary-time cache and therefore cannot establish the claimed same-state paired-time instability."
+  },
+  "recipe_application_check": {
+    "entries": [
+      {
+        "gap": "No retrieved frontier leaf supplies a common horizon-aware value for the competing uses of one additional unit of latency: resolving currently masked positions, reconsidering an earlier commitment, or reducing uncertainty before acting.",
+        "sub_pattern": "C23 (Liberate a Fixed Generative Component)",
+        "tactical_pattern_quoted": "Reach inside an iterative refinement (diffusion/flow) chain and re-specify one of its conventionally-frozen internal components, then re-derive the chain around the new choice.",
+        "instantiation_in_core_mechanism": "No step performs the C23 signature move: the mechanism explicitly inherits tau(b) from the frozen sampler and adds an external action-allocation certificate, rather than re-specifying a prior, transition family, solver schedule, seed, forward kernel, or conditioning point and re-deriving the chain.",
+        "verdict": "bypassed"
+      },
+      {
+        "gap": "Under a hard deadline, no retrieved frontier leaf ensures that unanticipated conservative steps or recovery steps do not consume the calls needed to finish the remaining masked positions with the best attainable terminal sequence quality.",
+        "sub_pattern": "C20 (Encode Structure by Construction)",
+        "tactical_pattern_quoted": "This cluster treats the forward corruption/degradation process itself as the structure to encode: authors prescribe an explicit law that maps the clean target to the observed signal and then construct the recovery or generation operator as the principled reverse of that prescribed law.",
+        "instantiation_in_core_mechanism": "The E_B mask-count envelope constrains resource feasibility around the inherited reverse decoder, but the candidate neither prescribes a new clean-to-corrupted forward law nor constructs the decoder as that law's reverse.",
+        "verdict": "bypassed"
+      },
+      {
+        "gap": "No retrieved frontier leaf tests whether the remaining global inference budget must stay an external stopping parameter rather than become part of the state used by every token-action decision.",
+        "sub_pattern": "C11 (Audit and Pivot an Assumption)",
+        "tactical_pattern_quoted": "Every paper here centers on a selection / acquisition / query rule and pivots the single assumption baked into that rule's criterion or its required structure. The invariant deliverable is a re-derived performance certificate for the pivoted rule, shown to match or strictly beat the pre-pivot baseline.",
+        "instantiation_in_core_mechanism": "The mechanism does put remaining budget into Q_b and proves an always-finish invariant, but it does not re-derive a terminal-quality, regret, or competitive certificate against the external-stopping selector; moreover its load-bearing probe statistic is not identifiable after a state transition.",
+        "verdict": "bypassed"
+      }
+    ],
+    "verdict": "bypassed",
+    "reasoning": "All three cited recipes are bypassed at their distinctive move: C23 inherits the sampler's internal schedule, C20 supplies no forward-law/reverse construction, and C11 lacks the comparative performance certificate for Q_b. The candidate implements the parent-level themes of redesign, structure, and budget-aware selection, but not the cited clusters' method signatures."
+  },
+  "anti_pattern_check": {
+    "composition_set": [
+      "generative_process_redesign",
+      "structural_prior_encoding",
+      "assumption_audit_and_pivot"
+    ],
+    "matched_pattern_id": null,
+    "required_mitigation_quoted": null,
+    "mitigation_substantively_delivered": "n/a",
+    "reasoning": "None of the three main-pattern values is heterogeneous_decomposition, so no documented reject-favored composition matches."
+  },
+  "paper_pointed_threat": {
+    "threat_paper_id": "semanticscholar:4c95b1cef66cda6693fa6ab192698703dd3c070f",
+    "threat_source": "lit_table",
+    "threat_channel": null,
+    "subsumption_argument": "Saber is the closest direct competitor because it already adapts masked-DLM acceleration and repairs earlier commitments by history-based thresholding and backtracking. The candidate's distinct claim therefore stands or falls on whether one shared deadline certificate plus a valid no-commit uncertainty probe improves terminal quality at matched NFE beyond Saber's adaptive commit/rollback policy; the current stale-cache probe does not establish that distinctive information source.",
+    "addressable_via": "The core_mechanism would need a redesigned probe protocol that obtains an ordinary-time and adjacent-time distribution under the same current mask state after every commit or repair, while still charging all required calls to the completion envelope.",
+    "parametric_family_concern": null
+  },
+  "falsification_structure_check": {
+    "minimal_experiment_named": "yes",
+    "outcome_metric_named": "yes",
+    "load_bearing_variable": "paired-time instability d_i",
+    "negative_control_target": "outcome_metric",
+    "verdict": "sound",
+    "reasoning": "The paragraph specifies LLaDA-8B on HumanEval at 32 NFE, names Pass@1 increasing while unfinished-mask rate stays zero, isolates one variable d_i, and predicts that permuting it returns downstream Pass@1 to the mask-envelope-only baseline. This structural soundness does not repair the separate procedural fact that the implemented probe cannot measure the named variable after a state transition."
+  },
+  "verdict": "abandon",
+  "verdict_layer": "hard_floor",
+  "verdict_rationale": "The hard floor fires because gap_closure_reject_check.entries[2] triggers C11's lessons on replacing a selector without a theorem and on ignoring identifiability: Q_b has only a mask-completion invariant, and its post-transition one-call probe has no same-state ordinary-time reference. recipe_application_check also finds all three cited tactical recipes bypassed, while Saber remains a direct matched-budget competitor whose adaptive repair mechanism the invalid probe currently fails to distinguish the candidate from.",
+  "revision_targets": []
+}

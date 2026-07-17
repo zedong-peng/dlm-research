@@ -1,0 +1,792 @@
+                                                      Deferred Commitment Decoding for Diffusion Language Models
+
+                                                        Yingte Shu1 , Yuchuan Tian1 , Chao Xu1 , Yunhe Wang2 , Hanting Chen2
+                                                                                    1
+                                                                                      Peking University
+                                                                                  2
+                                                                                    Huawei Technologies
+                                                        ytshu25@stu.pku.edu.cn, yuchuan.tian@outlook.com, xuchao@cis.pku.edu.cn,
+                                                                   yunhe.wang@huawei.com, chenhanting@huawei.com
+
+
+                                                                 Abstract
+
+
+
+
+arXiv:2601.02076v2 [cs.CL] 20 Jan 2026
+                                             Diffusion language models (DLMs) have recently
+                                             emerged as a strong alternative to autoregressive
+                                             models by enabling parallel text generation. To im-
+                                             prove inference efficiency and KV-cache compat-
+                                             ibility, prior work commonly adopts block-based
+                                             diffusion, decoding tokens block by block. How-
+                                             ever, this paradigm suffers from a structural lim-
+                                             itation that we term Boundary-Induced Context
+                                             Truncation (BICT): undecoded tokens near block
+                                             boundaries are forced to commit without access
+                                             to nearby future context, even when such context
+                                             could substantially reduce uncertainty. This limi-
+                                             tation degrades decoding certainty and generation
+                                             quality, especially for tasks requiring precise rea-
+                                             soning, such as mathematical problem solving and
+                                             code generation. We propose Deferred Commit-
+                                             ment Decoding (DCD), a novel, training-free de-
+                                             coding strategy that mitigates this issue. DCD
+                                             maintains a certainty-aware sliding window over
+                                             masked tokens, resolving low-uncertainty tokens
+                                             early while deferring high-uncertainty tokens until
+                                             sufficient contextual evidence becomes available.
+                                             Extensive experiments across multiple diffusion
+                                             language models, benchmarks, and caching config-
+                                                                                                        Figure 1: An overview of the proposed DCD algorithm. DCD
+                                             urations show that DCD improves generation ac-             defers uncertain tokens’ decoding with sliding windows for DLMs,
+                                             curacy by 1.73% with comparable time on average            thereby improving performance.
+                                             compared to fixed block-based diffusion methods,
+                                             with the most significant improvement reaching
+                                             16.5%. These results demonstrate that deferring to-        al., 2025] demonstrate that, at comparable scales, DLMs can
+                                             ken commitment based on uncertainty is a simple            match their autoregressive counterparts on selected reasoning
+                                             yet effective principle for improving both the qual-       tasks.
+                                             ity and efficiency of diffusion language model de-
+                                             coding. Code: https://github.com/shuyingte/DCD                A major challenge in practical DLM inference lies in
+                                                                                                        compatibility with key-value (KV) caching. Vanilla DLMs
+                                                                                                        decode tokens in largely unconstrained orders, which pre-
+                                                                                                        vents effective reuse of cached attention states and leads
+                                         1   Introduction                                               to slow inference. To address this issue, block-based dif-
+                                         Diffusion language models (DLMs) have recently emerged as      fusion methods have been proposed [Arriola et al., 2025;
+                                         a promising alternative to autoregressive models for natural   Nie et al., 2025], partitioning the sequence into blocks that
+                                         language generation. By decoding tokens in parallel rather     are decoded sequentially while allowing parallel decoding
+                                         than strictly left-to-right, DLMs relax sequential dependen-   within each block. This semi-autoregressive structure sig-
+                                         cies and enable more flexible generation. Recent models        nificantly improves KV-cache efficiency and has become a
+                                         such as NBDiff [Tian et al., 2025] and LLaDA2.0 [Bie et        standard design choice in recent DLM systems.
+   Despite their efficiency benefits, block-based diffusion       guage processing. Continuous diffusion language models [Li
+methods introduce a fundamental limitation, which we re-          et al., 2022; Gong et al., 2022] project discrete language to-
+fer to as Boundary-Induced Context Truncation (BICT).             kens into continuous spaces and apply denoising processes
+Once decoding proceeds to the next block, undecoded tokens        to recover text outputs. In contrast, discrete diffusion lan-
+in the current block are forced to commit, even if nearby fu-     guage models draw inspiration from masked language mod-
+ture tokens—often only a few positions away—could pro-            eling [Devlin et al., 2019], gradually recovering masked to-
+vide crucial disambiguating context. This issue is partic-        kens at predefined generation slots. Compared to continuous
+ularly detrimental for tokens in semantically critical posi-      approaches, discrete DLMs better align with the inherently
+tions, where insufficient context leads to low-certainty deci-    discrete nature of language and can be more easily adapted
+sions and error propagation. Importantly, this limitation is      from existing autoregressive models [Gong et al., 2024]; as
+not caused by an incorrect decoding order but by rigid block      a result, they have become the dominant paradigm in recent
+boundaries that assume information sufficiency upon block         diffusion-based language modeling research. Unless other-
+completion.                                                       wise specified, we use the term DLMs in this paper to refer to
+   Our core hypothesis is that decoding quality can be im-        discrete diffusion language models.
+proved by deferring commitment on high-uncertainty tokens            Discrete DLMs typically employ one of two attention
+until sufficient contextual evidence becomes available, with-     mechanisms in the Transformer architecture: semi-causal at-
+out abandoning the efficiency advantages of block-based de-       tention or full attention. Models such as BD3-LM [Arriola
+coding. Based on this insight, we propose Deferred Com-           et al., 2025], NBDiff [Tian et al., 2025], and Fast-dLLMv2
+mitment Decoding (DCD), a training-free decoding strategy         [Wu et al., 2025a] adopt semi-causal attention, which indi-
+that replaces fixed block boundaries with a certainty-aware       cates that their predefined attention maps are incomplete and
+sliding window. Within this window, tokens with low uncer-        tokens attend only to their current ”block” and previous ones.
+tainty are resolved first, while high-uncertainty tokens remain   In contrast, models such as LLaDA [Nie et al., 2025] and
+masked and continue to benefit from dynamically expanding         Dream [Ye et al., 2025] adopt full attention, allowing each
+context. This mechanism enables localized bidirectional in-       token to condition on the entire sequence during decoding.
+formation flow while preserving compatibility with existing       In this work, we consider both semi-causal and full-attention
+caching schemes.                                                  DLMs to demonstrate the generalization and robustness of
+   We evaluate DCD on a diverse set of tasks, including           the proposed DCD decoding algorithm across different archi-
+mathematical reasoning [Lightman et al., 2023; Cobbe et           tectural choices.
+al., 2021], code generation [Austin et al., 2021b; Chen et
+al., 2021], and instruction following [Zhou et al., 2023], us-    2.2   Decoding Strategies of DLMs
+ing multiple diffusion language models [Nie et al., 2025;         Earlier works on DLMs [Austin et al., 2021a; Sahoo et al.,
+Ye et al., 2025; Wu et al., 2025a; Tian et al., 2025] and var-    2024] randomly unmask and remask a fixed number of tokens
+ious KV caching configurations. Across all settings, DCD          at each decoding step, which often yields suboptimal perfor-
+consistently improves generation accuracy by +1.73% with          mance. Later approaches incorporate confidence- or entropy-
+comparable inference time on average compared to fixed            based criteria, decoding tokens whose uncertainty falls below
+block-based diffusion baselines, with the maximum improve-        a threshold or lies within the top-k candidates. These strate-
+ment in certain configurations reaching +16.5%. These re-         gies improve flexibility and parallelism but still rely on fixed
+sults establish DCD as a strong state-of-the-art decoding         decoding ranges.
+method for DLMs.                                                     More recently, a variety of decoding strategies have been
+   We summarize our contributions as follows:                     introduced to enhance either the performance or compu-
+    • We identify Boundary-Induced Context Truncation             tational efficiency of discrete diffusion language models
+      as a key structural limitation of block-based diffusion     (DLMs). Among training-based approaches, [Xu et al.,
+      decoding, which prevents undecoded tokens from lever-       2024] employs energy functions to steer the decoding pro-
+      aging nearby future context across rigid block bound-       cess, yielding a 1.3x speedup alongside notable gains in gen-
+      aries.                                                      eration quality. FS-DFM [Monsefi et al., 2025] formulates
+                                                                  a discrete flow-matching framework that generates 1024 to-
+    • We propose Deferred Commitment Decoding, a sim-             kens in just eight sampling steps without degrading perplex-
+      ple, training-free decoding strategy that dynamically       ity, while SDLM [Liu et al., 2025] adaptively decodes token
+      aligns the decoding order with token-level uncertainty      sequences based on prediction confidence.
+      using a sliding window.                                        For training-free methods, [Fu et al., 2025] introduces an
+    • We demonstrate that DCD achieves consistent accuracy        Explore-Then-Exploit scheduling mechanism that maximizes
+      improvements over fixed block-based diffusion methods       information gain per decoding round to improve efficiency.
+      across models, tasks, and caching configurations.           [Chen et al., 2025] enhances decoding quality by leveraging
+                                                                  historical trajectories to inform current predictions, and [Li
+2     Related Works                                               et al., 2025] proposes early-commit decoding to accelerate
+                                                                  inference in DLMs while largely preserving output fidelity.
+2.1    DLMs Taxonomy                                              Despite these advances, existing training-free strategies still
+There are two main lines of work that adapt diffusion tech-       lack mechanisms to dynamically adjust the decoding horizon
+niques [Ho et al., 2020] from computer vision to natural lan-     or to enrich contextual support for low-certainty tokens, indi-
+cating significant opportunities for further innovation.                   However, under block-based decoding, tokens after the cur-
+                                                                           rent block are all ⟨MASK⟩, which contain little informa-
+3     Preliminary of DLMs Decoding                                         tion and may even distract the decoding process. For tokens
+                                                                           whose contextual locality extends beyond the current block,
+3.1    Formulations of DLMs                                                Equation 4 deteriorates to
+Discrete diffusion language models (DLMs) generate a target                                                           (t)
+sequence x = (x1 , . . . , xT ) by iteratively denoising a par-                          pθ (xi | x(t) ) ≈ pθ (xi | x[i−ωl :b] )      (5)
+tially masked sequence. At diffusion step t, the sequence x(t)
+                                                                           where b < i + ωr denotes the right boundary of the current
+contains masked positions denoted by ⟨MASK⟩. The reverse
+                                                                           block. We term this reduction in a token’s effective contextual
+denoising process is modeled as:
+                                                                           window the Boundary-Induced Context Truncation phe-
+                                                                           nomenon. Although these tokens receive insufficient context,
+                                  Y
+          pθ (x(t−1) | x(t) ) =         pθ (xi | x(t) ),    (1)
+                                                                           they must be decoded before proceeding to the next block
+                                    i∈M(t)
+                                                                           under the block-based paradigm. Consequently, this leads
+where M(t) denotes the set of masked positions at step t.                  to low-certainty decoding at the end of each block and ulti-
+   For full-attention DLMs, each masked token xi is predicted              mately degrades the generation performance of DLMs.
+by conditioning on the entire partially decoded sequence x(t) .
+In contrast, semi-causal DLMs partition the sequence into or-
+dered blocks {B1 , . . . , BK } and restrict attention such that to-
+kens in block Bk are conditioned only on tokens from blocks
+{B1 , . . . , Bk }. Accordingly, the reverse process can be writ-
+ten as:
+                               K
+                                                             (t)
+                               Y        Y
+       pθ (x(t−1) | x(t) ) =                       pθ (xi | x≤k ),   (2)
+                               k=1 i∈Bk ∩M(t)
+
+         (t)
+where x≤k denotes the tokens in the first k blocks.
+
+3.2    Block-based decoding of DLMs
+Decoding proceeds by selecting token values for a subset of
+masked positions according to the model prediction:
+             (
+    (t−1)      arg maxv∈V pθ (v | x(t) ), i ∈ S (t) ,
+   xi     =     (t)                                     (3)
+               xi ,                       otherwise,
+                                                                           Figure 2: An example of DCD and block-based decoding. DCD
+where V is the vocabulary set and S (t) ⊆ M(t) specifies the               outperforms block-based decoding by solving BICT problem. More
+positions eligible for decoding at the current step.                       details can be found in Appendix B due to page limit.
+   In block-based decoding, the eligibility condition con-
+strains decoding positions to a fixed region, typically the cur-
+rent block: S (t) ⊆ {i | i ∈ Bcur }. Full-attention DLMs                   5     Deferred Commitment Decoding
+may optionally adopt block-based decoding to improve KV-                   5.1    Core Design of the DCD Algorithm
+cache compatibility. In contrast, semi-causal DLMs must
+                                                                           Based on the above analysis, the primary causes of BICT are
+employ block-based decoding due to their blockwise atten-
+                                                                           rigid block boundaries and the strict left-to-right blockwise
+tion constraints. Within a large attention block, semi-causal
+                                                                           decoding order. To address this problem, we must:
+DLMs may further apply sub-block decoding, where decod-
+ing positions are restricted to a smaller contiguous region:                (1) Remove the restrictions imposed by rigid block bound-
+S (t) ⊆ {i | i ∈ Bcur1 :cur2 }, where Bcur1 :cur2 denotes a contigu-            aries;
+ous subrange of blocks within a larger attention block.                     (2) Decode these tokens at the appropriate time and under
+                                                                                appropriate conditions.
+4     Boundary-Induced Context Truncation                                  As illustrated in Figure 1, the proposed Deferred Commit-
+The advantages of DLMs over their autoregressive counter-                  ment Decoding (DCD) algorithm maintains a sliding win-
+parts lie primarily in their (semi-)bidirectional attention hori-          dow and defers the decoding of low-certainty tokens. It fol-
+zons. [Piskorz et al., 2025] found that DLMs exhibit a strong              lows two principal design principles to achieve the above
+contextual locality bias, in which nearby tokens x[i−ωl :i+ωr ]            goals:
+contribute disproportionately to prediction certainty of i-th                 Design (1): The decoding window slides left to right
+token. Informally, this can be expressed as:                               with constraints. The sliding window defines the range of
+                                                                           tokens eligible for decoding. It abandons fixed boundaries
+                                             (t)
+               pθ (xi | x(t) ) ≈ pθ (xi | x[i−ωl :i+ωr ] )           (4)   across consecutive decoding steps; instead, it moves from left
+Figure 3: Confidence distributions of various models. We use LLaDA-8B-Instruct, Dream-v0-Base-7B and Fast-dLLM-v2-7B on GSM8K
+with DCD and (sub-)block-based decoding using dual cache and log10 scale for clarity. The DCD algorithm yields fewer low-certainty
+decoding steps across these models.
+
+
+to right within the generation slot of the DLM. Formally, let        Algorithm 1 Deferred Commitment Decoding (DCD)
+[L(t) , R(t) ) denote the left and right endpoints of the sliding                                  (t)
+                     (t)                                             Require: Generation slot x[l:r] , DLM pθ (·), window param-
+window, and let x[l:r] denote the generation slot at decoding
+                                                                         eters sinit , smax , cache parameters cache type, B ′ , r, cer-
+step t. Then,                                                            tainty threshold τ , DBE parameters τlow , estep , emax .
+                                 (t)
+          L(t) = arg min{i | xi = ⟨MASK⟩},                    (6)     1: Initialize L(t) , R(t) = l, l + sinit , cache refresh cd = 0.
+                       i≥l                                            2: while M(t) ̸= ∅ do
+          R(t) = arg max{i | i ≤ L(t) + smax and                      3:    if cache type ̸= none and cd ≤ 0 then
+                       i≤r                                            4:       Refresh the cache based on Equation 11.
+                    i−1    h           i                      (7)     5:       Set cd = B ′ .
+                             (t)
+                    X
+                            xk = ⟨MASK⟩ ≤ sinit }.                    6:    end if
+                  k=L(t)                                              7:    if Equation 9 is hold then
+                                                                      8:       Update r, R(t−1) based on Equation 10,7.
+Equation 6 shows that the left endpoint of the window is an-          9:       continue
+chored to the leftmost masked token. Equation 7 indicates            10:    end if
+that the sliding window expands its right boundary as much           11:    Select decoding positions S (t) using Equation 8.
+as possible, subject to two constraints: (1) the total length of
+                                                                     12:    Update x(t−1) with S (t) using Equation 3.
+the sliding window does not exceed smax , and (2) the number                                                    (t−1)
+of masked tokens within the window does not exceed sinit . In        13:    Update L(t−1) , R(t−1) with x[l:r] using Equations 6
+particular, the sliding window is initialized with length sinit at          and 7.
+the beginning of the generation slot.                                14:    Update cd = cd − |S (t) |.
+   These constraints maintain a moderate yet flexible window         15:    Update t = t − 1.
+length, which precisely captures relevant contextual informa-        16: end while
+                                                                                                      (t)
+tion and enables more efficient KV-cache integration.                17: return Final sequence x[l:r] .
+   Design (2): Tokens are deferred from decoding un-
+til sufficiently certain given nearby context. Low pre-
+diction certainty—measured by the confidence or entropy              sizes based on delimiter semantics in the generated tokens,
+of masked tokens—serves as a key indicator for identify-             improving generation coherence. However, once determined,
+ing BICT-affected tokens with insufficient context. In block-        the block sizes remain fixed; as a result, AdaBlock may still
+based decoding, tokens may be forcibly decoded to complete           suffer from BICT and thus leaves room for further improve-
+a block. In contrast, the proposed DCD algorithm handles             ment.
+them more gracefully: masked tokens are decoded only when
+their certainty exceeds threshold τ or ranks among the top in        5.2   Dynamic Block Extension for Semi-causal
+the window.                                                                DLMs
+                                                                     The core design of DCD fits well with full-attention DLMs
+S (t) = M(t) ∩ [L(t) , R(t) ) ∩ {i | C(i) ≥ min(τ, max C(j))}
+                                                       j             because their generation slots span the entire sequence, and
+                                                          (8)        DCD completely replaces block-based decoding. However,
+where the certainty metric C(i) of the i-th token is computed        for semi-causal DLMs, the large block size is predefined,
+using confidence or negative entropy. This approach signifi-         and vanilla DCD operates only at the intra-block level by re-
+cantly reduces low-certainty decoding events at later stages,        placing fixed-length sub-block decoding with small sliding
+thereby improving overall performance.                               windows. Therefore, we propose Dynamic Block Extension
+   How does the DCD algorithm differ from AdaBlock? The              (DBE), a patch to DCD for semi-causal DLMs trained with
+AdaBlock method [Lu et al., 2025] employs adaptive block             multiple block sizes. Specifically, when a low-certainty token
+is about to be committed and the window’s sliding is blocked         Cache Configurations and Baselines. For full-attention
+by the right boundary of the large block—i.e., the BICT prob-        DLMs, the parallel block-based decoding of Fast-dLLM [Wu
+lem arises due to rigid block boundaries—the following con-          et al., 2025b] serves as the baseline under three cache con-
+dition holds:                                                        figurations: no cache, prefix cache, and dual cache. For
+                                                                     the semi-causal DLM Fast-dLLM-v2-7B [Wu et al., 2025a],
+         min C(i) < τlow         and     R(t) − L(t) < smax
+        i∈S (t)                                                      sub-block-based decoding with no cache and with dual cache
+                         (t)
+                        RX   −1 h                              (9)   within each large block is used as the primary baseline, while
+                                                                     vanilla block-based decoding without sub-block structures is
+                                               i
+                                     (t)
+                  and               xk = ⟨MASK⟩ < sinit .
+                                                                     used as an additional baseline. For each model, benchmark,
+                        k=L(t)                                       and cache configuration, DCD is compared against these
+When this occurs, DBE aborts the current decoding step and           baselines as well as other training-free DLM decoding strate-
+expands the block with an upper limit:                               gies such as dKV-Cache [Ma et al., 2025], AdaBlock-dLLM
+                                                                     [Lu et al., 2025], CCD [Chen et al., 2025], and Prophet [Li et
+            r′ = min(r + estep , blocksize + emax ).          (10)   al., 2025] when available.
+Afterward, the sliding window is recalculated according to           Hyperparameters. All experiments use block size B =
+Equation 7, and a new decoding step begins to continue the           32, sub-block size b = 8 and batchsize = 1. To align with the
+generation loop. Although DBE relies on the DLM’s ability            configurations of baseline works, decoding certainty is mea-
+to generalize to variable block sizes, this patch can further en-    sured by negative entropy for NBDiff [Tian et al., 2025] and
+hance performance for models appropriately trained for such          by confidence for the remaining DLMs [Wu et al., 2025b;
+flexibility.                                                         Wu et al., 2025a], with a unified threshold τ = 0.9. For full-
+5.3    DCD’s Combination with KV Cache                               attention DLMs, we set L = 512, sinit = 16, smax = 128,
+                                                                     B ′ = 32 and r = 2. For the semi-causal DLM, we set
+To accelerate DLM inference, we integrate prefix and dual            sinit = 8 while keeping all other parameters unchanged. The
+caching into the DCD algorithm, following Fast-dLLM [Wu              DBE is not enabled in main results and discussed in Sec-
+et al., 2025b]. Inspired by dKV-Cache-Greedy [Ma et al.,             tion 6.5 with estep = 4, emax = 16 and τlow = 0.4 for con-
+2025], the active interval without caching is slightly extended      fidence and τlow = −0.5 for negative entropy.
+beyond the decoded tokens from the current and previous
+steps. Formally, it is defined as:                                   6.2   Main Results Analysis
+               n                                  o
+                   (t)
+       W (t) = xi | i ∈ [L(t−1) − r, R(t) + r) .            (11)     Table 1 reports the main experimental results across multiple
+                                                                     diffusion language models, tasks, and KV-cache configura-
+We then define the prefix of the generation slot as the tokens       tions. Overall, Deferred Commitment Decoding (DCD) con-
+preceding W (t) , and the suffix as the tokens following W (t) .     sistently outperforms block-based and sub-block-based de-
+The prefix cache temporarily stores the prefix, while the dual       coding across most settings, demonstrating strong robustness
+cache stores both the prefix and suffix. Additionally, to en-        across tasks and model architectures. On average, DCD im-
+sure a fair comparison with block-based cache refreshing, we         proves evaluation metrics by +1.73% while reducing decod-
+rebuild the cache after B ′ masked tokens have been decoded          ing time by 4.4% compared to block-based (or sub-block-
+since the last cache refresh.                                        based) baselines with regard to the same model, task and
+                                                                     cache configuration. The average improvement for each
+6     Experiments                                                    model over the baseline is highlighted in colored text in Ta-
+                                                                     ble 1.
+6.1    Experimental Setup
+                                                                        DCD’s gains over (sub-)block-based baselines are ob-
+Models. To validate the effectiveness of the DCD algo-               served across diverse tasks—including mathematical reason-
+rithm, we evaluate full-attention pretrained DLMs including          ing, code generation, and instruction following—and across
+LLaDA-8B-Instruct [Nie et al., 2025], Dream-v0-Instruct-             both full-attention and semi-causal DLMs. Among all mod-
+7B, and Dream-v0-Base-7B [Ye et al., 2025]; and semi-                els, LLaDA-8B-Instruct, Dream-v0-Instruct-7B, and Dream-
+causal DLMs including Fast-dLLM-v2-7B [Wu et al., 2025a]             v0-Base-7B exhibit significant improvements in accuracy
+and NBDiff [Tian et al., 2025].                                      and moderate speedups in time consumption, showing that
+Benchmarks. For each model, we evaluate coding bench-                our DCD algorithm works effectively at the whole-sequence
+marks including HumanEval [Chen et al., 2021] and MBPP               level. NBDiff benefits the most from DCD, achieving the
+[Austin et al., 2021b], mathematical reasoning benchmarks            largest average improvement of 5.22%, as it is trained with
+including MATH500 [Lightman et al., 2023] and GSM8K                  multiple block sizes and thus aligns well with sliding win-
+[Cobbe et al., 2021], and the instruction-following bench-           dows. Running the IFEval benchmark with NBDiff yields
+mark IFEval [Zhou et al., 2023]. The Dream-v0-Base-7B                the most significant improvement, with a 16.5% increase in
+model is excluded from IFEval because it is not instruction-         accuracy. In contrast, Fast-dLLM-v2-7B shows the smallest
+aligned. We do not evaluate multiple-choice QA benchmarks            improvement of 0.62% because it is trained with limited flex-
+[Hendrycks et al., 2020; Rein et al., 2024], as they primar-         ibility with variable decoding ranges. Nevertheless, DCD still
+ily measure token-level log-probabilities rather than decoding       outperforms sub-block-based decoding, which aligns with
+quality.                                                             our theoretical analysis.
+Table 1: Experimental results. For each experiment, we report its overall metrics (pass@1, accuracy, etc.). We also report the total seconds
+for running 5 benchmarks within one line. The best result of certain model and task is bolded and second-best is underlined. The (sub-)block-
+based decoding serves as DCD’s baseline and other algorithms serve as comparison works.
+
+          Model              Cache          Decoding           Time       Humaneval       MBPP       MATH500         GSM8K        IFEval
+                              None         Block-based         40750           43.3         39.8         40.2           78.3        57.9
+                              None            DCD              40745           43.9         40.0         41.0           79.1        59.0
+                              Prefix       Block-based         24671           43.3         39.8         38.8           76.0        56.4
+      LLaDA-8B                Prefix          DCD              24803           45.7         38.2         41.2           78.5        57.1
+       -Instruct              Dual         Block-based         18617           44.5         36.4         36.2           75.7        53.2
+   Avg. Metric +1.16          Dual            DCD              18501           44.5         37.2         39.0           79.2        53.6
+    Avg. Time 0.0%              dKV-Cache-Greedy                 -             15.37        20.4         27.0          68.23         -
+                              Dual      AdaBlock               23680           45.1         36.2         36.6           78.4        55.8
+                             Custom       CCD                    -             38.41       39.20          -            75.30         -
+                              None       Prophet                 -             30.5        37.4           -             77.9         -
+                              None         Block-based         23685           54.3         55.0         44.8           76.6        50.5
+                              None            DCD              23449           53.7         56.8         43.8           78.2        55.6
+      Dream-v0-               Prefix       Block-based         15420           56.7         53.6         43.4           77.6        51.8
+      Instruct-7B             Prefix          DCD              15044           58.5         57.4         43.4           78.6        56.4
+   Avg. Metric +2.63          Dual         Block-based          9273           56.7         52.8         44.4           74.8        47.7
+   Avg. Time -2.2%            Dual            DCD               9284           59.8         58.8         45.2           77.3        56.7
+                             Custom           CCD                 -            57.31       58.00           -           82.51          -
+                              None           Prophet              -            55.5        54.6            -           75.2           -
+                              None         Block-based         25594           48.2         13.8         12.0           75.5          -
+                              None            DCD              22714           50.6         17.0         12.8           76.0          -
+      Dream-v0-
+                              Prefix       Block-based         14600           57.3         13.6         12.6           74.5          -
+        base-7B
+                              Prefix          DCD              13283           53.0         16.0         12.8           74.4          -
+   Avg. Metric +0.77
+                              Dual         Block-based         10189           57.3         13.4         13.2           73.8          -
+   Avg. Time -9.2%
+                              Dual            DCD               9406           56.1         13.2         13.2           74.7          -
+                              Dual          AdaBlock           42141           53.0         14.4         13.0           76.0          -
+                              None       Sub-block-based       11228           61.0         50.2         54.6           77.6        62.8
+      Fast-dLLM
+                              None            DCD              10116           62.8         48.6         53.4           77.9        64.0
+        -v2-7B
+                              Dual       Sub-block-based       11379           57.9         46.0         52.4           76.0        60.3
+   Avg. Metric +0.62
+                              Dual            DCD              10498           59.1         49.0         51.6           77.8        60.8
+   Avg. Time -8.3%
+                              None         Block-based          9993           56.7         48.4         50.8           74.5        62.5
+        NBDiff                None       Sub-block-based         -             82.3         78.2         80.1           87.4        40.1
+   Avg. Metric +5.22          None            DCD             526163           81.7         80.2         84.4           91.3        56.6
+
+
+   Compared with AdaBlock [Lu et al., 2025], DCD achieves                methods. We attribute these regressions to the inherent
+better performance (average metric improvements of +0.28%                stochasticity of training-free decoding and the intrinsic dif-
+for LLaDA-8B-Instruct and +1.20% for Dream-v0-Base-7B)                   ficulty of certain tokens, which may remain ambiguous even
+and substantial speedups (average decoding time reductions               with extended context.
+of 19% and 71%, respectively), demonstrating the effective-
+ness of the deferred commitment mechanism. Compared with                 6.3    Evidence of BICT Mitigation
+dKV-Cache-Greedy [Ma et al., 2025], DCD substantially out-               Figure 3 provides direct evidence that DCD mitigates
+performs it in terms of accuracy, despite employing a similar            Boundary-Induced Context Truncation. We visualize the
+KV-cache strategy. Compared with CCD [Chen et al., 2025],                distribution of decoding confidence on the GSM8K bench-
+which uses a custom cache to store historical data, the best             mark for LLaDA-8B-Instruct, Dream-v0-Base-7B, and Fast-
+results of DCD surpass it by 1.90% on average. More impor-               dLLM-v2-7B. GSM8K is selected because it is the largest
+tantly, DCD outperforms Prophet [Li et al., 2025] by a large             benchmark and exhibits the most stable improvements under
+margin because the latter algorithm contradicts DCD by per-              DCD.
+forming early decoding, which substantially degrades DLMs’                  Across all models, DCD substantially reduces the fre-
+inference performance.                                                   quency of extremely low-certainty decoding steps compared
+   We note that in a small number of cases, DCD performs                 to block-based or sub-block-based decoding. Such low-
+slightly worse than (sub-)block-based decoding and other                 certainty events directly reflect the BICT phenomenon that
+Figure 4: Ablation studies. We vary smax , sinit , and τ , and evaluate task accuracy and decoding time on LLaDA-8B-Instruct on the MATH500
+task with dual-cache DCD.
+
+
+DCD is designed to address. This reduction provides a clear            of 1.14%, as expected. This is because NBDiff’s training data
+explanation for the observed accuracy improvements, partic-            includes generation slots of varying block sizes. In contrast,
+ularly on reasoning-intensive tasks.                                   Fast-dLLM-v2 is trained with a fixed block size of B = 32,
+                                                                       and thus fails to benefit from DBE, instead suffering a 1.30%
+6.4   Ablation Studies                                                 drop in metrics. Overall, we suggest that semi-causal DLMs
+Figure 4 presents ablation studies on LLaDA-8B-Instruct                should be trained with variable block sizes to mitigate the
+evaluated on MATH500 with dual cache enabled, analyzing                BICT problem and enable the DBE mechanism.
+the impact of three key hyperparameters in DCD: the maxi-
+mum window size smax , the initial window size sinit , and the         Table 2: Experimental results for DBE-patched DCD. The com-
+certainty threshold τ .                                                parison baselines are vanilla DCD without cache for two models.
+
+Effect of smax . The maximum window size determines the                          Item             NBDiff          Fast-dLLM-v2
+upper bound of contextual expansion. When smax = 32,                          HumanEval          83.5+1.8            58.5−4.3
+the window is constrained to the baseline block size, limiting                  MBPP             80.9+0.7            47.2−1.4
+DCD’s ability to mitigate BICT. When smax = 512 (equiva-                      MATH500            86.2+1.8            54.0+0.6
+lent to removing the upper bound given L = 512), accuracy                      GSM8K             90.9−0.4            78.4+0.5
+degrades due to diluted contextual relevance. Decoding time
+                                                                                IFEval           58.4+1.8            62.1−1.9
+does not exhibit a consistent monotonic trend with respect to
+smax , as the window rarely expands to its maximum in prac-                   Avg. Metric       79.98+1.14          60.04−1.30
+tice.                                                                            Time          604526+14.9%        10757+6.3%
+Effect of sinit . The initial window size controls early decod-
+ing behavior. Setting sinit = 8 reduces the available context
+and may degrade performance, while sinit = 32 may lead                 7    Conclusion
+to excessively long windows, introducing premature commit-
+ments near the right boundary. The weak negative correlation           In this work, we investigate a fundamental limitation of
+between sinit and decoding time may result from increased              block-based diffusion decoding for language models, which
+parallelism enabled by larger windows.                                 we formalize as Boundary-Induced Context Truncation.
+                                                                       We identify suboptimal token commitment—whereby to-
+Effect of τ . The certainty threshold regulates how aggres-            kens that would otherwise benefit from nearby future context
+sively tokens are deferred. Accuracy improves as τ increases           are forced to commit at block boundaries—leading to low-
+from lower values but degrades when τ = 1 (i.e., top-1 con-            certainty predictions and degraded generation quality. To ad-
+fidence decoding), as this setting becomes fully deterministic         dress this issue, we propose Deferred Commitment Decod-
+and loses flexibility. In contrast to window parameters, τ ex-         ing, a simple, training-free decoding strategy that replaces
+hibits a clearer positive correlation with decoding time.              fixed block boundaries with sliding windows. By defer-
+   Overall, accuracy exhibits a clear unimodal trend as smax ,         ring uncertain tokens until sufficient context becomes avail-
+sinit , and τ increase in this setting. Based on these ablation re-    able, DCD enables more effective utilization of local bidi-
+sults, we select appropriate hyperparameters and apply them            rectional context without sacrificing KV-cache compatibility.
+consistently across all experiments.                                   Extensive experiments across multiple DLMs, benchmarks,
+                                                                       and caching configurations demonstrate that DCD consis-
+6.5   The Effects of Dynamic Block Extention                           tently improves generation accuracy by 1.73% on average
+Table 2 reports the performance of DBE-patched DCD across              with comparable decoding time relative to fixed block-based
+five benchmarks for semi-causal DLMs. Despite minimal                  baselines, with the maximum improvement reaching 16.5%.
+computational overhead, NBDiff consistently benefits from              These results demonstrate the superiority of DCD for DLM
+DBE across various tasks, achieving an average improvement             inference.
+References                                                       [Fu et al., 2025] Hengyu Fu, Baihe Huang, Virginia Adams,
+[Arriola et al., 2025] Marianne Arriola, Aaron Gokaslan,            Charles Wang, Venkat Srinivasan, and Jiantao Jiao.
+   Justin T Chiu, Zhihan Yang, Zhixuan Qi, Jiaqi Han, Sub-          From bits to rounds: Parallel decoding with explo-
+   ham Sekhar Sahoo, and Volodymyr Kuleshov. Block dif-             ration for diffusion language models. arXiv preprint
+   fusion: Interpolating between autoregressive and diffusion       arXiv:2511.21103, 2025.
+   language models. arXiv preprint arXiv:2503.09573, 2025.       [Gong et al., 2022] Shansan Gong, Mukai Li, Jiangtao Feng,
+[Austin et al., 2021a] Jacob Austin, Daniel D Johnson,             Zhiyong Wu, and LingPeng Kong. Diffuseq: Sequence
+   Jonathan Ho, Daniel Tarlow, and Rianne Van Den Berg.            to sequence text generation with diffusion models. arXiv
+   Structured denoising diffusion models in discrete state-        preprint arXiv:2210.08933, 2022.
+   spaces. Advances in neural information processing sys-        [Gong et al., 2024] Shansan Gong, Shivam Agarwal, Yizhe
+   tems, 34:17981–17993, 2021.                                     Zhang, Jiacheng Ye, Lin Zheng, Mukai Li, Chenxin An,
+[Austin et al., 2021b] Jacob Austin, Augustus Odena,               Peilin Zhao, Wei Bi, Jiawei Han, et al. Scaling diffusion
+   Maxwell Nye, Maarten Bosma, Henryk Michalewski,                 language models via adaptation from autoregressive mod-
+   David Dohan, Ellen Jiang, Carrie Cai, Michael Terry,            els. arXiv preprint arXiv:2410.17891, 2024.
+   Quoc Le, et al. Program synthesis with large language
+                                                                 [Hendrycks et al., 2020] Dan Hendrycks, Collin Burns,
+   models. arXiv preprint arXiv:2108.07732, 2021.
+                                                                   Steven Basart, Andy Zou, Mantas Mazeika, Dawn Song,
+[Bie et al., 2025] Tiwei Bie, Maosong Cao, Kun Chen, Lun           and Jacob Steinhardt. Measuring massive multitask lan-
+   Du, Mingliang Gong, Zhuochen Gong, Yanmei Gu, Jiaqi             guage understanding. arXiv preprint arXiv:2009.03300,
+   Hu, Zenan Huang, Zhenzhong Lan, et al. Llada2.0: Scal-          2020.
+   ing up diffusion language models to 100b. arXiv preprint
+   arXiv:2512.15745, 2025.                                       [Ho et al., 2020] Jonathan Ho, Ajay Jain, and Pieter Abbeel.
+[Chen et al., 2021] Mark Chen, Jerry Tworek, Heewoo Jun,           Denoising diffusion probabilistic models. Advances in
+                                                                   neural information processing systems, 33:6840–6851,
+   Qiming Yuan, Henrique Ponde de Oliveira Pinto, Jared
+                                                                   2020.
+   Kaplan, Harri Edwards, Yuri Burda, Nicholas Joseph,
+   Greg Brockman, Alex Ray, Raul Puri, Gretchen Krueger,         [Li et al., 2022] Xiang Li, John Thickstun, Ishaan Gulrajani,
+   Michael Petrov, Heidy Khlaaf, Girish Sastry, Pamela              Percy S Liang, and Tatsunori B Hashimoto. Diffusion-lm
+   Mishkin, Brooke Chan, Scott Gray, Nick Ryder, Mikhail            improves controllable text generation. Advances in neural
+   Pavlov, Alethea Power, Lukasz Kaiser, Mohammad Bavar-            information processing systems, 35:4328–4343, 2022.
+   ian, Clemens Winter, Philippe Tillet, Felipe Petroski Such,   [Li et al., 2025] Pengxiang Li, Yefan Zhou, Dilxat Muhtar,
+   Dave Cummings, Matthias Plappert, Fotios Chantzis, Eliz-
+                                                                    Lu Yin, Shilin Yan, Li Shen, Yi Liang, Soroush Vosoughi,
+   abeth Barnes, Ariel Herbert-Voss, William Hebgen Guss,
+                                                                    and Shiwei Liu. Diffusion language models know the an-
+   Alex Nichol, Alex Paino, Nikolas Tezak, Jie Tang, Igor
+                                                                    swer before decoding. arXiv preprint arXiv:2508.19982,
+   Babuschkin, Suchir Balaji, Shantanu Jain, William Saun-
+                                                                    2025.
+   ders, Christopher Hesse, Andrew N. Carr, Jan Leike, Josh
+   Achiam, Vedant Misra, Evan Morikawa, Alec Radford,            [Lightman et al., 2023] Hunter Lightman, Vineet Kosaraju,
+   Matthew Knight, Miles Brundage, Mira Murati, Katie               Yuri Burda, Harrison Edwards, Bowen Baker, Teddy
+   Mayer, Peter Welinder, Bob McGrew, Dario Amodei, Sam             Lee, Jan Leike, John Schulman, Ilya Sutskever, and Karl
+   McCandlish, Ilya Sutskever, and Wojciech Zaremba. Eval-          Cobbe. Let’s verify step by step. In The Twelfth Interna-
+   uating large language models trained on code. arXiv              tional Conference on Learning Representations, 2023.
+   preprint arXiv:2107.03374, 2021.                              [Liu et al., 2025] Yangzhou Liu, Yue Cao, Hao Li, Gen Luo,
+[Chen et al., 2025] Kecheng Chen, Ziru Liu, Xijia Tao, Hui          Zhe Chen, Weiyun Wang, Xiaobo Liang, Biqing Qi, Lijun
+   Liu, Xinyu Fu, Suiyun Zhang, Dandan Tu, Lingpeng                 Wu, Changyao Tian, et al. Sequential diffusion language
+   Kong, Rui Liu, and Haoliang Li. Beyond confidence:               models. arXiv preprint arXiv:2509.24007, 2025.
+   Adaptive and coherent decoding for diffusion language
+                                                                 [Lu et al., 2025] Guanxi Lu, Hao Mark Chen, Yuto
+   models. arXiv preprint arXiv:2512.02044, 2025.
+                                                                   Karashima, Zhican Wang, Daichi Fujiki, and Hongx-
+[Cobbe et al., 2021] Karl Cobbe, Vineet Kosaraju, Moham-           iang Fan. Adablock-dllm: Semantic-aware diffusion
+   mad Bavarian, Mark Chen, Heewoo Jun, Lukasz Kaiser,             llm inference via adaptive block size. arXiv preprint
+   Matthias Plappert, Jerry Tworek, Jacob Hilton, Reiichiro        arXiv:2509.26432, 2025.
+   Nakano, et al. Training verifiers to solve math word prob-
+   lems. arXiv preprint arXiv:2110.14168, 2021.                  [Ma et al., 2025] Xinyin Ma, Runpeng Yu, Gongfan Fang,
+[Devlin et al., 2019] Jacob Devlin, Ming-Wei Chang, Ken-           and Xinchao Wang. dkv-cache: The cache for diffusion
+                                                                   language models. arXiv preprint arXiv:2505.15781, 2025.
+   ton Lee, and Kristina Toutanova. Bert: Pre-training of
+   deep bidirectional transformers for language understand-      [Monsefi et al., 2025] Amin Karimi Monsefi, Nikhil Bhen-
+   ing. In Proceedings of the 2019 conference of the North         dawade, Manuel Rafael Ciosici, Dominic Culver, Yizhe
+   American chapter of the association for computational lin-      Zhang, and Irina Belousova. Fs-dfm: Fast and accu-
+   guistics: human language technologies, volume 1 (long           rate long text generation with few-step diffusion language
+   and short papers), pages 4171–4186, 2019.                       models. arXiv preprint arXiv:2509.20624, 2025.
+[Nie et al., 2025] Shen Nie, Fengqi Zhu, Zebin You, Xiaolu
+   Zhang, Jingyang Ou, Jun Hu, Jun Zhou, Yankai Lin, Ji-
+   Rong Wen, and Chongxuan Li. Large language diffusion
+   models. arXiv preprint arXiv:2502.09992, 2025.
+[Piskorz et al., 2025] Julianna Piskorz, Cristina Pinneri, Al-
+   varo Correia, Motasem Alfarra, Risheek Garrepalli, and
+   Christos Louizos. Masks can be distracting: On con-
+   text comprehension in diffusion language models. arXiv
+   preprint arXiv:2511.21338, 2025.
+[Rein et al., 2024] David Rein, Betty Li Hou, Asa Cooper
+   Stickland, Jackson Petty, Richard Yuanzhe Pang, Julien
+   Dirani, Julian Michael, and Samuel R Bowman. Gpqa:
+   A graduate-level google-proof q&a benchmark. In First
+   Conference on Language Modeling, 2024.
+[Sahoo et al., 2024] Subham Sahoo, Marianne Arriola, Yair
+   Schiff, Aaron Gokaslan, Edgar Marroquin, Justin Chiu,
+   Alexander Rush, and Volodymyr Kuleshov. Simple and
+   effective masked diffusion language models. Advances
+   in Neural Information Processing Systems, 37:130136–
+   130184, 2024.
+[Tian et al., 2025] Yuchuan Tian, Yuchen Liang, Jiacheng
+   Sun, Shuo Zhang, Guangwen Yang, Yingte Shu, Sibo
+   Fang, Tianyu Guo, Kai Han, Chao Xu, et al. From next-
+   token to next-block: A principled adaptation path for dif-
+   fusion llms. arXiv preprint arXiv:2512.06776, 2025.
+[Wu et al., 2025a] Chengyue Wu, Hao Zhang, Shuchen Xue,
+   Shizhe Diao, Yonggan Fu, Zhijian Liu, Pavlo Molchanov,
+   Ping Luo, Song Han, and Enze Xie. Fast-dllm v2: Efficient
+   block-diffusion llm. arXiv preprint arXiv:2509.26328,
+   2025.
+[Wu et al., 2025b] Chengyue Wu, Hao Zhang, Shuchen Xue,
+   Zhijian Liu, Shizhe Diao, Ligeng Zhu, Ping Luo, Song
+   Han, and Enze Xie. Fast-dllm: Training-free acceleration
+   of diffusion llm by enabling kv cache and parallel decod-
+   ing. arXiv preprint arXiv:2505.22618, 2025.
+[Xu et al., 2024] Minkai Xu, Tomas Geffner, Karsten Kreis,
+   Weili Nie, Yilun Xu, Jure Leskovec, Stefano Ermon, and
+   Arash Vahdat. Energy-based diffusion language mod-
+   els for text generation. arXiv preprint arXiv:2410.21357,
+   2024.
+[Ye et al., 2025] Jiacheng Ye, Zhihui Xie, Lin Zheng, Jiahui
+   Gao, Zirui Wu, Xin Jiang, Zhenguo Li, and Lingpeng
+   Kong. Dream 7b: Diffusion large language models. arXiv
+   preprint arXiv:2508.15487, 2025.
+[Zhou et al., 2023] Jeffrey Zhou, Tianjian Lu, Swaroop
+   Mishra, Siddhartha Brahma, Sujoy Basu, Yi Luan, Denny
+   Zhou, and Le Hou. Instruction-following evaluation for
+   large language models. arXiv preprint arXiv:2311.07911,
+   2023.
+    A       Experimental Environment                                    the sliding window incorporates sufficient contextual infor-
+                                                                        mation, such as “res.append”. Consequently, the model cor-
+    Hardware. For comparison experiments between (sub-
+                                                                        rectly decodes the second occurrence of “res” and success-
+    )block-based decoding and DCD on LLaDA-8B-Instruct,
+                                                                        fully passes all test cases.
+    Dream-v0-Base-7B, and Fast-dLLM-v2-7B, we allocate one
+    NVIDIA A100 80GB GPU and eight Intel(R) Xeon(R) Plat-
+    inum 8358 CPUs for each experiment. For AdaBlock and                C     Details about Main Experiments
+    NBDiff experiments, we allocate one NVIDIA A800 GPU                 C.1     lm eval harness Part
+    and sixteen Intel(R) Xeon(R) Platinum 8378A CPUs for each
+    experiment.                                                         For LLaDA-8B-Instruct, Dream-v0-Base-7B and Fast-
+                                                                        dLLM-v2-7B, we use lm-eval-harness 0.4.8 and the code-
+    Software. We use Ubuntu Linux, CUDA 12, and Python                  cleaning suite in the Fast-dLLM codebase. Specifically:
+    3.10 for all experiments. For LLaDA-8B-Instruct, Dream-                 • For HumanEval, we use 0-shot pass@1 as the eval-
+    v0-Base-7B, and Fast-dLLM-v2-7B, we follow their original                 uation metric. For code cleaning, we concatenate
+    papers and use lm-eval-harness as the evaluation suite.                   the prompt and the generated output, remove possible
+    For NBDiff, we use opencompass as the evaluation suite.                   “‘python ... “‘ blocks, and extract the function based on
+                                                                              Python syntax trees. No prompt engineering is applied
+    B       More Details about BICT Case Study                                in this setting.
+    Figure 2 in main paper illustrates the BICT phenomenon                  • For MBPP, we use 3-shot pass@1 as the evaluation met-
+    in block-based decoding. This example corresponds to                      ric. The code-cleaning logic is the same as that for Hu-
+    the 129th test case of the MBPP benchmark, generated by                   manEval. Prompt engineering and the few-shot mecha-
+    Dream-v0-Instruct-7B without any caching. The prompt for                  nism are automatically handled by the lm-eval-harness
+    this task is: “Write a function to extract elements that occur            library.
+    singly in the given tuple list.” The test cases are:                    • For MATH500, we use 0-shot accuracy as the evaluation
+                                                                              metric, with simple chain-of-thought reasoning prompts
+1   assert extract_singly([(3, 4, 5), (4, 5, 7),
+        (1, 4)]) == [3, 4, 5, 7, 1]
+                                                                              as the default. The cleaning logic extracts the boxed an-
+2   assert extract_singly([(1, 2, 3), (4, 2, 3),                              swer and simplifies the mathematical expression.
+        (7, 8)]) == [1, 2, 3, 4, 7, 8]
+3   assert extract_singly([(7, 8, 9), (10, 11,                                You are a math expert. You will be given
+        12), (10, 11)]) == [7, 8, 9, 10, 11, 12]                                  a question to solve. Solve it step
+                                                                                  by step. Wrap the final answer in a
+                                                                                  \\boxed{}.
+          The incorrect code generated by the block-based method              Respond in the following format:
+    is:                                                                       <reasoning>
+                                                                              Your reasoning here
+1   def extract_singly(test_tup):                                             </reasoning>
+2     res = []                                                                <answer>
+3     for tup in test_tup:                                                    boxed{...}
+4       for i in tup:                                                         </answer>
+5         if i not in tup:                                                    {{text}}
+6           res.append(i)
+7     return res
+
+       The error occurs at decoding step 21, as illustrated in the          • For GSM8K, we use 5-shot accuracy as the evalua-
+    left part of Figure 2. The ⟨MASK⟩ at a critical position (the             tion metric, corresponding to the “exact match,flexible-
+    rightmost token of line 5) is adjacent to the first block bound-          extract” value reported in the lm-eval-harness result
+    ary and suffers from truncated context. As a result, it is in-            files. All other settings follow the default configuration.
+    correctly decoded as ”tup” with low confidence.                         • For IFEval,        we use 0-shot accuracy as
+       The correct code generated by the DCD method is:                       the evaluation metric,          corresponding to the
+                                                                              “prompt level strict acc,none” value reported in
+1   def extract_singly(test_tup):                                             the lm-eval-harness result files. All other settings follow
+2     res = []                                                                the default configuration.
+3     for tup in test_tup:
+4       for num in tup:                                                 Notably, we do not use any stop words (e.g., “[DONE]” in the
+5         if num not in res:                                            default MBPP configuration) in any experiments. This choice
+6           res.append(num)                                             may lead to degraded performance for Dream-v0-Base-7B on
+7     return res                                                        these tasks, as unaligned models often struggle to terminate
+                                                                        generation appropriately and may produce extraneous content
+       The critical decoding step 23 is illustrated in the right part   after completing the task. However, this setting is applied
+    of Figure 2. The DCD algorithm successfully resolves this           consistently across all experiments in this paper, ensuring fair
+    issue by deferring the decoding of the critical ⟨MASK⟩ until        comparisons.
+C.2    OpenCompass Part                                           in each experiment. The results show that the DCD algorithm
+For NBDiff, we use zero-shot evaluation with simple or            mitigates the BICT phenomenon by significantly reducing the
+no prompt engineering, as detailed below. The scoring             number of low-certainty decoding steps, thereby improving
+logic is entirely based on https://github.com/open-compass/       performance.
+opencompass. These configurations are identical to those in
+the original paper.
+                                                                  D.3    Other Efficiency Metrics
+                                                                  The wall-clock time reported earlier is highly dependent on
+    • HumanEval:                                                  hardware-specific environments and exhibits limited general-
+                                                                  ization. Therefore, we report two additional metrics to assess
+           Complete the following python code:
+           {{text}}
+                                                                  the algorithmic efficiency of each experiment:
+                                                                     • Average decoding steps. This metric measures the aver-
+                                                                       age number of decoding steps required to complete gen-
+    • MBPP:                                                            eration for prompts. It corresponds directly to the aver-
+                                                                       age number of forward propagations and constitutes the
+          You are an expert Python programmer,                         primary source of time consumption in DLM inference.
+          and here is your task: {{text}}                            • Average forward length. This metric measures the av-
+          Your code should pass these tests:                           erage number of tokens directly fed into the DLM for
+          {{test_list[0]}}
+                                                                       forward propagation. In some scenarios, certain tokens
+          {{test_list[1]}}                                             are cached and thus excluded from this count. Conse-
+          {{test_list[2]}}                                             quently, this metric is positively correlated with both
+          You should submit your final                                 time consumption and memory usage per decoding step.
+          solution in the following format:                          As shown in Table 5 and Table 6, the average decoding
+          ‘‘‘python
+                                                                  steps of DCD are slightly lower (-5.0% on average) than those
+           ‘‘‘                                                    of the (sub-)block-based baselines, indicating a modest effi-
+                                                                  ciency gain from its decoding strategy. Meanwhile, the av-
+                                                                  erage forward length under DCD is comparable (+6.0% on
+                                                                  average) to that of the baselines across all models and tasks.
+    • MATH500:                                                    Together, these results suggest that DCD incurs no additional
+                                                                  computational overhead—in fact, its total inference time is on
+          {{text}}
+          Please reason step by step, and put                     par with or slightly less than that of the (sub-)block-based ap-
+          your final answer within \\boxed{}.                     proaches, consistent with the wall-clock time measurements.
+
+
+
+    • GSM8K:
+          Question: {{text}}
+          Please reason step by step, and put
+          your final answer within \\boxed{}.
+
+
+
+    • IFEval: No additional prompt.
+
+D     More Statistics of Each Experiment
+D.1    Time Consumption
+To better understand the DCD method, we record the time
+consumption for each benchmark experiment. According to
+Table 3, DCD completes benchmarks in comparable—and
+even slightly less—time than the baseline method, demon-
+strating its efficiency relative to traditional approaches. For
+dKV-Cache-Greedy, CCD, and Prophet, we copy their statis-
+tics from the original papers, as their time consumption data
+are unavailable.
+
+D.2    Low-Certainty Decoding
+To better understand the BICT phenomenon, we collect the
+number of low-certainty (confidence < 0.3) decoding steps
+                       Table 3: Detailed time consumption for each experiment. (unit: seconds)
+
+  Model       Cache           Decoding             Humaneval          MBPP        MATH500        GSM8K    IFEval
+              None           Block-based               2128            7333           5958       18144    7187
+              None              DCD                    2027            7467           5702       18167    7382
+              Prefix         Block-based               1536            3778           4551       8584     6222
+LLaDA-8B
+              Prefix            DCD                    1565            3824           4478       8552     6384
+ -Instruct
+              Dual           Block-based               1289            2934           3594        6356    4444
+              Dual              DCD                    1252            2877           3620        6266    4486
+              Dual            AdaBlock                 1531            3934           3983        9350    4882
+              None           Block-based               1038            1688           5106       10186    5667
+              None              DCD                    986             1588           5000       10299    5576
+Dream-v0-     Prefix         Block-based               821             1022           3912       4922     4743
+Instruct-7B   Prefix            DCD                    783              948           3790       4844     4679
+              Dual           Block-based                477             587           2587        2807    2815
+              Dual              DCD                     470             586           2532        2879    2817
+              None           Block-based               1534            6777           5602       11681      -
+              None              DCD                    1209            6987           5231       9287       -
+              Prefix         Block-based               1177            3963           3943       5517       -
+Dream-v0-
+              Prefix            DCD                    1066            4053           3729       4435       -
+ base-7B
+              Dual           Block-based                717            2684           3594        3194      -
+              Dual              DCD                     658            2415           3620        2713      -
+              Dual            AdaBlock                 2243            7105           6432       26361      -
+              None        Sub-block-based               615            1566           2650        3285    3112
+              None             DCD                      561            1519           2253        2793    2990
+Fast-dLLM
+              Dual        Sub-block-based               670            1667           2428        3451    3163
+  -v2-7B
+              Dual             DCD                      598            1608           2339        2895    3058
+              None           Block-based                561            1487           2168        2831    2946
+ NBDiff       None               DCD                  35215           81001          179530      135040   95467
+                         Table 4: Low-certainty decoding steps of each experiment.
+
+  Model       Cache       Decoding            Humaneval          MBPP        MATH500       GSM8K   IFEval
+              None      Block-based                 57             214               366    161    7450
+              None         DCD                      52             177               284    129    6848
+LLaDA-8B      Prefix    Block-based                 67             220               370    184    7870
+ -Instruct    Prefix       DCD                      50             269               330    137    6975
+              Dual      Block-based                 88             333               538    242    8181
+              Dual         DCD                      82             245               421    155    7245
+              None      Block-based                181             43                473    588    7481
+              None         DCD                     165             45                395    579    7381
+Dream-v0-     Prefix    Block-based                193             66                508    647    7935
+Instruct-7B   Prefix       DCD                     159             54                446    640    7493
+              Dual      Block-based                227             75                689    746    8304
+              Dual         DCD                     196             59                565    702    7914
+              None      Block-based               1393            951            1213       9111     -
+              None         DCD                     353            631             888        601     -
+Dream-v0-     Prefix    Block-based               1414            1129           1408       8726     -
+ base-7B      Prefix       DCD                    399              878            899        683     -
+              Dual      Block-based               1499            1277           1477       6084     -
+              Dual         DCD                     471             971            894        791     -
+              None     Sub-block-based             244             701               292    805    5679
+              None          DCD                    184             604               158    160    4512
+Fast-dLLM
+              Dual     Sub-block-based             332             994               401    1119   6748
+  -v2-7B
+              Dual          DCD                    174             690               175    181    4751
+              None      Block-based                192             602               245    583    4861
+                           Table 5: Average decoding steps of each experiment.
+
+  Model       Cache       Decoding           Humaneval         MBPP         MATH500       GSM8K    IFEval
+              None      Block-based              161.4          108.1            154.4     86.0    197.1
+              None         DCD                   160.6          108.1            149.2     85.0    201.2
+LLaDA-8B      Prefix    Block-based              163.4          112.5            157.3     89.8    197.4
+ -Instruct    Prefix       DCD                   165.2          113.4            151.5     87.0    199.5
+              Dual      Block-based              174.9          118.5            168.4     95.0    195.9
+              Dual         DCD                   169.5          113.3            162.1     90.4    196.8
+              None      Block-based               88.5           28.0            150.1     55.7    176.7
+              None         DCD                    85.9           26.4            147.9     55.0    179.7
+Dream-v0-     Prefix    Block-based               88.1           28.8            152.0     56.5    172.5
+Instruct-7B   Prefix       DCD                    85.4           26.6            149.5     55.6    169.2
+              Dual      Block-based               86.0           30.0            161.2     57.6    164.1
+              Dual         DCD                    83.1           27.3            155.8     55.9    165.3
+              None      Block-based              129.7          120.2            169.9     64.9      -
+              None         DCD                   113.2          123.5            162.0     51.3      -
+Dream-v0-     Prefix    Block-based              132.8          130.1            160.8     65.8      -
+ base-7B      Prefix       DCD                   119.6          136.4            153.4     52.2      -
+              Dual      Block-based              132.5          138.3            163.2     68.1      -
+              Dual         DCD                   121.2          141.0            149.6     53.6      -
+              None     Sub-block-based           157.0          130.1            216.4    108.3    253.4
+              None          DCD                  143.9          124.1            196.7    92.5     243.9
+Fast-dLLM
+              Dual     Sub-block-based           157.9          136.9            224.5    112.7    258.2
+  -v2-7B
+              Dual          DCD                  143.2          121.8            198.0     94.5    246.4
+              None      Block-based              143.9          124.1            196.7     92.5    243.9
+ NBDiff       None          DCD                 4787.1          6185.1           7166.3   2573.3   3376.2
+                           Table 6: Average forward length of each experiment.
+
+  Model       Cache       Decoding           Humaneval         MBPP         MATH500      GSM8K    IFEval
+              None      Block-based              672.3          1259.9           674.6   1540.3   571.1
+              None         DCD                   672.5          1261.0           673.7   1540.9   571.1
+LLaDA-8B      Prefix    Block-based              317.4           416.5           347.0   504.3    354.9
+ -Instruct    Prefix       DCD                   312.9           410.4           345.1   506.9    366.2
+              Dual      Block-based               86.1           134.7            83.0    172.2    56.9
+              Dual         DCD                    88.8           139.0            81.5    180.8    72.8
+              None      Block-based              681.4          1234.7           667.9   1532.5   576.9
+              None         DCD                   685.0          1241.2           668.1   1531.1   576.6
+Dream-v0-     Prefix    Block-based              435.3           550.1           375.2   552.8    368.6
+Instruct-7B   Prefix       DCD                   436.4           572.6           373.3   560.2    383.3
+              Dual      Block-based               69.1           116.8            78.1    148.0    57.5
+              Dual         DCD                    70.0           152.0            78.1    163.8    69.0
+              None      Block-based              646.0          1203.3           646.9   1511.5     -
+              None         DCD                   646.6          1203.1           647.7   1513.3     -
+Dream-v0-     Prefix    Block-based              405.2           472.5           344.3   526.4      -
+ base-7B      Prefix       DCD                   415.4           470.3           344.2   558.9      -
+              Dual      Block-based               65.7           167.5            90.5    121.6     -
+              Dual         DCD                    71.2           170.6            90.2    152.6     -
+              None     Sub-block-based            32.9           37.3            32.6     41.2     32.2
+              None          DCD                   33.0           37.6            32.7     42.8     32.2
+Fast-dLLM
+              Dual     Sub-block-based            15.5           19.3            18.0     25.7     13.5
+  -v2-7B
+              Dual          DCD                   20.4           24.4            22.5     32.4     19.4
+              None      Block-based               33.0           37.6            32.7     42.8     32.2
+ NBDiff       None          DCD                   32.0           32.0            32.0     32.0     32.0
+

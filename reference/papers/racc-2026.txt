@@ -1,0 +1,1408 @@
+    RACC: Regret-Aware Confidence Calibration for Consistent Masked
+                     Discrete Diffusion Decoding
+
+                 Qinglin Zeng, Jusheng Zhang, Jing Yang, Ningyuan Liu, Keze Wang*
+                                       Sun Yat-sen University
+                                         Guangzhou, China
+
+
+
+                          Abstract                               for iterative self-correction—a capability funda-
+                                                                 mentally absent in AR models. In each forward
+        Masked Discrete Diffusion Models (MDMs)                  pass, the model re-examines the global context to
+        enable parallel generation via iterative refine-         reach an equilibrium of logical self-consistency
+        ment. However, we identify a critical de-
+                                                                 (Nie et al., 2024).
+        cisional mismatch. The MDM architecture
+        is inherently dynamic and capable of sens-
+                                                                    However, we observe a critical mismatch be-
+        ing context shifts. In contrast, prevailing de-          tween the underlying architecture of Masked Dif-
+        coding paradigms remain static and myopic.               fusion Models (MDMs) and their current decod-
+        They treat each denoising step as an isolated            ing paradigms. Prevailing sampling methods re-
+        snapshot, effectively discarding valuable tem-           main entrenched in the linear decoding logic of
+        poral feedback that signals logical conflicts.           AR models, treating each denoising step as an iso-
+        To bridge this gap, we propose Regret-Aware              lated, instantaneous inference. This paradigm as-
+        Confidence Calibration (RACC). This training-
+                                                                 sumes that the model can make optimal decisions
+        free framework aligns decoding decisions with
+        the model’s latent self-correction capabilities.         solely based on the current probability distribution.
+        RACC introduces a momentum anchor to track               Crucially, it overlooks a vital information source
+        confidence trajectories. When a token’s proba-           unique to dLLM decoding: while token confidence
+        bility drops abruptly below its historical trend,        in AR models is fixed once generated, confidence
+        the system triggers a "regret" signal. Un-               in dLLMs is a time-evolving variable that fluctu-
+        like expensive re-masking or lookahead search,           ates as new content is incorporated.
+        RACC utilizes this signal to proactively demote
+                                                                    Existing paradigms, such as confidence-based
+        unstable candidates. Extensive experiments
+        on reasoning benchmarks, such as HumanEval
+                                                                 sampling and Predictor-Corrector (PC) samplers,
+        and GSM8K, demonstrate that RACC signifi-                fail to escape this “linear” mindset, relying on lo-
+        cantly improves generation consistency. Cru-             cal decisions from current-step distributions while
+        cially, RACC achieves these gains with zero              ignoring temporal evolution features. Although
+        additional inference overhead, effectively bal-          re-masking methods (e.g., Re-MDM) attempt to
+        ancing decoding quality and efficiency.                  alleviate contextual contradictions via partial re-
+                                                                 construction, they not only neglect key temporal
+1       Introduction                                             dynamics but also introduce prohibitive computa-
+                                                                 tional overhead. Similarly, while Lookahead strate-
+Diffusion Language Models (dLLMs) have
+                                                                 gies mitigate logical conflicts through forward-path
+emerged as formidable competitors to the domi-
+                                                                 searching, they function as makeshift solutions that
+nant Autoregressive (AR) architectures, garnering
+                                                                 trade heavy computation for performance without
+significant attention for their superior bidirectional
+                                                                 addressing the fundamental misalignment between
+context awareness and potential for parallel gen-
+                                                                 the decoding paradigm and the model architecture.
+eration. Theoretically, the bidirectional attention
+                                                                    To activate the latent self-correction capabili-
+mechanism in dLLMs provides the model with
+                                                                 ties of dLLMs, we propose RACC (Regret-Aware
+a “global perspective,” enabling it to dynamically
+                                                                 Confidence Calibration). RACC leverages a “free
+evaluate the logical consistency of the entire se-
+                                                                 lunch” in the MDM inference process: the full-
+quence during each denoising step. This charac-
+                                                                 sequence logits that are automatically generated in
+teristic endows dLLMs with an inherent potential
+                                                                 each forward pass but typically discarded. RACC
+    *    Corresponding author.                                   transforms these misaligned temporal evolution sig-
+                                                            22656
+                    Findings of the Association for Computational Linguistics: ACL 2026, pages 22656–22672
+                                 July 2-7, 2026 ©2026 Association for Computational Linguistics
+nals into negative feedback to guide generation,          2025). This method calibrates raw confidence by in-
+thereby reshaping the open-loop sampling process          troducing position-wise (P ) and category-prior (C)
+into a Closed-loop Feedback System with self-             weights. Such improvements enhance generation
+monitoring capabilities.                                  quality without increasing sampling complexity.
+   Specifically, RACC introduces Momentum An-
+                                                          Limitations of Static Logic Despite these ad-
+chors to track the confidence trajectory of each
+                                                          vancements, such methods essentially adhere to a
+position in real-time. When bidirectional attention
+                                                          static sampling logic: they make selections based
+detects logical inconsistencies, previously stable
+                                                          solely on the instantaneous probability distribution
+confidence scores drop below their historical av-
+                                                          of the current step. However, instantaneous confi-
+erages. RACC identifies this drop as a “Regret”
+                                                          dence is often insufficient to fully characterize the
+signal. This signal is then operationalized as an
+                                                          robustness of a decision, as it ignores the temporal
+active conflict suppression mechanism: by apply-
+                                                          evolution of confidence across successive denois-
+ing a dynamic calibration penalty to candidates
+                                                          ing trajectories which may signal potential logical
+exhibiting high regret, they are naturally filtered
+                                                          conflicts.
+out during the Top-K selection. Under this closed-
+loop architecture, the model’s “reflection” on past       2.3   Iterative Refinement and Inference-time
+decisions imposes real-time constraints on future               Scaling
+sampling paths. Experimental results demonstrate
+                                                          To compensate for the deficiencies of static sam-
+that RACC significantly improves accuracy in logi-
+                                                          pling, recent studies have explored introducing ad-
+cal reasoning tasks with zero additional inference
+                                                          ditional computation during the inference stage to
+overhead, achieving a Pareto optimal balance be-
+                                                          trade for generation quality.
+tween decoding stability and execution efficiency.
+                                                          Explicit Remasking Methods represented by Re-
+2   Related Work                                          MDM (Wang et al., 2025a) allow the model to
+                                                          retract determined tokens and re-mask them during
+2.1 Masked Discrete Diffusion Models                      generation. However, the re-masking decisions
+Masked Discrete Diffusion Models (MDMs) gen-              in Re-MDM primarily rely on static confidence
+erate sequences by simulating a reverse denoising         scores assigned at the token’s “inception,” rather
+process, transitioning from a fully masked state to       than monitoring the continuous belief dynamics.
+the original text (Austin et al., 2021a; Lou et al.,
+                                                          Lookahead Search Strategies such as LookUM
+2023). Compared to traditional Autoregressive
+                                                          (Lee et al., 2025) verify current decisions by simu-
+(AR) models, the core advantage of MDMs lies
+                                                          lating multiple future generation paths. While ef-
+in their bidirectional attention architecture, which
+                                                          fective, the multi-path simulation incurs significant
+enables the capture of global dependencies during
+                                                          computational overhead. These methods typically
+each denoising iteration (Nie et al., 2025). Despite
+                                                          function as post-hoc corrections or expensive looka-
+their excellence in parallel generation, leveraging
+                                                          heads, leaving a gap for zero-overhead preventive
+this bidirectional capability to ensure logical consis-
+                                                          calibration mechanisms.
+tency during decoding remains an open challenge.
+                                                          2.4   Temporal Evolution in Diffusion
+2.2 Confidence-based Sampling and                               Trajectories
+    Calibration
+                                                          Recent research has begun to exploit the tempo-
+The most fundamental decoding method for MDMs             ral dimension of the generation process in MDMs,
+is Confidence-based Sampling. In this paradigm,           revealing that model predictions exhibit complex
+the sampler evaluates the instantaneous predicted         dynamical characteristics rather than simple linear
+probabilities for all [MASK] positions at each de-        convergence.
+noising step t and selects the K positions with the
+highest confidence to be filled.                          Temporal Oscillation and Post-hoc Aggregation.
+                                                          Wang et al. (2025b) uncovered the temporal os-
+PC-Sampler and Calibration Techniques To                  cillation phenomenon, wherein correct candidates
+rectify biases introduced by word frequency dispar-       frequently emerge during intermediate denoising
+ities and positional shifts in basic sampling, recent     stages but are subsequently overshadowed by er-
+research proposed the PC-Sampler (Huang et al.,           roneous late-stage predictions. To capture these
+                                                     22657
+“intermediate truths,” they proposed Temporal Self-            tion pθ (x0 |xt ) via a bidirectional attention mecha-
+Consistency Voting, which enhances accuracy                    nism. Unlike AR models, the predicted probability
+through weighted voting across intermediate pre-               P (xi |xt ) for each token xi evolves dynamically
+dictions within a single sampling trajectory.                  across different timesteps t. This property allows
+                                                               the model to utilize newly introduced context at
+Coherent Context and Trajectory Rectifica-                     step t to re-evaluate decisions made at step t + 1.
+tion. Addressing the unreliability of instanta-
+neous metrics, Coherent Contextual Decoding                    3.2     Instantaneous Inference Bias in MDM
+(CCD) (Chen et al., 2025) introduces a trajectory                      Decoding
+rectification mechanism. By maintaining a history
+                                                               Despite the bidirectional potential of the archi-
+buffer (Ht ) that stores recent prediction distribu-
+                                                               tecture, current parallel sampling paradigms (e.g.,
+tions, CCD identifies and rejects sampling paths
+                                                               PC-Sampler) suffer from instantaneous inference
+that exhibit temporal instability.
+                                                               bias. Formally, let Ct ⊂ {1, . . . , L} be the set of
+While these works recognize the significance of the            positions committed before step t. The decision
+temporal dimension, they primarily rely on post-               function D at step t relies solely on the current
+hoc processing (e.g., voting) or explicit, memory-             probability snapshot Pt :
+intensive history buffers. Crucially, the potential
+to operationalize these evolutionary signals into                             xt−1 = D(pθ (x0 |xt ))             (3)
+a proactive, real-time feedback loop remains
+largely unexplored. The field lacks a lightweight              This paradigm neglects the temporal gradient of
+paradigm that can activate this intrinsic self-                confidence. For a committed position i ∈ Ct+1 , if
+correction capability without the burden of ad-                the newly filled content at step t conflicts with xi ,
+ditional inference overhead.                                   the bidirectional attention will trigger a significant
+                                                               collapse in confidence:
+3   Methodology
+                                                                       ∆Pti = P (xi |xt ) − P (xi |xt+1 ) ≪ 0    (4)
+3.1 Probabilistic Modeling: AR vs. MDM
+To clarify the unique advantages of MDMs, we                   In traditional open-loop sampling, this signal re-
+first contrast the joint probability modeling of Au-           flecting logical dissonance is ignored because D
+toregressive (AR) models and Masked Diffusion                  lacks temporal memory. Consequently, the model
+Models (MDMs).                                                 is forced to continue generating within a spurious
+   AR models follow the chain rule, decomposing                context where conditional probabilities have plum-
+the probability of a sequence x = [x1 , . . . , xL ] into      meted, leading to error cascading.
+a product of unidirectional conditional probabili-
+ties:                                                          3.3     Regret-Aware Confidence Calibration
+                          YL                                           (RACC)
+              PAR (x) =       P (xi |x<i )            (1)
+                            i=1
+                                                               RACC reshapes the decoding process from a se-
+                                                               quence of instantaneous selections into a system of
+This decoding process is monotonic and irre-                   evolution monitoring through a temporal feedback
+versible; the confidence of the i-th token is fixed at         loop.
+the moment of generation, precluding any updates
+in subsequent steps.                                           3.3.1    Position-wise Momentum Tracking
+   In contrast, MDMs are defined over a denoising              To robustly quantify confidence fluctuations,
+trajectory xT , xT −1 , . . . , x0 . The inference pro-        RACC maintains a momentum anchor Eti for each
+cess is a gradual iteration over the variational dis-          position i in the sequence. Crucially, unlike track-
+tribution pθ (xt−1 |xt ):                                      ing specific token identities, Eti monitors the sta-
+                 Z                 T
+                                                               bility of the local belief state at position i. This
+                                   Y
+PM DM (x0 ) =             p(xT )         pθ (xt−1 |xt )dx1:T   prevents the "moving target" problem where legiti-
+                   x1:T            t=1
+                                                               mate hypothesis switching might be conflated with
+                                            (2)                regret. The anchor is updated via an Exponential
+At each sampling step t ∈ {T, . . . , 1}, the                  Moving Average (EMA) of the probability of the
+model predicts the global conditional distribu-                                             ∗ = argmax p (·|x ):
+                                                               locally optimal candidate wt,i              t    t
+
+                                                           22658
+                                               Iterative Denoising Timeline
+
+
+
+              t=T              ...                t             t                    t-1                     ...                  0
+
+
+
+
+                       Input Sequence
+                                                           Momentum Tracking & Regret Signal Detection
+
+
+
+                 … The [Mask] sat on the [Mask]. …
+
+
+
+
+
+                     Transformer Backbone
+
+
+                     (Frozen Pre-trained MDM)
+
+
+
+
+
+                                                                            Candidate Reranking
+
+                Instantaneous Probabilities
+
+                                                           Before RACC
+    Before RACC
+
+
+
+                                                             1.Token A
+       1.Token B
+
+
+                                                                                                      State Update
+                                                                              2.Token C
+
+
+                                                                               ...             … The cat sat on the [Mask]. …
+
+                                                                 ...
+                                                                 ...          ... Token A
+   Penalized
+
+
+
+
+
+                    Standard MDM Forward
+                      Regret-Aware Confidence Calibration 
+
+
+
+
+
+Figure 1: Overview of the RACC framework. RACC acts as a closed-loop system, monitoring confidence
+trajectories to detect Regret Signals (red shaded area). By dynamically penalizing unstable candidates (e.g., Token
+A), it actively steers the generation toward consistency without additional inference overhead.
+
+                                                                       stringent in the final stages to enforce strict logical
+       (                                                               coherence.
+                ∗ |x ),
+         pt (wt,i                           i
+                                          Et+1  =∅
+                    t
+Eti =                             ∗
+         βEt+1 + (1 − β)pt (wt,i |xt ), otherwise
+              i                                                        3.4 The Temporal Gatekeeper: Regret-Driven
+                                                 (5)                       Trajectory Reshaping
+where β ∈ [0, 1] is the momentum coefficient. This                     Unlike the fixed left-to-right decoding order in Au-
+anchor provides an adaptive reference frame: stable                    toregressive (AR) models, the decoding trajectory
+beliefs result in Eti ≈ pit , while sudden collapses                   of MDMs is dynamically determined by the con-
+in confidence (indicating logical conflict) manifest                   fidence ranking across all masked positions. We
+as pit ≪ Eti .                                                         leverage this property to introduce the Temporal
+3.3.2 Dynamic Regret Signal and Penalty                                Gatekeeper mechanism, which transforms RACC
+       Scheduling                                                      from a local calibration tool into a global trajectory
+We define the Regret Signal ∆it as the negative                        optimizer.
+deviation of the current instantaneous probability                     Mechanism. For each position i ∈ {1, . . . , L}
+from the historical momentum anchor:                                   in the [MASK] state, RACC calibrates the sampling
+                        ∗
+             ∆it = pt (wt,i          i
+                            |xt ) − Et+1                  (6)          score of its most probable candidate wi∗ . The cali-
+                                                                       brated score S̃ti is formally defined as:
+A significant negative ∆it indicates that the bidirec-                                                                  
+tional attention has detected a dissonance between                         S̃ti = pit (wi∗ ) · exp λt · min(0, ∆it + ϵ)   (7)
+the current context and the model’s prior belief
+                                                                       where ∆it is the regret signal captured in Section
+trajectory.
+                                                                       3.2, ϵ represents the tolerance threshold, and λt
+   To balance exploration and consistency, we
+                                                                       is the dynamic penalty intensity derived from the
+modulate the penalty intensity λt using a time-
+                                                                       schedule. This operator acts as a soft admission fil-
+dependent strategy. Instead of a fixed penalty, we
+                                                                       ter: it preserves the scores of tokens that maintain
+employ a cosine schedule where λt smoothly in-
+                                                                       temporal stability while exponentially suppressing
+creases from λmin to λmax as the denoising process
+                                                                       those exhibiting logical inconsistency.
+progresses (t → 0). This design ensures that the
+“Temporal Gatekeeper” remains permissive during                        Inter-position Re-ranking. While the calibra-
+early-stage hypothesis formation—where uncer-                          tion is computed locally, its primary impact mani-
+tainty is naturally high—but becomes increasingly                      fests in the global competition for commitment.
+                                                            22659
+In parallel sampling paradigms (e.g., LLaDA), the        ations with O(L) complexity for momentum track-
+set of positions Pt to be de-masked at step t is         ing.
+selected based on their relative confidence scores.         Compared to the O(L2 ) complexity of self-
+Formally:                                                attention and the massive parameter multiplications
+                                                       in Transformers, these scalar operations are com-
+        Pt = ArgTop-K {S̃ti | i ∈ Mt }         (8)       putationally invisible in practice. As verified in
+                                                         Section 4.3, RACC maintains the same wall-clock
+where Mt is the set of indices currently in the          throughput as the baseline sampler, effectively of-
+[MASK] state. By penalizing tokens with high tem-        fering a "free lunch" for decoding consistency.
+poral regret, RACC effectively demotes the global
+priority of logically unstable positions. This en-       4     Experiments
+sures that the limited budget of K tokens per step
+                                                         4.1    Pilot Study: Unveiling the Decisional
+is allocated only to positions where the model’s
+                                                                Mismatch
+bidirectional context has reached a consensus.
+                                                         Before evaluating the performance of RACC, we
+Regret-Driven Trajectory Reshaping. This                 first conduct a comprehensive pilot study to em-
+mechanism achieves what we term Regret-Driven            pirically verify the existence of the “decisional
+Trajectory Reshaping. Unlike explicit re-masking         mismatch” in MDM decoding. We analyze the
+methods that retract committed tokens, RACC im-          evolution of confidence from both qualitative and
+plements a preventive priority deferral strategy.        quantitative perspectives.
+Traditional samplers are often "greedy," commit-
+ting to high-confidence but logically premature to-      Qualitative Observation: Temporal Confidence
+kens that cause error cascading. In contrast, RACC       Collapse We visualize the confidence trajectories
+recognizes these "regretful" decisions before they       across denoising steps for a representative failed
+are finalized.                                           reasoning case using a spatiotemporal heatmap, as
+   By penalizing tokens that exhibit a high regret       shown in Figure 2. Vertical slices of the heatmap
+signal (∆it ≪ 0), the calibration term exp(·) acts       reveal a critical phenomenon: certain tokens are ini-
+as a ranking suppressor. It drastically reduces S̃ti ,   tially committed with high confidence; however, as
+causing logically unstable positions to plummet in       the bidirectional context becomes more complete
+the global priority list. Consequently, the sampler      in subsequent steps, their predictive probabilities
+is steered to bypass these high-risk regions in the      undergo a significant “post-commitment collapse.”
+current step, allowing other positions with stable,      This observation confirms that while the MDM’s in-
+coherent confidence trajectories to be prioritized       ternal architecture is capable of perceiving logical
+for filling. This strategic postponement empowers        conflicts via bidirectional attention, existing static
+the model to "pause" on contentious positions and        samplers lack the feedback mechanism to react to
+wait for more definitive global context to emerge in     these emergent signals.
+subsequent iterations, transforming dLLM decod-
+                                                         Quantitative: Regret as a Failure Predictor.
+ing from an instantaneous probabilistic selection
+                                                         We perform a statistical analysis on HumanEval
+into a globally coordinated, time-aware reasoning
+                                                         to quantify this phenomenon. Our results reveal
+process.
+                                                         two insights: (1) High Correlation with Failure.
+3.5 Complexity and Efficiency                            Regret signals are triggered in 57.6% of failed sam-
+                                                         ples, compared to only 40.6% in correct ones (30%
+RACC achieves superior logical robustness with           lower), indicating a strong link between internal
+negligible computational cost by adopting an in-         regret and logical inconsistency. (2) Signal Magni-
+formation reuse strategy.                                tude Disparity. The average intensity of regret in
+  Unlike inference-time scaling methods (e.g.,           erroneous samples is 1.1× higher than in correct
+Re-MDM) which require ∆T additional forward              ones, suggesting that logical contradictions induce
+passes, or Lookahead Search (e.g., LookUM)               a more profound internal “dissonance” than typical
+which multiplies FLOPs by a branching factor B,          generative variance.
+RACC utilizes the full-sequence logits inherently
+produced during the standard forward pass. The           Key Insight The gathered evidence highlights a
+extra computation involves only element-wise oper-       fundamental bottleneck: the model knows it has
+                                                    22660
+             0                                           1.0
+             9
+            18                                                 Implementation Details. We conduct experi-
+            27                                                 ments using the LLaDA-8B-Instruct and LLaDA-
+            36
+            45
+            54
+            63
+                                                         0.8   1.5 backbones. All evaluations are performed on
+            72                                                 a server with 8 × NVIDIA A100 (64GB) GPUs
+            81
+            90
+            99                                           0.6   using CUDA 12.7. To ensure a rigorous compari-
+           108
+
+Position
+           117                                                 son of inference efficiency, each task is executed
+           126
+           135
+           144                                                 on a single GPU in an isolated environment. For
+           153                                           0.4
+           162                                                 RACC, we set β = 0.8, [λmin , λmax ] = [1.0, 5.0],
+           171
+           180                                                 and ϵ = 0.08 as the default configuration.
+           189
+           198
+           207                                           0.2
+           216
+           225                                                 4.3   Main Results and Discussion
+           234
+           243
+           252                                           0.0
+               0
+               9
+              18
+              27
+              36
+              45
+              54
+              63
+              72
+              81
+              90
+              99
+             108
+             117
+             126
+             135
+             144                                               As shown in Table 1, RACC establishes a new
+                                                               state-of-the-art for MDM decoding across all tested
+             153
+                            Step
+             162
+             171
+             180
+             189
+             198
+             207
+             216
+             225
+             234
+             243
+             252
+                                                               backbones and benchmarks.
+   Figure 2: Confidence Evolution Heatmap. Green and
+   red denote high and low confidence, respectively. The       Superiority in Logical and Code Reasoning.
+   appearance of red streaks within initially stable (green)   The most striking performance leaps occur in code
+   regions highlights post-commitment probability col-
+                                                               generation tasks (HumanEval and MBPP). For in-
+   lapses, visually confirming the emergent logical regret
+   as global context evolves.                                  stance, on LLaDA-1.5, RACC achieves a Pass@1
+                                                               of 45.73% on HumanEval, nearly doubling the
+   erred, yet the sampler remains blind. This dis-             performance of the vanilla Confidence sampler
+   connect between internal feedback (regret signals)          (23.70%) and significantly outperforming the next
+   and external decision-making (static Top-K selec-           best method, LookUM (33.50%). Similarly, in
+   tion) serves as the primary driver of error cascad-         MBPP, RACC leads the second-best baseline by
+   ing. This observation provides the direct physical          a margin of over 5%. These results suggest that
+   motivation for our proposed RACC closed-loop                RACC’s closed-loop calibration is uniquely effec-
+   feedback mechanism.                                         tive at maintaining the long-range logical coher-
+                                                               ence required for algorithmic tasks.
+   4.2 Experimental Setup
+  Datasets and Metrics. We evaluate RACC on a                  Efficiency and Accuracy Pareto Frontier. A
+  diverse suite of reasoning-intensive benchmarks:             key takeaway is RACC’s ability to outperform
+  HumanEval (Chen, 2021) and MBPP (Austin                      “search-heavy” methods like LookUM without any
+  et al., 2021b) for code generation; GSM8K (Cobbe             additional computational cost. While LookUM
+  et al., 2021) and MATH (Hendrycks et al., 2021)              provides competitive results by simulating multi-
+  for mathematical reasoning; and Sudoku and                   ple future paths, RACC consistently surpasses it
+  Countdown for constrained symbolic reasoning.                in symbolic tasks like Countdown (e.g., 35.70%
+  We report Pass@1 accuracy for code and math                  vs 25.40% on 8B) and Sudoku. This proves that
+  tasks, and standard accuracy for symbolic tasks.             the internal bidirectional attention of dLLMs al-
+                                                               ready encodes sufficient signals for error detec-
+   Baselines. We benchmark RACC against six rep-               tion; RACC successfully activates this “latent’ self-
+   resentative decoding paradigms for MDMs: (1)                correction without the need for redundant forward
+   Confidence: The vanilla confidence-based sam-               passes.
+   pling; (2) Margin: A variation selecting tokens
+   based on the gap between the top two probabili-             Comparison with Static Calibration. Baseline
+   ties; (3) Entropy: A strategy utilizing predictive          methods such as Margin, Entropy, and PC-Sampler,
+   entropy to identify low-confidence positions; (4)           which rely on instantaneous probability distribu-
+   PC-Sampler (Huang et al., 2025): A method us-               tions, show limited gains or even performance
+   ing position and category priors for calibration; (5)       degradation in complex tasks like HumanEval.
+   Re-MDM (Wang et al., 2025a): An iterative refine-           This confirms our hypothesis in Section 4.1: instan-
+   ment approach with 5 explicit re-masking steps; (6)         taneous snapshots of confidence are insufficient
+   LookUM (Lee et al., 2025): A heavy-computation              to capture logical conflicts. By incorporating the
+   strategy using forward-path lookahead search.               temporal evolution of confidence via momentum
+                                                          22661
+Table 1: Main Results. Comparison of RACC against state-of-the-art decoding methods. Results are reported
+in Pass@1 (%) for code/math tasks and Accuracy (%) for others. Bold indicates the best performance among all
+methods.
+
+          Model          Method         HumanEval      GSM8K          MBPP      MATH      Sudoku        Countdown
+                         Confidence         32.00         76.70       28.40     32.40         23.80            20.30
+                         Margin             31.00         76.10       28.40     34.40         21.80            19.10
+                         Entropy            19.50         75.40       24.40     33.00         12.00            21.90
+          LLaDA-8B       PC-Sampler         30.50         73.70       25.20     32.40         23.20            26.50
+                         Re-MDM             29.30         77.90       28.40     33.00         15.40            25.30
+                         LookUM             35.90         79.30       36.20     34.60         25.00            25.40
+                         Ours (RACC)        44.51         79.76       47.31     34.80         25.80            35.70
+                         Confidence         23.70         79.40       38.60     32.60         27.40            23.40
+                         Margin             27.40         78.30       38.10     35.00         27.80            14.00
+                         Entropy            23.20         77.00       36.50     32.20         23.00            12.00
+          LLaDA-1.5      PC-Sampler         23.80         77.30       39.60     32.20         27.20            19.10
+                         Re-MDM             29.80         80.10       39.30     34.00         22.80            19.90
+                         LookUM             33.50         82.30       43.60     35.80         28.00            17.90
+                         Ours (RACC)        45.73         82.60       48.95     36.20         29.40            34.40
+
+
+Table 2: Efficiency Profile on HumanEval. Measured            We utilize LLaDA-8B-Instruct as the backbone
+on a single A100 (T = 256). We report Through-                with 64 total denoising steps. We treat the original
+put and Relative Latency in a unified column. RACC
+                                                              TSCV implementation as the Baseline and com-
+matches the baseline speed (17.76 vs 17.92 tok/s), while
+search-based methods exhibit significant real-world           pare it against the RACC-enhanced version. We
+slowdowns.                                                    report both the Final Accuracy (at the last step)
+                                                              and the Voting Accuracy (aggregated via TSCV) to
+ Method            NFE / Sample    Throughput (Latency)       demonstrate how RACC improves the quality of
+                     (Ratio)           tok/s (Relative)       the entire trajectory.
+ Confidence           256 (1.0×)       17.92 (1.00×)
+ PC-Sampler           256 (1.0×)       17.85 (1.00×)          Table 3: Synergy between RACC and Temporal Vot-
+ RACC (Ours)          256 (1.0×)       17.76 (1.01×)
+                                                              ing. We compare the performance of standard TSCV
+ Re-MDM (5-iter)      384 (1.5×)       12.97 (1.38×)          when applied to vanilla trajectories (Baseline) vs. tra-
+ LookUM (k=2)         512 (2.0×)       11.43 (1.57×)          jectories calibrated by RACC. Dark green values de-
+                                                              note absolute improvements over the respective baseline.
+                                                              RACC consistently elevates the voting performance up-
+anchors, RACC provides a much more robust dis-                per bound.
+criminative signal for high-quality generation.
+                                                                  Dataset   Method             Final Acc (%)       Vote Acc (%)
+4.3.1 Synergy with Global Temporal
+                                                                            Baseline (TSCV)      67.70                 69.60
+         Aggregation                                              GSM8K
+                                                                            RACC + TSCV          68.23 +0.53           70.20 +0.60
+Recent research has identified the “temporal os-                  SVAMP
+                                                                            Baseline (TSCV)      82.00                 83.33
+                                                                            RACC + TSCV          82.67 +0.67           84.67 +1.34
+cillation” phenomenon in MDMs, where correct
+answers frequently emerge during intermediate                               Baseline (TSCV)      27.80                 28.60
+                                                                  MATH
+                                                                            RACC + TSCV          28.80 +1.00           29.40 +0.80
+denoising steps but are subsequently overwritten
+by erroneous late-stage predictions. To address
+                                                              Analysis: RACC as a Trajectory Optimizer.
+this, Wang et al. (2025b) proposed Temporal Self-
+                                                              As shown in Table 3, the integration of RACC
+Consistency Voting (TSCV), a post-hoc strategy
+                                                              consistently yields performance gains across all
+that selects the final output by aggregating predic-
+                                                              datasets. This synergy stems from two key factors.
+tions {xt0 }Tt=1 across the sampling trajectory. In
+                                                              First, optimizing the signal source. The effec-
+this section, we investigate whether RACC, as a
+                                                              tiveness of TSCV relies on correct intermediate
+real-time interceptor, provides complementary ben-
+                                                              predictions. By suppressing logically inconsistent
+efits to such global voting mechanisms.
+                                                              tokens in real-time, RACC ensures that more inter-
+Experimental Setup. We evaluate the synergy                   mediate steps {xt0 } stay within the correct reason-
+between RACC and TSCV on three reasoning                      ing manifold, providing a higher-quality "source"
+benchmarks: GSM8K, SVAMP, and MATH500.                        for voting. Second, robustness against oscilla-
+                                                          22662
+                   46
+                         (a) Momentum Coefficient               This gap empirically validates that tracking the his-
+                                                                torical trajectory via momentum allows for more
+
+
+
+      Pass@1 (%)
+                                                                accurate regret detection than immediate snapshots.
+                   45                                           (b) Penalty Schedule λ (Impact of Dynamic
+                                                                Gating): We compare different intensity ranges
+                   44                                           [λmin , λmax ] for the cosine schedule. The results
+                                                                show that moderate penalty ranges (e.g., [1.0, 5.0])
+                        0.0    0.2   0.4   0.6   0.8   1.0      yield optimal performance. Ranges that are too
+               46.0
+                         (b) Penalty Schedule Range             aggressive (e.g., [3.0, 10.0]) cause a performance
+                                                                drop (45.73% → 45.12%), indicating that over-
+
+
+  Pass@1 (%)
+               45.5                                             penalizing high-entropy positions hinders valid ex-
+                                                                ploration. This supports our design of using a
+               45.0                                             dynamic schedule to balance early-stage diversity
+                                                                with late-stage consistency.
+               44.5                                             (c) Tolerance Threshold ϵ (Robustness to Noise):
+                         0.5-2.0 1.0-5.0 2.0-8.0 3.0-10.0       Higher thresholds (ϵ ∈ [0.08, 0.10]) outperform
+               46.0
+                          (c) Tolerance Threshold               lower ones (ϵ ≈ 0.0). This indicates that the "Gate-
+               45.5                                             keeper" mechanism benefits from being lenient to-
+
+
+  Pass@1 (%)
+                                                                wards minor probability fluctuations (noise), inter-
+               45.0                                             vening only when significant confidence collapses
+               44.5                                             signal a true logical conflict.
+               44.0                                             5    Conclusion
+                        0.00 0.02 0.04 0.06 0.08 0.10
+                              Hyperparameter Value              In this work, we revisited the decoding paradigm
+Figure 3: Parameter Sensitivity Analysis. We investi-           of Masked Discrete Diffusion Models, identifying
+gate the impact of (a) momentum β, (b) penalty schedule         a critical decisional mismatch: while the model ar-
+ranges, and (c) regret threshold ϵ on HumanEval per-            chitecture is bidirectional and dynamic, the prevail-
+formance. The results demonstrate a robust operating            ing sampling strategies remain static and myopic.
+window for RACC.
+                                                                To bridge this gap, we introduced Regret-Aware
+                                                                Confidence Calibration (RACC), a training-free
+tion. While TSCV helps recover correct answers
+                                                                framework that operationalizes the model’s internal
+lost to oscillation, RACC proactively reduces the
+                                                                “regret” signals into a real-time feedback mecha-
+occurrence of such oscillations by penalizing "re-
+                                                                nism.
+gretful" paths. The fact that the voting accuracy in-
+                                                                   Unlike prior approaches that rely on computa-
+creases—reaching 84.67% on SVAMP—confirms
+                                                                tionally expensive lookahead search or explicit re-
+that RACC and TSCV are orthogonal and comple-
+                                                                masking, RACC achieves implicit trajectory re-
+mentary.
+                                                                planning with zero inference overhead. Our ex-
+4.4 Ablation Study and Analysis                                 tensive experiments demonstrate that RACC not
+                                                                only establishes new state-of-the-art performance
+To verify the contribution of RACC’s core com-                  across logic-intensive benchmarks but also acts as
+ponents and assess its robustness, we analyze the               a robust “source optimizer” that synergizes effec-
+performance impact of varying three key hyperpa-                tively with post-hoc temporal aggregation strate-
+rameters on LLaDA-1.5 (HumanEval). As visual-                   gies.
+ized in Figure 3:                                                  Ultimately, our findings suggest a paradigm shift
+(a) Momentum Coefficient β (Impact of EMA):                     in diffusion decoding: moving from treating gen-
+The performance curve follows an inverted U-                    eration as a sequence of isolated, irreversible steps
+shape, confirming the necessity of long-term his-               to viewing it as a continuous, self-rectifying tem-
+tory tracking. Specifically, setting β = 0 reduces              poral trajectory. We hope RACC inspires future
+RACC to a local-only calibration (referencing only              research to further exploit the rich, latent temporal
+the previous step). While this still outperforms the            dynamics inherent in bidirectional attention mech-
+standard baseline (43.9% vs 23.7%), it lags behind              anisms.
+the EMA-enhanced version (β = 0.8, 45.73%).
+                                                             22663
+Limitations                                                Mark Chen. 2021. Evaluating large language models
+                                                            trained on code. arXiv preprint arXiv:2107.03374.
+While RACC demonstrates significant improve-
+ments in decoding consistency without additional           Karl Cobbe, Vineet Kosaraju, Mohammad Bavarian,
+overhead, several limitations warrant further inves-         Mark Chen, Heewoo Jun, Lukasz Kaiser, Matthias
+                                                             Plappert, Jerry Tworek, Jacob Hilton, Reiichiro
+tigation.                                                    Nakano, and 1 others. 2021. Training verifiers
+   First, RACC functions as a decisional filter              to solve math word problems. arXiv preprint
+rather than a creative generator; its efficacy is fun-       arXiv:2110.14168.
+damentally bounded by the backbone model’s inter-
+                                                           Abhimanyu Dubey, Abhinav Jauhri, Abhinav Pandey,
+nal awareness. If a model fails to exhibit any con-          Abhishek Kadian, Ahmad Al-Dahle, Aiesha Letman,
+fidence fluctuations (i.e., no regret signal) during         Akhil Mathur, Alan Schelten, Amy Yang, Angela
+logical collapses due to undertraining, RACC’s cal-          Fan, and 1 others. 2024. The llama 3 herd of models.
+ibration mechanism remains inactive (Wang et al.,            arXiv preprint arXiv:2407.21783.
+2025b).
+                                                           Zhengcong Fei, Mingyuan Fan, Changqian Yu, De-
+   Second, the optimal configuration of hyperpa-             bang Li, Youqiang Zhang, and Junshi Huang. 2024.
+rameters, such as the regret threshold ϵ and the             Dimba: Transformer-mamba diffusion models. arXiv
+penalty schedule λt , was empirically determined.            preprint arXiv:2406.01159.
+While we observed a robust operating window
+                                                           Yichao Fu, Xuewei Wang, Yuandong Tian, and Jiawei
+across several benchmarks, these heuristics may              Zhao. 2025. Deep think with confidence. arXiv
+require recalibration for radically different archi-         preprint arXiv:2508.15260.
+tectures or non-linguistic modalities.
+   Lastly, the effectiveness of RACC’s priority de-        Marjan Ghazvininejad, Omer Levy, Yinhan Liu, and
+                                                            Luke Zettlemoyer. 2019. Mask-predict: Parallel
+ferral is constrained by the remaining sampling
+                                                            decoding of conditional masked language models.
+budget. Should a regret signal emerge in the final          arXiv preprint arXiv:1904.09324.
+steps of the denoising process, the limited number
+of unfilled positions may restrict the sampler’s abil-     Zhibin Gou, Zhihong Shao, Yeyun Gong, Yelong
+ity to re-plan the reasoning trajectory effectively.         Shen, Yujiu Yang, Nan Duan, and Weizhu Chen.
+                                                             2023. Critic: Large language models can self-correct
+Future work could explore integrating RACC with              with tool-interactive critiquing. arXiv preprint
+explicit re-masking strategies to handle such late-          arXiv:2305.11738.
+stage logical conflicts.
+                                                           Dan Hendrycks, Collin Burns, Saurav Kadavath, Akul
+                                                             Arora, Steven Basart, Eric Tang, Dawn Song, and Ja-
+                                                             cob Steinhardt. 2021. Measuring mathematical prob-
+References                                                   lem solving with the math dataset. arXiv preprint
+Josh Achiam, Steven Adler, Sandhini Agarwal, Lama            arXiv:2103.03874.
+  Ahmad, Ilge Akkaya, Florencia Leoni Aleman,
+  Diogo Almeida, Janko Altenschmidt, Sam Altman,           Jie Huang, Xinyun Chen, Swaroop Mishra,
+  Shyamal Anadkat, and 1 others. 2023. Gpt-4 techni-          Huaixiu Steven Zheng, Adams Wei Yu, Xiny-
+  cal report. arXiv preprint arXiv:2303.08774.                ing Song, and Denny Zhou. 2023. Large language
+                                                              models cannot self-correct reasoning yet. arXiv
+Jacob Austin, Daniel D Johnson, Jonathan Ho, Daniel           preprint arXiv:2310.01798.
+  Tarlow, and Rianne Van Den Berg. 2021a. Structured
+   denoising diffusion models in discrete state-spaces.    Pengcheng Huang, Shuhao Liu, Zhenghao Liu, Yukun
+  Advances in neural information processing systems,         Yan, Shuo Wang, Zulong Chen, and Tong Xiao. 2025.
+   34:17981–17993.                                           Pc-sampler: Position-aware calibration of decoding
+                                                             bias in masked diffusion models. arXiv preprint
+Jacob Austin, Augustus Odena, Maxwell Nye, Maarten           arXiv:2508.13021.
+   Bosma, Henryk Michalewski, David Dohan, Ellen
+   Jiang, Carrie Cai, Michael Terry, Quoc Le, and 1 oth-   Adam Tauman Kalai and Santosh S Vempala. 2024.
+   ers. 2021b. Program synthesis with large language         Calibrated language models must hallucinate. In
+   models. arXiv preprint arXiv:2108.07732.                  Proceedings of the 56th Annual ACM Symposium on
+                                                             Theory of Computing, pages 160–171.
+Kecheng Chen, Ziru Liu, Xijia Tao, Hui Liu, Xinyu Fu,
+  Suiyun Zhang, Dandan Tu, Lingpeng Kong, Rui Liu,         Lorenz Kuhn, Yarin Gal, and Sebastian Farquhar. 2023.
+  and Haoliang Li. 2025. Beyond confidence: Adap-            Semantic uncertainty: Linguistic invariances for un-
+  tive and coherent decoding for diffusion language          certainty estimation in natural language generation.
+  models. arXiv preprint arXiv:2512.02044.                   arXiv preprint arXiv:2302.09664.
+                                                      22664
+Sanghyun Lee, Seungryong Kim, Jongho Park, and              and 1 others. 2022. Chain-of-thought prompting elic-
+  Dongmin Park. 2025. Lookahead unmasking elic-             its reasoning in large language models. Advances
+  its accurate decoding in diffusion language models.       in neural information processing systems, 35:24824–
+  arXiv preprint arXiv:2511.05563.                          24837.
+
+Aaron Lou, Chenlin Meng, and Stefano Ermon.              Shunyu Yao, Dian Yu, Jeffrey Zhao, Izhak Shafran,
+  2023. Discrete diffusion modeling by estimating          Tom Griffiths, Yuan Cao, and Karthik Narasimhan.
+  the ratios of the data distribution. arXiv preprint      2023. Tree of thoughts: Deliberate problem solving
+  arXiv:2310.16834.                                        with large language models. Advances in neural
+                                                           information processing systems, 36:11809–11822.
+Aman Madaan, Niket Tandon, Prakhar Gupta, Skyler
+ Hallinan, Luyu Gao, Sarah Wiegreffe, Uri Alon,          Shunyu Yao, Jeffrey Zhao, Dian Yu, Nan Du, Izhak
+ Nouha Dziri, Shrimai Prabhumoye, Yiming Yang,             Shafran, Karthik R Narasimhan, and Yuan Cao. 2022.
+ and 1 others. 2023. Self-refine: Iterative refinement     React: Synergizing reasoning and acting in language
+ with self-feedback. Advances in Neural Information        models. In The eleventh international conference on
+ Processing Systems, 36:46534–46594.                       learning representations.
+
+Sewon Min, Xinxi Lyu, Ari Holtzman, Mikel Artetxe,       Qinglin Zeng, Jing Yang, and Keze Wang. 2025.
+  Mike Lewis, Hannaneh Hajishirzi, and Luke Zettle-        Reflective confidence:     Correcting reasoning
+  moyer. 2022. Rethinking the role of demonstra-           flaws via online self-correction. arXiv preprint
+  tions: What makes in-context learning work? arXiv        arXiv:2512.18605.
+  preprint arXiv:2202.12837.
+                                                         Fengqi Zhu, Rongzhen Wang, Shen Nie, Xiaolu Zhang,
+Shen Nie, Fengqi Zhu, Chao Du, Tianyu Pang, Qian           Chunwei Wu, Jun Hu, Jun Zhou, Jianfei Chen,
+  Liu, Guangtao Zeng, Min Lin, and Chongxuan Li.           Yankai Lin, Ji-Rong Wen, and 1 others. 2025. Llada
+  2024. Scaling up masked diffusion models on text.        1.5: Variance-reduced preference optimization for
+  arXiv preprint arXiv:2410.18514.                         large language diffusion models. arXiv preprint
+                                                           arXiv:2505.19223.
+Shen Nie, Fengqi Zhu, Zebin You, Xiaolu Zhang,
+  Jingyang Ou, Jun Hu, Jun Zhou, Yankai Lin, Ji-Rong
+  Wen, and Chongxuan Li. 2025. Large language dif-
+  fusion models. arXiv preprint arXiv:2502.09992.
+
+Subham Sahoo, Marianne Arriola, Yair Schiff, Aaron
+  Gokaslan, Edgar Marroquin, Justin Chiu, Alexan-
+  der Rush, and Volodymyr Kuleshov. 2024. Simple
+  and effective masked diffusion language models. Ad-
+  vances in Neural Information Processing Systems,
+  37:130136–130184.
+
+Noah Shinn, Federico Cassano, Ashwin Gopinath,
+  Karthik Narasimhan, and Shunyu Yao. 2023. Re-
+  flexion: Language agents with verbal reinforcement
+  learning. Advances in Neural Information Process-
+  ing Systems, 36:8634–8652.
+
+Guanghan Wang, Yair Schiff, Subham Sekhar Sahoo,
+  and Volodymyr Kuleshov. 2025a. Remasking dis-
+  crete diffusion models with inference-time scaling.
+  arXiv preprint arXiv:2503.00307.
+
+Wen Wang, Bozhen Fang, Chenchen Jing, Yongliang
+ Shen, Yangyi Shen, Qiuyu Wang, Hao Ouyang, Hao
+ Chen, and Chunhua Shen. 2025b. Time is a feature:
+ Exploiting temporal dynamics in diffusion language
+ models. arXiv preprint arXiv:2508.09138.
+
+Xuezhi Wang, Jason Wei, Dale Schuurmans, Quoc Le,
+  Ed Chi, Sharan Narang, Aakanksha Chowdhery, and
+  Denny Zhou. 2022. Self-consistency improves chain
+  of thought reasoning in language models. arXiv
+  preprint arXiv:2203.11171.
+
+Jason Wei, Xuezhi Wang, Dale Schuurmans, Maarten
+   Bosma, Fei Xia, Ed Chi, Quoc V Le, Denny Zhou,
+                                                    22665
+Supplementary Material for RACC: Regret-Aware Confidence Calibration
+         for Consistent Masked Discrete Diffusion Decoding
+
+A      Detailed Experimental Settings                                                                Examples:
+                                                                                                     question: There are 15 trees in the grove. Grove
+A.1 Hyperparameter Configuration                                                                     workers will plant trees in the grove today. After they
+We maintain a consistent experimental setup                                                          are done, there will be 21 trees. How many trees did
+                                                                                                     the grove workers plant today?
+across two backbones: LLaDA-8B-Instruct and                                                          target: There are 15 trees originally. Then there were
+LLaDA-1.5. For all experiments, the momentum                                                         21 trees after some more were planted. So there must
+coefficient is set to β = 0.8. We adapt the penalty                                                  have been 21 − 15 = 6. The answer is 6.
+                                                                                                     question: If there are 3 cars in the parking lot and 2
+schedule range [λmin , λmax ] and tolerance thresh-                                                  more cars arrive, how many cars are in the parking
+old ϵ based on the task characteristics (e.g., sym-                                                  lot?
+                                                                                                     target: There are originally 3 cars. 2 more cars arrive.
+bolic vs. natural language). Table 4 details the                                                     3 + 2 = 5. The answer is 5.
+exact generation configurations.
+                                                                                                     New Question: {question}
+ Dataset     Steps (T )   Gen Len   Block Len   Penalty (λ)   Threshold (ϵ)   Momentum (β)
+                                                                                                     Solution:
+ HumanEval      256        256         256       [1.0, 5.0]       0.08            0.8
+ MBPP           256        256         256       [1.0, 5.0]       0.08            0.8
+ GSM8K          256        256         256       [1.0, 5.0]       0.08            0.8
+ MATH
+ Sudoku
+               1024
+                128
+                           1024
+                           128
+                                      1024
+                                       128
+                                                 [1.0, 5.0]
+                                                 [1.0, 5.0]
+                                                                  0.08
+                                                                  0.03
+                                                                                  0.8
+                                                                                  0.8                MATH (Math-500)
+ Countdown      128        128         128       [1.0, 5.0]       0.08            0.8
+
+                                                                                                     Q: Let
+Table 4: Hyperparameter configurations for different                                                                 
+benchmarks. The penalty schedule follows a cosine                                                                    ax + 3,
+                                                                                                                                    if x > 2,
+curve within the specified range.                                                                             f (x) = x − 5,         if − 2 ≤ x ≤ 2,
+                                                                                                                     
+                                                                                                                     2x − b,        if x < −2.
+
+A.2 Prompt Templates                                                                                 Find a + b if the piecewise function is continuous
+                                                                                                     (which means that its graph can be drawn without
+To ensure reproducibility, we provide the exact                                                      lifting your pencil from the paper).
+prompt templates used for each benchmark. All                                                        A: <think>
+                                                                                                     For the piecewise function to be continuous, the cases
+prompts are formatted to be compatible with the                                                      must "meet" at 2 and −2. For example, ax + 3 and
+LLaDA instruction format.                                                                            x − 5 must be equal when x = 2. This implies a(2) +
+                                                                                                     3 = 2 − 5, which we solve to get 2a = −6 ⇒ a =
+    HumanEval (Code Generation)                                                                      −3. Similarly, x − 5 and 2x − b must be equal when
+                                                                                                     x = −2. Substituting, we get −2 − 5 = 2(−2) − b,
+  Role: You are a professional Python coding                                                         which implies b = 3. So a + b = −3 + 3 = 0 .
+  assistant                                                                                          </think>
+  Task:     Complete   the   follow    function                                                      <answer>
+  implementation strictly and clearly without                                                        0
+  any additional comments or explanations.                                                           </answer>
+  {func}
+                                                                                                     Q: A rectangular band formation is a formation with
+                                                                                                     m band members in each of r rows, where m and r
+    MBPP (Code Generation)
+                                                                                                     are integers. A particular band has less than 100 band
+                                                                                                     members. The director arranges them in a rectangular
+  Role: You are a professional Python coding
+                                                                                                     formation and finds that he has two members left over.
+  assistant
+                                                                                                     If he increases the number of members in each row
+  Task:      Complete  the   follow    function
+                                                                                                     by 1 and reduces the number of rows by 2, there are
+  implementation strictly and clearly without
+                                                                                                     exactly enough places in the new formation for each
+  any additional comments or explanations.
+                                                                                                     band member. What is the largest number of members
+  {func}
+                                                                                                     the band could have?
+  the function name and the parameters is
+                                                                                                     A: <think>
+  {function_signature}
+                                                                                                     Let x be the number of band members in each row for
+                                                                                                     the original formation, when two are left over. Then
+     GSM8K (Math Reasoning)                                                                          we can write two equations from the given informa-
+                                                                                                     tion:
+     Please solve the new question step by step just like                                                                 rx + 2 = m
+     the following examples. For this question:                                                                      (r − 2)(x + 1) = m
+     1. Break down the problem into logical steps
+     2. Show all intermediate calculations                                                           Setting these equal, we find:
+     3. Conclude with "So the answer is..." format
+                                                                                                        rx + 2 = (r − 2)(x + 1) = rx − 2x + r − 2
+
+
+                                                                                             22666
+        2 = −2x + r − 2 =⇒ 4 = r − 2x                              Puzzle: 4100
+We know that the band has less than 100 members.                   0001
+Based on the first equation, we must have rx less than             1300
+98. We can guess and check some values of r and                    2000
+x in the last equation. If r = 18, then x = 7, and                 <answer>
+rx = 126 which is too big. If r = 16, then x = 6,                  4132
+and rx = 96, which is less than 98. Checking back in               3241
+the second formation, we see that (16 − 2)(6 + 1) =                1324
+14 · 7 = 98 as it should. This is the best we can do, so           2413
+the largest number of members the band could have                  </answer>
+is 98 .
+</think>                                                           Puzzle: 0004
+<answer>                                                           0321
+98                                                                 0203
+</answer>                                                          3002
+                                                                   <answer>
+Q: What is the degree   of the polynomial (4 + 5x3 +               2134
+            4
+                 √    4                                            4321
+100 + 2πx + 10x + 9)?                                              1243
+A: <think>                                                         3412
+This polynomial is not written in standard form. How-              </answer>
+ever, we don’t need to write it in standard form, nor
+do we need to pay attention to the coefficients. We                Puzzle: 4123
+just look for the exponents on x. We have an x4 term               0000
+and no other term of higher degree, so 4 is the de-                0402
+gree of the polynomial.                                            2300
+</think>                                                           <answer>
+<answer>                                                           4123
+4                                                                  3214
+</answer>                                                          1432
+                                                                2341
+Q: Evaluate 3 6 − 12 .                                             </answer>
+A: <think>        
+Firstly, 3 6 − 12 = 18 − 1 − 21 = 17 − 12 . Because                Puzzle: 1432
+                               
+0 ≤ 12 < 1, we have 17 − 21 = 17 .                                 0041
+</think>                                                           3000
+<answer>                                                           4000
+17                                                                 <answer>
+</answer>                                                          1432
+                                                                   2341
+Q: {question}                                                      3214
+A:                                                                 4123
+                                                                   </answer>
+
+Sudoku                                                             Puzzle: 0020
+                                                                   0341
+Solve this 4x4 Sudoku puzzle represented                           0210
+as a 16-digit string (read left-to-right,                          1002
+top-to-bottom) where ’0’=empty cell.                               <answer>
+                                                                   4123
+Requirements:                                                      2341
+1. Replace ALL ’0’s with digits 1-4                                3214
+2. Follow STRICT Sudoku rules:                                     1432
+    - Rows: Each must contain 1-4 exactly                          </answer>
+once
+  - Columns: Each must contain 1-4 exactly                         Puzzle: {puzzle_str}
+once                                                               <answer>
+  - 2x2 Boxes: Each must contain 1-4
+exactly once
+3. Format answer as:
+                                                                   Countdown
+<answer>
+-digit solution
+                                                                   For the given numbers, find a sequence of arithmetic
+                                                                   operations that results in the target number. Show
+                                                                   your reasoning and conclude with "The answer is:
+</answer>                                                          [formula]".
+
+Please solve        the   following      4x4   Sudoku              Examples:
+puzzle...                                                          question: 15,44,79,50
+
+
+                                                           22667
+    Solution: Let’s try to combine 15 and 44.                         size to V = 4. The method constructs a histor-
+    44 − 15 = 29. Now we have 29 and the remaining                    ical buffer to track the top-V most confident
+    number 79. We need to reach the target 50. Let’s                  tokens across the last d iterations. Tokens that
+    try 79 − 29 = 50. This works. The answer is:
+    44-15=29,79-29=50                                                 consistently appear in this buffer are priori-
+                                                                      tized based on their marginalized probability
+    question: 1,2,12,25                                               over the trajectory, serving as a temporal con-
+    Solution: We have 1, 2, 12 and the target is 25. Let’s
+    try multiplying 2 and 12. 2 ∗ 12 = 24. Now we have                sistency filter.
+    24 and the remaining number 1. We need to reach
+    25. 24 + 1 = 25. This is correct. The answer is:
+    2*12=24,1+24=25                                             C     Comparison with Trajectory-Aware
+                                                                      Methods
+    question: 3,85,5,30
+    Solution: The numbers are 3, 85, 5 and the target is
+    30. Let’s try adding 85 and 5. 85 + 5 = 90. Now             We provide a direct comparison with Coherent Con-
+    we have 90 and the remaining number 3. We need to           textual Decoding (CCD) (Chen et al., 2025), a re-
+    reach 30. 90/3 = 30. That’s the target. The answer          cent state-of-the-art method that also leverages his-
+    is: 85+5=90,90/3=30
+                                                                torical trajectories. Unlike CCD, which requires
+    New Question: {question}                                    maintaining a memory-intensive buffer of prob-
+    Solution:                                                   ability distributions (O(d · V )), RACC employs
+                                                                a lightweight scalar momentum anchor (O(1)) to
+B    Baseline Implementation Details                            achieve superior performance.
+
+We compare RACC against the following baselines,                Table 5: Comparison with CCD on LLaDA-8B.
+adopting their official or recommended configura-               RACC outperforms CCD across key reasoning bench-
+tions to ensure a fair evaluation:                              marks while being more memory-efficient. (* indicates
+                                                                results reproduced using official settings: d = 2, V =
+    • PC-Sampler (Huang et al., 2025): We utilize               4).
+      the official implementation with the Gaussian
+                                                                 Method                     HumanEval   GSM8K   MBPP
+      corrector hyperparameter set to w = 1.2. This
+                                                                 Baseline (Confidence)        32.00     76.70   28.40
+      method calibrates the logits using position-               CCD (Chen et al., 2025)*     38.41     75.30   41.20
+      based and category-based priors to mitigate                RACC (Ours)                  44.51     79.76   47.31
+      selection bias.
+
+    • Re-MDM (Wang et al., 2025a): We adopt
+                                                                D     Impact of Penalty Schedule Strategies
+      the inference-time scaling setting with R = 5
+      refinement iterations. In each iteration, the to-         The dynamic penalty schedule λt is a critical com-
+      kens with the lowest confidence (bottom 10%)              ponent governing the trade-off between exploration
+      are re-masked and regenerated, allowing the               (early-stage) and consistency (late-stage). In this
+      model to iteratively self-correct committed er-           section, we investigate how different functional
+      rors.                                                     forms of the schedule impact the model’s ability
+                                                                to navigate the denoising trajectory, focusing on
+    • LookUM (Lee et al., 2025): Following the
+                                                                shape characteristics and intensity robustness.
+      main experimental setup in the original paper,
+      we set the lookahead depth to d = 1 with a
+                                                                D.1    Influence of Functional Forms (Shape)
+      branching factor of k = 2 (i.e., 2 selected
+      paths). We utilize a candidate pool size of               To identify the optimal modulation strategy, we
+      |Pt | = 5 and employ Average Negative En-                 compare five representative functional forms: Con-
+      tropy as the verifier metric to score and select          stant (λt = λmax ), Step Function (discrete
+      the optimal unmasking trajectory.                         jump at 50%), Concave (Square-root growth),
+                                                                Linear (Uniform increase), and Cosine. All
+    • CCD (Chen et al., 2025): We implement Co-                 schedules operate within the same intensity range
+      herent Contextual Decoding (CCD) following                [λmin , λmax ] = [1.0, 5.0].
+      the official configuration for the LLaDA back-
+      bone. Specifically, we set the sliding-window             Analysis. Table 6 indicates that the functional
+      history length to d = 2 and the candidate set             shape plays a pivotal role in decoding stability.
+                                                             22668
+Table 6: Performance by Schedule Shape. Compar-                       trast, the Cosine schedule demonstrates remark-
+ison of different functional forms on HumanEval and                   able resilience, maintaining a high performance
+GSM8K. The Cosine schedule yields superior perfor-
+                                                                      (44.51%) even at λmax = 10.0. This stability sug-
+mance by closely mirroring the signal-to-noise ratio
+(SNR) evolution inherent in diffusion models.                         gests that the gradual onset of the Cosine function
+                                                                      effectively mitigates the risk of over-penalization,
+  Schedule Shape             HumanEval (Pass@1)      GSM8K (Acc)      making it a theoretically robust choice for diffusion
+  Constant (λ = 5.0)                 40.85              79.90         decoding.
+  Concave (Sqrt Growth)              42.07              80.10
+  Step Function (50%/50%)            43.29              81.20
+  Linear Growth                      44.51              81.95
+  Cosine                             45.73              82.60         E Qualitative Analysis and Case Studies
+                                                                      To better understand how RACC improves code
+Early-Stage Tolerance. The Concave schedule                           generation reliability, we analyze specific failure
+underperforms (42.07%) because it increases the                       cases from the Baseline (Standard PC-Sampler)
+penalty too aggressively in the early noisy stages,                   that were successfully corrected by RACC. We
+potentially suppressing valid diverse hypotheses                      also visualize the confidence evolution heatmaps to
+before they can mature.                                               demonstrate the stability improvements (Figure 4).
+
+Smooth Transition. The Step Function lags be-                         E.1      Case Study 1: Logical Ordering
+hind continuous schedules (Linear/Cosine), sug-                                (HumanEval/44)
+gesting that the transition from exploration to con-
+sistency should be gradual rather than abrupt to                      Task: pairs_sum_to_zero requires finding if two
+align with the continuous nature of the denoising                     distinct elements sum to zero.
+process.
+                                                                      Analysis. The Baseline fails on inputs like [0]
+Optimality of Cosine. The Cosine schedule                             because it adds the number to the set before check-
+achieves the best results (45.73%). Its derivative is                 ing for its complement. This causes 0 to match
+near-zero at t ≈ T , effectively creating a "safety                   with itself. RACC corrects this by enforcing the
+buffer" that permits sufficient exploration in the                    logical check before the state update.
+initial phase before strictly enforcing consistency
+constraints as the sequence structure solidifies.                     Baseline (Fail). Incorrect order leads to false pos-
+                                                                      itives.
+D.2 Robustness to Intensity Variations
+                                                                           Baseline Code
+We further assess whether the superiority of the
+Cosine shape holds under aggressive parameter set-                         seen = set()
+                                                                           for num in l:
+tings. We increase the maximum penalty intensity                               seen.add(num)       # <--- Wrong Order:
+λmax from 5.0 to 10.0 to simulate extreme operat-                              Adds before check
+ing conditions.                                                                if -num in seen:
+                                                                                   return True
+Table 7: Intensity Robustness Analysis (HumanEval).
+Performance degradation when increasing the maximum                   RACC (Success).       Corrects causality.
+penalty λmax from 5.0 to 10.0. The Cosine shape ex-
+hibits higher stability compared to Linear and Constant                    RACC Code
+strategies.
+                                                                           seen = set()
+     λmax Value             Constant     Linear      Cosine                for num in l:
+                                                                               if -num in seen:   # <--- Correct
+     λmax = 5.0              40.85           44.51    45.73                    Order: Check first
+     λmax = 7.0              37.80           43.29    45.12                        return True
+     λmax = 10.0             35.37           41.46    44.51                    seen.add(num)
+     Drop                    -5.48           -3.05    -1.22
+
+                                                                      E.2      Case Study 2: Edge Case Coverage
+                                                                               (HumanEval/28)
+Robustness Findings. As shown in Table 7, the
+Constant strategy is highly sensitive to intensity,                   Task: flip_case requires flipping case while pre-
+collapsing to 35.37% under high penalty. In con-                      serving non-alphabetic characters.
+                                                                   22669
+             0                          1.0                0                               1.0                0                              1.0
+             9                                             9                                                  9
+            18                                            18                                                 18
+            27                                            27                                                 27
+            36                                            36                                                 36
+            45                          0.8               45                               0.8               45                              0.8
+            54                                            54                                                 54
+            63                                            63                                                 63
+            72                                            72                                                 72
+            81                                            81                                                 81
+            90                                            90                                                 90
+            99                          0.6               99                               0.6               99                              0.6
+           108                                           108                                                108
+
+Position                                      Position                                           Position
+           117                                           117                                                117
+           126                                           126                                                126
+           135                                           135                                                135
+           144                                           144                                                144
+           153                          0.4              153                               0.4              153                              0.4
+           162                                           162                                                162
+           171                                           171                                                171
+           180                                           180                                                180
+           189                                           189                                                189
+           198                                           198                                                198
+           207                          0.2              207                               0.2              207                              0.2
+           216                                           216                                                216
+           225                                           225                                                225
+           234                                           234                                                234
+           243                                           243                                                243
+           252 0                        0.0              252 0                             0.0              252 0                            0.0
+               9
+              18
+              27
+              36
+              45
+              54
+              63
+              72
+              81
+              90
+              99
+             108
+             117                                             9
+                                                            18
+                                                            27
+                                                            36
+                                                            45
+                                                            54
+                                                            63
+                                                            72
+                                                            81
+                                                            90
+                                                            99
+                                                           108
+                                                           117                                                  9
+                                                                                                               18
+                                                                                                               27
+                                                                                                               36
+                                                                                                               45
+                                                                                                               54
+                                                                                                               63
+                                                                                                               72
+                                                                                                               81
+                                                                                                               90
+                                                                                                               99
+                                                                                                              108
+                                                                                                              117
+             126
+             135
+             144
+             153                                           126
+                                                           135
+                                                           144
+                                                           153                                                126
+                                                                                                              135
+                                                                                                              144
+                                                                                                              153
+                           Step                                       Step                                                   Step
+             162
+             171
+             180
+             189
+             198
+             207
+             216
+             225
+             234
+             243
+             252                                           162
+                                                           171
+                                                           180
+                                                           189
+                                                           198
+                                                           207
+                                                           216
+                                                           225
+                                                           234
+                                                           243
+                                                           252                                                162
+                                                                                                              171
+                                                                                                              180
+                                                                                                              189
+                                                                                                              198
+                                                                                                              207
+                                                                                                              216
+                                                                                                              225
+                                                                                                              234
+                                                                                                              243
+                                                                                                              252
+
+
+                 (a) Case 1: Baseline                          (b) Case 2: Baseline                                   (c) Case 3: Baseline
+             0                          1.0                0                               1.0                0                              1.0
+             9                                             9                                                  9
+            18                                            18                                                 18
+            27                                            27                                                 27
+            36                                            36                                                 36
+            45                          0.8               45                               0.8               45                              0.8
+            54                                            54                                                 54
+            63                                            63                                                 63
+            72                                            72                                                 72
+            81                                            81                                                 81
+            90                                            90                                                 90
+            99                          0.6               99                               0.6               99                              0.6
+           108                                           108                                                108
+
+Position                                      Position                                           Position
+           117                                           117                                                117
+           126                                           126                                                126
+           135                                           135                                                135
+           144                                           144                                                144
+           153                          0.4              153                               0.4              153                              0.4
+           162                                           162                                                162
+           171                                           171                                                171
+           180                                           180                                                180
+           189                                           189                                                189
+           198                                           198                                                198
+           207                          0.2              207                               0.2              207                              0.2
+           216                                           216                                                216
+           225                                           225                                                225
+           234                                           234                                                234
+           243                                           243                                                243
+           252 0                        0.0              252 0                             0.0              252 0                            0.0
+               9
+              18
+              27
+              36
+              45
+              54
+              63
+              72
+              81
+              90
+              99
+             108
+             117                                             9
+                                                            18
+                                                            27
+                                                            36
+                                                            45
+                                                            54
+                                                            63
+                                                            72
+                                                            81
+                                                            90
+                                                            99
+                                                           108
+                                                           117                                                  9
+                                                                                                               18
+                                                                                                               27
+                                                                                                               36
+                                                                                                               45
+                                                                                                               54
+                                                                                                               63
+                                                                                                               72
+                                                                                                               81
+                                                                                                               90
+                                                                                                               99
+                                                                                                              108
+                                                                                                              117
+             126
+             135
+             144
+             153                                           126
+                                                           135
+                                                           144
+                                                           153                                                126
+                                                                                                              135
+                                                                                                              144
+                                                                                                              153
+                           Step                                       Step                                                   Step
+             162
+             171
+             180
+             189
+             198
+             207
+             216
+             225
+             234
+             243
+             252                                           162
+                                                           171
+                                                           180
+                                                           189
+                                                           198
+                                                           207
+                                                           216
+                                                           225
+                                                           234
+                                                           243
+                                                           252                                                162
+                                                                                                              171
+                                                                                                              180
+                                                                                                              189
+                                                                                                              198
+                                                                                                              207
+                                                                                                              216
+                                                                                                              225
+                                                                                                              234
+                                                                                                              243
+                                                                                                              252
+
+
+                 (d) Case 1: RACC                              (e) Case 2: RACC                                       (f) Case 3: RACC
+
+   Figure 4: Visualization of Confidence Dynamics across Case Studies. Top Row: Baseline (PC-Sampler) exhibits
+   chaotic fluctuations and low confidence (red regions). Bottom Row: RACC stabilizes the generation process,
+   maintaining higher confidence (green regions). Columns correspond to Case Studies 1, 2, and 3 respectively.
+
+
+   Analysis. The Baseline employs an if-elif                                 E.3   Case Study 3: State Maintenance
+   structure covering only alphabets, inadvertently                                (HumanEval/7)
+   dropping symbols. RACC leverages the robust                               Task: parse_nested_parens requires tracking
+   library function.                                                         maximum nesting depth.
+                                                                             Analysis. The Baseline updates the max depth
+   Baseline (Fail). Explicit branching misses non-                           using the value popped from the stack, which rep-
+   alpha characters.                                                         resents the previous level, not the current peak.
+                                                                             RACC uses len(stack) before popping to capture
+           Baseline Code                                                     the true depth.
+           flipped_string = ''                                               Baseline (Fail). Updates max_level with stale
+           for char in string:
+               if char.islower():                                            state.
+                   flipped_string += char.upper()
+               elif char.isupper():                                            Baseline Code
+                   # <--- Missing 'else' branch for
+               symbols/spaces                                                  if char == ')':
+                   flipped_string += char.lower()                                  current_level -= 1
+           return flipped_string                                                   if stack:
+                                                                                       # Incorrect: popping returns the
+                                                                                   OLD level
+                                                                                       max_level = max(max_level,
+                                                                                   stack.pop())
+   RACC (Success). Uses robust library function.
+
+           RACC Code
+                                                                             RACC (Success).                      Uses immediate state.
+
+           # swapcase() automatically handles                                  RACC Code
+               non-alphabetic chars
+           return string.swapcase()                                            elif char == ')':
+                                                                                   # Correct: capture depth before popping
+
+                                                                     22670
+      max_level = max(max_level, len(stack))            of Thoughts (Yao et al., 2023) explicitly search
+      if stack:                                         the reasoning space to identify optimal paths. Re-
+          stack.pop()
+                                                        cently, Reflective Confidence (Zeng et al., 2025)
+                                                        proposed automating this by using low confidence
+F   Extended Discussion: The Evolution of               as a trigger for self-inquiry. Despite these advances,
+    Confidence Utilization                              Huang et al. (2023) argue that LLMs struggle to
+                                                        intrinsically self-correct without external feedback.
+In this section, we analyze the divergence in un-
+                                                        Consequently, frameworks like ReAct (Yao et al.,
+certainty utilization between Autoregressive (AR)
+                                                        2022) and CRITIC (Gou et al., 2023) integrate
+models and Masked Discrete Diffusion Models
+                                                        external tools to verify outputs. Nevertheless, these
+(MDMs). We argue that while AR methods are con-
+                                                        approaches are additive: they improve accuracy
+strained by their monotonic nature to rely on exter-
+                                                        but incur significant overhead by expanding the
+nal interventions (filtering or prompting), MDMs
+                                                        context window, slowing down inference.
+offer a unique opportunity for internal dynamic
+calibration, which RACC exploits.                       F.2   Confidence in MDMs: Temporal
+                                                              Dynamics as a Feature
+F.1 Confidence in AR: Static Snapshots and
+    External Interventions                              MDMs (Sahoo et al., 2024; Fei et al., 2024; Lou
+                                                        et al., 2023; Zhu et al., 2025) generate sequences
+In AR models (Achiam et al., 2023; Dubey et al.,        via iterative denoising (xT → · · · → x0 ), trans-
+2024), decoding is monotonic. The confidence            forming confidence from a scalar into a temporal
+of a token xi is derived instantly from P (xi |x<i ).   trajectory. Recent works have begun to exploit
+Since the model cannot intrinsically revisit past       this non-monotonic property.
+decisions without external mechanisms, improve-
+ments largely rely on "patching" the output via two     Temporal Aggregation. "Time Is a Feature"
+paradigms:                                              (Wang et al., 2025b) observes that correct tokens
+                                                        often oscillate during generation. They propose
+Paradigm 1: Post-Hoc Filtering (Rejection).             a voting mechanism across timesteps to retrieve
+Strategies like Self-Consistency (Wang et al.,          lost answers. Similarly, CCD (Chen et al., 2025)
+2022) attempt to bypass uncertainty by aggregat-        enforces consistency by aggregating predictions
+ing multiple independent samples. This is theoreti-     from a history buffer. While these methods utilize
+cally grounded in the finding that calibrated models    history for aggregation, RACC utilizes the deriva-
+must hallucinate when the data distribution is com-     tive (Regret) for control. We do not just average
+plex (Kalai and Vempala, 2024), necessitating ex-       the past; we actively penalize deviations from the
+ternal verification. Furthermore, Min et al. (2022)     expected momentum.
+highlight that in-context learning is often driven
+by format rather than ground truth, reinforcing the     F.3   Future Horizons: Regret-Driven Control
+need for output-side validation. To address linguis-
+                                                        The "Regret Signal" identified in this work
+tic variation, Semantic Uncertainty (Kuhn et al.,
+                                                        opens avenues for more granular control in non-
+2023) refines aggregation by clustering meanings.
+                                                        autoregressive generation, potentially linking back
+Building on this, DeepConf (Fu et al., 2025) intro-
+                                                        to early iterative refinement ideas like Mask-
+duces a confidence-aware pruning mechanism. By
+                                                        Predict (Ghazvininejad et al., 2019).
+monitoring the joint probability of reasoning traces,
+it proactively discards low-confidence paths. How-      Dynamic Re-masking. Currently, RACC sup-
+ever, these methods are subtractive: they treat low     presses the probability of unstable tokens. Future
+confidence as a "stop signal," discarding potentially   work could leverage high-regret signals to explic-
+recoverable reasoning chains.                           itly re-mask spatially adjacent tokens. For in-
+                                                        stance, if xi exhibits high regret, the model could
+Paradigm 2: Verbal Reflection (Prompting).              reset xi−1 and xi+1 to [MASK], triggering a local-
+To enable correction, methods like Reflexion            ized regeneration to resolve semantic conflicts con-
+(Shinn et al., 2023) and Self-Refine (Madaan et al.,    textually.
+2023) rely on iterative prompting, building on the
+foundational Chain-of-Thought (Wei et al., 2022)        Adaptive Step Scheduling. A sudden system-
+paradigm. More advanced frameworks like Tree            wide spike in regret could serve as an indicator
+                                                   22671
+that the current diffusion step size is too large. An
+adaptive scheduler could respond by slowing down
+the denoising process (adding intermediate steps)
+specifically when high regret is detected, allocating
+more compute dynamically to difficult reasoning
+transitions.
+
+
+
+
+                                                   22672
+

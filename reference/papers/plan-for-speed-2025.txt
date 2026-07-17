@@ -1,0 +1,1689 @@
+                                            Plan for Speed: Dilated Scheduling for Masked Diffusion Language Models
+
+
+                                                                        Omer Luxembourg 1 Haim Permuter 1 Eliya Nachmani 1
+
+
+                                                                  Abstract                                     trollability (Campbell et al., 2022; Lou et al., 2024; Sahoo
+                                                                                                               et al., 2024). In discrete diffusion for text, generation is
+                                              Masked diffusion language models (MDLMs)
+                                                                                                               an iterative denoising process: starting from a fully noised
+                                              promise fast, non-autoregressive text generation,
+                                                                                                               (e.g., masked) sequence, the model reconstructs text over
+
+
+
+
+arXiv:2506.19037v5 [cs.CL] 25 May 2026
+                                              yet existing samplers, which pick tokens to un-
+                                                                                                               multiple steps. While this enables any-order generation,
+                                              mask based on model confidence, ignore interac-
+                                                                                                               high quality often requires roughly one denoising pass per
+                                              tions when unmasking multiple positions in par-
+                                                                                                               token, so generating length G typically entails O(G) de-
+                                              allel and effectively reduce to slow, autoregres-
+                                                                                                               noiser calls. Although current diffusion LMs still lag AR
+                                              sive behavior. We propose the Dilated Unmask-
+                                                                                                               models on some benchmarks, this gap stems primarily from
+                                              ing Scheduler (DUS), an inference-only, planner-
+                                                                                                               training maturity rather than fundamental architectural limi-
+                                              model-free method that partitions sequence po-
+                                                                                                               tations: diffusion models outperform AR under data-scarce
+                                              sitions into non-adjacent dilated groups and un-
+                                                                                                               conditions (Prabhudesai et al., 2026), and a code-specialized
+                                              masks them in parallel so as to minimize an up-
+                                                                                                               diffusion LM has been reported to exceed its AR counterpart
+                                              per bound on joint entropy gain at each denois-
+                                                                                                               on HumanEval, MBPP, and BigCodeBench-Hard (Fan et al.,
+                                              ing step. By explicitly trading off the number
+                                                                                                               2026).
+                                              of network calls against generation quality, DUS
+                                              recovers most of the performance lost under tra-                 AR LLMs typically generate token-by-token, leading to
+                                              ditional parallel unmasking strategies. Across                   linear inference latency. Speculative decoding partially mit-
+                                              math (GSM8K, MATH500), code (HumanEval,                          igates this by using a lightweight draft model to propose
+                                              MBPP), general-knowledge (BBH, MMLU-Pro),                        multiple tokens that the full AR model verifies (Leviathan
+                                              and instruction following (IFEval) benchmarks,                   et al., 2023; Xia et al., 2022). By contrast, diffusion-based
+                                              DUS outperforms confidence-based planners and                    LMs reconstruct the entire sequence simultaneously: al-
+                                              turns the diffusion-specific quality-speed trade-off             though naive masked denoising still incurs O(G) passes, it
+                                              into a deterministic, predictable speedup set by                 supports any-order and parallel generation, enabling infer-
+                                              the block size B, yielding up to 5.8× wall-clock                 ence schedules with fewer denoiser calls.
+                                              speedup over token-by-token MDLM decoding
+                                                                                                               Existing strategies to accelerate diffusion sampling either
+                                              without modifying the underlying denoiser. Ap-
+                                                                                                               introduce heuristic planners that select tokens to unmask
+                                              plied as a drop-in post-filter, dilated spacing also
+                                                                                                               based on confidence or entropy, or employ semi-AR block-
+                                              improves adaptive samplers. Code is available at
+                                                                                                               wise generation that divides the sequence into contiguous
+                                              https://github.com/omerlux/DUS.
+                                                                                                               spans and applies parallel diffusion within each block to pre-
+                                                                                                               serve global coherence (Ye et al., 2025; Arriola et al., 2025;
+                                                                                                               Nie et al., 2025b). However, planners can be shortsighted
+                                         1. Introduction                                                       and prone to error propagation, and semi-AR diffusion still
+                                                                                                               incurs O(B) denoiser calls per block of size B. Recent
+                                         Diffusion-based language models have emerged as a promis-             work has framed unmasking as an inference-time planning
+                                         ing alternative to traditional autoregressive (AR) large lan-         problem (Peng et al., 2025), incorporated planning mecha-
+                                         guage models (Grattafiori et al., 2024; Yang et al., 2025),           nisms into the ELBO training objective (Liu et al., 2025),
+                                         offering potential advantages in parallel generation and con-         and improved efficiency via non-uniform schedules (Park
+                                           1                                                                   et al., 2025) or denoiser-signal-based unmasking schemes
+                                             School of Electrical and Computer Engineering, Ben-Gurion
+                                         University of the Negev, Beersheba, Israel . Correspondence to:       (Ben-Hamu et al., 2025; Wu et al., 2025) that reveal multiple
+                                         Omer Luxembourg <omerlux@post.bgu.ac.il>, Haim Permuter               tokens in parallel.
+                                         <haimp@bgu.ac.il>, Eliya Nachmani <eliyanac@bgu.ac.il>.
+                                                                                                               In this work, we introduce the Dilated Unmasking Scheduler
+                                         Proceedings of the 43 rd International Conference on Machine          (DUS), a purely inference-time, model-agnostic planner that
+                                         Learning, Seoul, South Korea. PMLR 306, 2026. Copyright 2026          partitions each block of length B into logarithmically many
+                                         by the author(s).
+
+                                                                                                           1
+                                                            Plan for Speed: Dilated Scheduling for Masked Diffusion Language Models
+
+                            Self-Confidence Planner          DUS Planner          SOTA @1×             AR LLaMA3-8B
+                              LLaDA-Base-8B                    LLaDA-Instruct-8B                  Dream-Instruct-7B
+                                                       80                                 80
+
+
+   Accuracy % ( )
+                    60
+                                                       60                                 60
+GSM8K
+                    40
+                                                       40                                 40
+                    20
+                                                       20                                 20
+                         1.0 2.7 4.0   6.4      10.7        1.0 2.7 4.0    6.4     10.7        1.0 2.7 4.0   6.4      10.7
+                                                                                                                                                             (b) DUS planner
+                    40                                 40
+
+   Pass@1 ( )
+                                                                                          40
+MBPP                20
+                                                       30
+                                                       20                                 20
+                                                       10
+                         1.0 2.7 4.0   6.4      10.7        1.0 2.7 4.0 6.4        10.7        1.0 2.7 4.0   6.4      10.7
+                                                                    Speedup (×)
+                                                                                                                                                        (c) Self-confidence planner
+ (a) Score vs. speedup - DUS and self-confidence MDLM planners.                                                                      Generation Start                                 Generation End
+
+Figure 1. (a) Trade-off between inference speedup and task accuracy on math (GSM8K, MATH500) and code (HumanEval, MBPP)
+benchmarks. Solid orange curves show DUS planner results; solid blue curves show self-confidence planner results. The star (⋆) marks
+the single-token, token-by-token SOTA baseline, and dashed gray lines denote AR LLaMA3-8B performance under the same protocol
+(Nie et al., 2025b; Ye et al., 2025; Grattafiori et al., 2024). (b), (c) Chain-of-thought on a GSM8K example with block size B = 32
+(speedup 6.4×). Token shading (blue→orange) encodes the unmasking iteration. (b), DUS, generates a full, coherent reasoning trace; (c),
+self-confidence, truncates its chain-of-thought prematurely.
+
+
+iterations using a fixed dilation pattern. Under a Markov                                                                             or modestly higher NFE, without modifying their score
+assumption, this schedule minimizes the joint conditional                                                                             function or selection criterion (Section 4.4).
+entropy at each step, reducing denoiser calls from O(B) to
+O(log B) without retraining or additional planner modules.                                                                       2. Related Work
+Our main contributions are:
+                                                                                                                                 Discrete diffusion sampling relies on a planner to decide
+              • Inference-Only, Model-Agnostic Decoding: A drop-                                                                 which masked tokens to reveal at each reverse step (Liu
+                in strategy requiring zero modifications to model archi-                                                         et al., 2025). Early “self-planners” use the diffusion de-
+                tecture or training.                                                                                             noiser itself to rank positions by simple criteria: top-k
+                                                                                                                                 highest probability (confidence), lowest conditional entropy,
+              • Logarithmic Unmasking Schedule: Deterministic,                                                                   or top-k probability margin (the gap between the highest
+                coarse-to-fine dilation that respects local context and                                                          and second-highest scores) (Campbell et al., 2022; Sahoo
+                minimizes joint entropy, in O(log B) denoiser itera-                                                             et al., 2024; Kim et al., 2025). Recent analyses show that
+                tions.                                                                                                           such confidence-based decoding empirically exhibits near-
+                                                                                                                                 autoregressive, left-to-right ordering (Gong et al., 2025;
+              • Theoretical Guarantees: We show that DUS ap-                                                                     Horvitz et al., 2025), limiting the parallelism advantage of
+                proaches the joint entropy bound at each iteration under                                                         diffusion models.
+                fast-mixing assumptions, compared to baselines with
+                the same step budget.                                                                                            Path Planning (P2) extends beyond these self-planners by in-
+                                                                                                                                 corporating an external guiding model - a pretrained BERT
+              • Empirical Validation: Extensive experiments on math                                                              - to evaluate candidate token sets according to their output
+                (GSM8K (Cobbe et al., 2021), MATH500 (Lightman                                                                   probabilities (Peng et al., 2025). P2 compares denoiser-
+                et al., 2023)), code (HumanEval (Chen et al., 2021),                                                             guided selection, random sampling, and BERT-scored plan-
+                MBPP (Austin et al., 2021)), general-knowledge (BBH                                                              ners, finding that the learned BERT planner yields better
+                (Suzgun et al., 2023), MMLU-Pro (Wang et al., 2024)),                                                            scores in various experiments at the cost of auxiliary model
+                and instruction following (IFEval (Zhou et al., 2023))                                                           calls.
+                benchmarks with LLaDA-8B, Dream-7B, DiffuCoder-                                                                  Semi-AR block diffusion segments a long sequence into
+                7B demonstrate up to an order-of-magnitude reduction                                                             contiguous spans of length B, runs denoiser iterations in
+                in denoiser calls and consistent quality improvements                                                            parallel within each block, and reveals blocks sequentially
+                over confidence-based planners, along with a head-to-                                                            (Arriola et al., 2025; Nie et al., 2025b). This approach does
+                head comparison against adaptive entropy and confi-                                                              not reduce the total number of denoiser passes from O(G)
+                dence bounded samplers (Appendix B.9).                                                                           to O(G/B) (where G is the generation length), it still incurs
+                                                                                                                                 O(B) calls per block, and it typically requires a policy to
+              • Complementary Hybrid Extension: A drop-in
+                                                                                                                                 decide block order. While (Arriola et al., 2025) discusses
+                dilated-spacing post-filter applied on top of adaptive
+                                                                                                                                 both training and inference with semi-AR block diffusion,
+                samplers (EB/CB) improves their accuracy at matched
+
+                                                                                                                             2
+                          Plan for Speed: Dilated Scheduling for Masked Diffusion Language Models
+
+here we focus exclusively on inference.                              tion, derive an entropy-based surrogate objective for planner
+                                                                     design in the block-wise setting, review denoiser-guided
+At the 7-8B parameter scale, LLaDA-8B (Nie et al., 2025b)
+                                                                     self-planners, present DUS, and finally give theoretical guar-
+(trained on 2.3T tokens) and Dream-7B (Ye et al., 2025)
+                                                                     antees (with proofs deferred to the appendix).
+(with AR initialization) demonstrate the practical viability
+of fully parallel decoding, matching AR baselines on math,
+code, and reasoning benchmarks while offering supervised             3.1. Notation
+fine-tuned (SFT) variants for instruction following. Dif-            Let X = {X1 , . . . , XG } be a length-G sequence of ran-
+fuCoder (Gong et al., 2025), trained solely on 400B code             dom variables, each taking values in a finite token vocab-
+tokens, reduces left-to-right bias via temperature-controlled        ulary V of size |V|. At each decoding iteration step t,
+”causalness” and coupled-GRPO, enabling fully parallel               we represent the partially observed (masked) sequence by
+decoding without semi-AR blocks.                                     Mt = (Mt,1 , . . . , Mt,G ), where Mt,i = Xi if position i is
+Inference efficiency can also be improved orthogonally via           currently unmasked and Mt,i = [MASK] otherwise. We
+Key-Value (KV) caching, which reuses stable transformer              write St for the sampler state at iteration t (equivalently, the
+key/value tensors across denoising steps. Methods such as            information contained in Mt ).
+FreeCache (Hu et al., 2025), Fast-dLLM (Wu et al., 2025),            For our theoretical analysis we will assume that X is gener-
+and dKV-Cache (Ma et al., 2026) report up to 3× speedups             ated by a stationary, ergodic variable-length Markov chain
+with minimal quality loss, at the cost of extra memory (and,         (VLMC) with fast mixing; the formal assumption is stated
+for FreeCache, an auxiliary AR guide model).                         in Appendix C.3.
+Adaptive scheduling methods decide which tokens to un-
+mask and when, aiming to improve inference speed while               Denoiser and planner. A masked diffusion sampler can
+preserving quality. On the timestep axis, Jump Your Steps            be viewed as the interaction of: (i) a denoiser Dθ (with
+(JYS) selects a non-uniform subset of noise levels by esti-          parameters θ) that, given the current partially masked state
+mating KL divergences between adjacent diffusion kernels,            St , outputs token-wise categorical distributions pθ (Xi |
+trading a small ELBO loss for fewer denoiser calls (Park             St ) ∈ ∆(V) for each currently masked position, where
+et al., 2025). However, JYS targets score-matching diffusion         ∆(V) denotes the probability simplex over V, and (ii) a plan-
+models (e.g., SEDD (Lou et al., 2024)), which currently op-          ner Pt : St × Dθ → 2{1,...,G} that chooses which masked
+erate at smaller scale, precluding meaningful comparison on          indices to reveal next. Importantly, the planner may use
+our benchmarks. Moreover, many discrete masked diffusion             denoiser-derived signals (e.g., per-token probabilities, en-
+models are trained with cross-entropy objectives (rather than        tropies, or other confidence scores), which we write as
+continuous score-based losses) (Sahoo et al., 2024), making
+                                                                                   It = Pt (St ; Dθ ) ⊆ {1, . . . , G}.          (1)
+direct log-likelihood scheduling less straightforward. At
+the token level, entropy-bounded (EB) sampling selects the           The planner controls only which indices are revealed. The
+largest set of tokens whose cumulative conditional entropy           values revealed at those indices are then sampled from the
+is below a user-specified bound, achieving 2-3× speedups             denoiser distributions, after which the state is updated to
+without retraining (Ben-Hamu et al., 2025); confidence-              obtain St+1 .
+bounded (CB) variants show similar gains (Wu et al., 2025).
+These per-token heuristics are effective but do not explicitly       Masked diffusion language models are trained by maxi-
+model token dependencies when unmasking in parallel. We              mizing a masked cross-entropy ELBO that upper-bounds
+revisit EB and CB both as baselines (Appendix B.9) and as            (− log pθ (x)) (Sahoo et al., 2024; Shi et al., 2024; Campbell
+a substrate on which the dilated-spacing principle acts as a         et al., 2022; Nie et al., 2025b); the formal forward process
+drop-in post-filter (Section 4.4).                                   and training objective are given in Appendix A.2. At in-
+                                                                     ference time, the denoiser parameters θ are fixed, and the
+                                                                     only remaining degree of freedom is the planner (i.e., the
+3. Method
+                                                                     sequence of index sets {It }). We formalize the planner
+We cast masked diffusion inference as the interaction of             objective in the block-wise setting in Section 3.3.
+a fixed denoiser Dθ and a planner P that selects which
+masked positions to reveal at each iteration. Building on this       3.2. MDLM Inference in Practice
+view, we propose Dilated Unmasking Scheduling (DUS), a
+                                                                     In large-scale discrete diffusion language models, inference
+deterministic coarse-to-fine planner for block-wise (semi-
+                                                                     is often implemented in a semi-autoregressive (semi-AR),
+autoregressive) masked diffusion that reduces the number
+                                                                     block-wise manner: the sequence is partitioned into con-
+of denoiser evaluations per block from O(B) to O(log B)
+                                                                     secutive blocks of size B, and each block is completed via
+while preserving generation quality.
+                                                                     several denoising rounds before moving to the next (Nie
+We begin with notation and the denoiser-planner decomposi-
+                                                                 3
+                           Plan for Speed: Dilated Scheduling for Masked Diffusion Language Models
+
+et al., 2025b). Block diffusion variants typically train the           planner’s ideal objective is the expected joint negative log-
+denoiser by masking contiguous spans of length B and                   likelihood
+recovering them jointly, which improves local coherence,                                                                       
+while other variants train on masks spread across the en-                     J (It ; St ) := EXIt ∼p(·|St ) − log p(XIt | St )   (3)
+tire sequence (Arriola et al., 2025). We next formalize an
+entropy-based surrogate objective for choosing It in this              We write this objective as an expectation since under sta-
+block-wise setting.                                                    tionarity and ergodicity the long-run average log loss equals
+                                                                       its expectation.
+3.3. Detailed Formulation                                              Note that this expected joint log loss is equal to the condi-
+While the denoiser is trained over uniformly sampled mask-             tional joint entropy
+ing rates (Sahoo et al., 2024; Shi et al., 2024), the inference-                                               
+time masking pattern, a fully observed prompt followed by                   EXIt ∼p(·|St ) − log p(XIt | St ) = H(XIt | St )
+                                                                                                                         
+a contiguous block of masked tokens, is an edge case of                                    = H Xi(t) , . . . , Xi(t) | St .      (4)
+                                                                                                            1            kt
+the training distribution. The denoiser is therefore not well-
+calibrated for this regime (Kim et al., 2025), and multi-step
+unmasking improves sample quality. Consequently, infer-                Parallel sampling. Given a selected set It                 =
+                                                                         (t)          (t)
+ence unfolds over multiple unmasking-denoising iterations              {i1 , . . . , ikt }, a parallel sampler reveals all tokens in
+(Campbell et al., 2022; Nie et al., 2025a). Large-scale dif-           It simultaneously by sampling them independently from
+fusion LLMs typically partition the sequence into semi-AR              the denoiser conditionals. Equivalently, it uses the
+blocks of length B and apply several denoiser iterations               product-of-marginals approximation ppar (XIt | St ) :=
+                                                                       Qkt
+within each block before moving to the next (Nie et al.,                 j=1 p(Xi(t) | St ). Under this sampler, the step-t objec-
+                                                                                   j
+2025b).                                                                tive induced by parallel sampling is the expected negative
+                                                                       log-likelihood
+Block-wise setting. At iteration t, let St denote the full
+                                                                           L(It ; St ) := EXIt ∼ppar (·|St ) − log ppar (XIt | St )
+                                                                                                                                   
+state of the sequence: (1) all previously unmasked blocks,
+(2) the current block containing a mixture of masked and                                   k
+                                                                                           X
+unmasked tokens, and (3) the remaining future blocks that                              =         H(Xi(t) | St ).                            (5)
+are still fully masked. Denote the indices of the current                                  j=1
+                                                                                                        j
+
+
+block by {b, . . . , b + B − 1}. The planner selects a set of
+indices                                                                This sum-of-marginals objective, L(It ; St ), is the tractable
+                                                                       surrogate optimized by planners. We next relate the tractable
+          It = Pt (St ; Dθ ) ⊆ {b, . . . , b + B − 1},       (2)       surrogate to the intractable joint objective H(XIt | St ).
+where the dependence on Dθ captures that the planner may               Lemma 3.3 (Token-by-token vs. parallel bounds). Let
+use denoiser-derived signals (e.g., confidence/entropy). Af-           the current block indices be B := {b, . . . , b + B − 1}.
+ter sampling X̂It from the denoiser distributions, the state           Consider any partition of theSblock into T ∈ N dis-
+is updated to St+1 and the denoiser runs again, yielding new                                              T
+                                                                                  S I1 , . . . , IT with t=1 It = B, and define
+                                                                       joint groups
+conditionals due to the updated context.                               I<t := s<t Is . Under the optimal estimator assump-
+                                                                       tion, the total
+                                                                                 PT loss induced by parallel  sampling within each
+Optimal estimator and parallel sampling. We analyze
+                                                                                                        
+                                                                       group is t=1 L It ; S1 , XI<t , then
+planner design under an optimal estimator assumption, used
+purely as an analysis device: the denoiser model’s distri-                                 T
+                                                                                           X                                 X
+bution pθ at each iteration t outputs the data conditional             H(XB | S1 ) ≤              L It ; S1 , XI<t        ≤         H(Xi | S1 ).
+distribution for every currently masked position.                                          t=1                                i∈B
+                                                                                                                                   (6)
+Assumption 3.1 (Optimal estimator). For every iteration t
+                                                                       The left inequality is tight and is achieved by token-by-token
+and every masked index i, the denoiser provides pθ (Xi | St )
+                                                                       unmasking (all groups have size |It | = 1), while the right
+and equals the real data distribution p(Xi | St ).
+                                                                       inequality corresponds to full parallel sampling (a single
+From this point on, under Assumption 3.1, we write p as                group I1 = B). A proof is given in Appendix C.1.
+the optimal estimator distribution and drop the subscript θ            Corollary 3.4 (Gap-minimization principle for parallel sam-
+from entropies and mutual information (MI) (i.e., we write             pling). For any iteration t and any parallel (grouped) sam-
+H and I). In practice, a learned denoiser only approximates            pling step that reveals a set It simultaneously, define the
+these conditionals. Our goal here is to isolate the role of the        entropy gap
+planner given p.                                                                            X
+Assumption 3.2 (Planner objective). Fix an iteration t and                   ∆(It ; St ) :=     H(Xi | St ) − H(XIt | St ), (7)
+                                            (t)        (t)
+a state St . For any candidate set It = {i1 , . . . , ikt }, the                                 i∈It
+                                                                   4
+                           Plan for Speed: Dilated Scheduling for Masked Diffusion Language Models
+
+and ∆(It ; St ) ≥ 0 (by Lemma 3.3). Thus, to make parallel              number of iterations and step sizes are defined as
+sampling behave like the joint objective, planner design
+should explicitly minimize the entropy gap ∆(It ; St ).                                                       B
+                                                                               R = loga B ,         st =         at   ,     t = 1, . . . , R.   (8)
+Corollary 3.4 suggests the key design goal for any parallel             The scheduled It at iteration t and the incremental un-
+sampler: choose It to minimize the entropy gap ∆(It ; St ).             masked set Ut are defined as
+Design principle. This motivates planners that avoid se-
+                                                                               
+                                                                          It = k ∈ {1, . . . , B} \ Ut−1 | (k − 1) mod st = 0 ,
+lecting strongly coupled (typically nearby) indices in the
+                                                                                        U0 = ∅,         Ut = Ut−1 ∪ It .                        (9)
+same iteration conditioned on St . DUS enforces spacing to
+reduce conditional dependence, thereby reducing ∆(It ; St )             If |IR | < |IR−1 |, then IR is merged into IR−1 to balance
+and making the marginal-based surrogate a faithful proxy                coverage. This schedule completes a block in R ≈ ⌈loga B⌉
+for the joint.                                                          iterations, where the values st make early iterations unmask
+We now describe denoiser-guided self-planners and then                  a few widely spaced positions and later iterations fill in the
+present DUS as a deterministic alternative, with planner                remaining gaps at finer resolution. For example, let B = 8
+design guided by keeping the surrogate in (5) close to the              and a = 2. Then R = 3, s1 = 4, s2 = 2, s3 = 1, and
+joint objective by controlling the entropy gap ∆(It ; St ).
+                                                                        I1 = { k | (k − 1) mod 4 = 0} = {1, 5},
+3.4. Self-Planners Guided by Denoiser Confidence                        I2 = { k ∈
+                                                                                 / {1, 5} | (k − 1) mod 2 = 0} = {3, 7},
+                                                                        I3 = { k ∈
+                                                                                 / {1, 3, 5, 7} | (k − 1) mod 1 = 0} = {2, 4, 6, 8}.
+Self-planners are denoiser-guided planners that select in-
+dices to reveal using per-token scores derived from the de-
+noiser conditionals. At iteration t, each masked index i                3.6. Theoretical Analysis of DUS
+is assigned a score r(i | St ) computed from p(Xi | St ),               Corollary 3.4 shows that parallel unmasking is accurate
+and the planner selects an index set It (e.g., top-k or a               when the simultaneously revealed indices have a small
+threshold rule) (Kim et al., 2025; Wu et al., 2025; Ben-                entropy  gap ∆(It ; St ), i.e., when the tractable surrogate
+Hamu et al., 2025). Two common instantiations are: (i)                  P
+                                                                           i∈It H(X  i | St ) is close to the intractable joint entropy
+confidence-based scoring, r(i | St ) = maxx p(xi | St ),                H(XIt | St ). Under a fast-mixing VLMC model, spac-
+and (ii) entropy-based scoring, r(i | St ) = H(xi | St ).               ing the indices in It makes their conditional dependence
+Because these scores are per-token, self-planners effectively           small, which in turn makes this gap small. The next lemma
+minimize the parallel-sampling surrogate in (5). However,               formalizes that, for sufficiently well-separated indices, the
+they do not explicitly control the dependence among indices             joint conditional entropy is ε-close to the sum of individual
+selected in the same iteration, and thus may incur a large              conditional entropies.
+entropy gap ∆(It ; St ) when It contains strongly coupled               Lemma 3.5. Assume that (X1 , . . . , XG ) is a stationary,
+(often nearby) positions.                                               ergodic VLMC with finite order L with fast-mixing property.
+                                                                                   (t)          (t)
+                                                                        Let It = {i1 , . . . , ikt } ⊆ {1, . . . , B} be indices such that
+3.5. DUS as Predefined Planner                                                                                  (t)       (t)
+                                                                        the pairwise distances satisfy im − in ≥ d for all m ̸= n.
+DUS is a deterministic, inference-only planner that fixes in            Then, for any ε > 0, there exists a distance threshold Dε
+advance which positions will be unmasked at each iteration,             such that for all d ≥ Dε ,
+independently of model outputs. In the core, DUS directly
+                                                                                                                kt
+specifies the index set to reveal at each iteration, denoted It ,                                              X                 
+                                                                         H Xi(t) , . . . , Xi(t) | St       ≥         H Xi(t) | St − ε. (10)
+and reveals all indices in It in parallel.                                      1            kt                                 j
+                                                                                                                j=1
+Given a block of size B and a base a > 1, DUS completes
+the block in R = ⌈loga B⌉ denoiser evaluations (versus                  The proof of Lemma 3.5 relies on the fast-mixing property
+O(B) for token-by-token unmasking).                                     of the underlying VLMC, which implies that the MI between
+                                                                        a token and any finite block of sufficiently distant tokens
+Implementation details. In practice, DUS can be aug-                    decays rapidly with their separation. The following lemma
+mented with a skip heuristic that defers unmasking positions            formalizes this decay. Restated lemma and proof are given
+in It whose denoiser scores indicate high uncertainty. Un-              in Appendix C.2.
+less stated otherwise, we use the core schedule in (8)-(9)
+                                                                        Lemma 3.6 (MI decays under fast mixing). Let (Xt )t∈Z
+without skip. An empirical sweep over the skip threshold is
+                                                                        be a stationary, ergodic VLMC with finite order L < ∞,
+in Appendix B.2.
+                                                                        fast-mixing property on a finite alphabet (Assumption C.1
+Inside a block, positions are indexed by {1, . . . , B}, and the
+                                                                    5
+                          Plan for Speed: Dilated Scheduling for Masked Diffusion Language Models
+
+in Appendix C.3). Then there exist constants C < ∞ and                correcting some local inconsistencies via additional con-
+ρ ∈ (0, 1) such that for any index i, spacing d ≥ 1, and any          text. The VLMC fast-mixing assumption serves primarily
+finite M ≥ 0,                                                         as an analytical device motivating the dilated design, not
+                                                                      a literal claim about all data. DUS only requires tokens
+    I Xi ; Xi+d , Xi+2d , . . . , Xi+(M +1)d ≤ C ρ d . (11)
+                                            
+                                                                      spaced at distance d to be on average less dependent, a sub-
+A proof of (11) is given in Appendix C.3.                             stantially milder block-level requirement than full-sequence
+                                                                      fast mixing. Empirically, DUS attains 2-3× wider aver-
+In the context of DUS, the indices in It within a fixed               age token spacing than alternative planners while achieving
+iteration t satisfy a minimum separation st in index space            equal or higher accuracy on HumanEval and MATH500
+(Section 3.5). Combined with Lemma 3.6, this spacing                  (Appendix B.7), validating the schedule on domains that
+implies that the MI between selected positions can be made            violate strict fast mixing.
+uniformly small when st is large, which in turn yields the
+joint-entropy bound in Lemma 3.5 for the set It .                     3.7. Experimental Setup
+
+Late iterations and richer context. The bound is most                 For each model and dataset, decoding uses a semi-
+informative in the early, coarse iterations of DUS where              AR masked diffusion process with block sizes B ∈
+the spacing st is large. As t increases, DUS necessarily              {8, 16, 32, 64}. Decoding proceeds in nblocks = G/B
+decreases st to fill finer-grained gaps. In this regime, nearby       rounds; within each round, the model iteratively predicts
+tokens can be strongly dependent and we do not claim condi-           the masked tokens of the current block before moving to the
+tional independence. However, by late iterations the state St         next. With DUS, the average number of function evaluations
+contains substantially more revealed neighbors around each            per block is NFEblock = log2 B, so the average parallelism
+remaining mask, providing richer surrounding context to               is k = B/ log2 B. The total number of denoiser calls (total
+the denoiser. This typically lowers the remaining per-token           NFE) is
+conditional entropies and helps the model correct local in-
+                                                                                                              G
+consistencies introduced by earlier parallel decisions.                        NFE = nblocks NFEblock =         log2 B,       (12)
+                                                                                                              B
+In summary, DUS aims to make the marginal-entropy sur-
+                                                                      so larger blocks trade more parallelism for fewer diffu-
+rogate in (5) a faithful proxy for the joint objective by ex-
+                                                                      sion evaluations. Section 4.3 further studies fixed-k versus
+plicitly controlling the entropy gap ∆(It ; St ) through spac-
+                                                                      incremental-k (DUS-like) schedules for self-confidence and
+ing. In contrast, denoiser-guided self-planners based on
+                                                                      random planners; aside from that ablation, all non-DUS
+per-token scores can select tightly clustered indices in the
+                                                                      planners use fixed k.
+same iteration, for which the surrogate may be a loose upper
+bound on the joint uncertainty. Two features of the prede-            We evaluate five MDLM variants: (1) LLaDA-Base-8B and
+fined DUS schedule are designed to reduce this mismatch:              (2) LLaDA-Instruct-8B (Nie et al., 2025b), an 8B mask-
+                                                                      diffusion transformer pretrained on mixed text+code and
+  1. Maintained spacing across iterations. Early itera-               its instruction-tuned version. (3) Dream-Instruct-7B (Ye
+     tions reveal a sparse set of indices with large separa-          et al., 2025), a 7B instruction-tuned model; we focus on
+     tion, which (under fast mixing) reduces within-step              this variant since Dream-Base performs substantially worse
+     dependence among simultaneously sampled tokens.                  in our setup. (4) DiffuCoder-Base-7B and (5) DiffuCoder-
+                                                                      Instruct-7B (Gong et al., 2025), a 7B model trained on
+  2. Coarse-to-fine contextual conditioning. By spread-
+                                                                      code tokens with AR initialization and its instruction-tuned
+     ing early reveals across the block, later iterations pre-
+                                                                      version. The DiffuCoder authors report results without a
+     dict remaining masks given richer local context from
+                                                                      semi-AR protocol, thus, for DiffuCoder baselines (without
+     multiple regions of the block.
+                                                                      DUS) we disable semi-AR inference. Four planners are
+Under the fast-mixing VLMC assumption, this design                    evaluated:
+makes the entropy gap small in the coarse iterations, and
+therefore supports the use of parallel unmasking within each            1. Self-confidence (baseline). At each block the model’s
+It .                                                                       top-k confident tokens are unmasked at each diffusion
+                                                                           reverse iteration, while the others are masked. k is set
+When long-range dependencies are strong (e.g., global con-                 to a fixed value that is dependent on block size of the
+straints in code or poetry), any parallel unmasking scheme                 semi-AR process, k = log2 B, unless stated otherwise.
+can still sample dependent tokens together and incur a larger              LLaDA and Dream models use maximum probability
+entropy gap. In such settings, DUS should be viewed as                     as their confidence while DiffuCoder uses entropy (as
+a heuristic that trades fewer denoiser evaluations for ap-                 in their original work).
+proximate parallel decisions, with later iterations potentially
+
+                                                                  6
+                            Plan for Speed: Dilated Scheduling for Masked Diffusion Language Models
+
+Table 1. Math (GSM8K, MATH500) and code (Humaneval, MBPP) benchmarks for self-confidence (Conf.) and DUS (ours). Tasks
+reported accuracy (%) for math and pass@1 for code, at block sizes B = {8, 16, 32, 64}, with corresponding speedup factor (×). Model
+names: B=Base, I=Instruct. DiffuCoder is tested only on code benchmarks: HumanEval and MBPP. Bold marks better planner scores. ∗
+denotes our own reruns for token-by-token MDLM baselines, † Llama-3-8B, and ‡ Qwen-3-8B.
+
+                                                                 B=8                    B=16               B=32                     B=64                 AR
+                          Model             ×1                   ×2.7                    ×4                ×6.4                     ×10.7              Baseline
+                                          Conf.           Conf.     DUS         Conf.      DUS        Conf.        DUS       Conf.      DUS            L† / Q‡
+                                                 ∗
+                          LLaDA-B         72.63           59.29     63.08       51.23      59.51      29.04      49.36        8.04      35.18
+            GSM8K         LLaDA-I         80.29∗          69.22     73.24       61.41      70.66      38.74      65.73       18.73      57.09     49.81∗ / 88.55∗
+                          Dream-I         77.10∗          61.64     65.28       53.22      56.63      27.60      44.66       17.89      32.07
+                          LLaDA-B         24.00∗          16.6          21.4     11.2      19.2         6.0        13.6       2.6       10.2
+            MATH500       LLaDA-I         28.80∗          21.4          23.8     15.4      22.8        10.8        19.2       8.0       14.8      15.23∗ / 50.20∗
+                          Dream-I         37.00∗          22.4          27.0     15.4      19.8         7.2        13.2       4.0       11.6
+                          LLaDA-B         34.76∗          15.85     25.61        12.8      19.51      4.88       14.02        4.88       6.71
+                          LLaDA-I         39.02∗          21.95     28.05       14.02      23.17      9.76       10.37       10.98      11.59
+            Humaneval     Dream-I          57.90           8.54     14.63        5.49      11.59       6.71       6.71        6.10       9.15     36.59∗ / 61.59∗
+                          DiffuCoder-B     67.10          17.07     28.66        6.71      38.41       2.44      21.95        0.61       6.10
+                          DiffuCoder-I     72.00           7.93     22.56       14.02      20.12      13.41      12.80       11.59       8.54
+                          LLaDA-B         38.0∗           19.8          30.4     12.8      31.6         8.2        22.6       3.4       14.4
+                          LLaDA-I         39.4∗           25.4          33.6     17.6      31.8        14.0        23.2      11.4       18.6
+            MBPP          Dream-I          56.2           32.8          45.0     23.8      40.8        16.4        26.6      11.8       22.2       48.4∗ / 65.4∗
+                          DiffuCoder-B     74.2           29.2          48.6     17.4      43.0        10.2        27.4       3.4       17.2
+                          DiffuCoder-I     75.1           31.8          46.4     25.6      43.6        21.0        26.6      13.0       18.2
+
+
+Table 2. General knowledge (BBH, MMLU-pro) benchmarks for self-confidence (Conf.) and DUS (ours). Both are few-shot, COT,
+multiple-choice datasets on general topics from various fields. Tasks report accuracy (%) for token-by-token (×1) and block sizes
+B = {8, 16, 32, 64}, with corresponding speedup factor (×). Model names: B=Base, I=Instruct. For token-by-token baselines, ∗ denotes
+our own reruns. Bold marks better planner scores. † Llama-3-8B; ‡ Qwen-3-8B.
+
+                                                                  B=8              B=16               B=32                B=64                AR
+                                  Model          ×1               ×2.7              ×4                ×6.4                ×10.7             Baseline
+                                              Conf.         Conf.       DUS     Conf.     DUS      Conf.   DUS       Conf.    DUS           L † / Q‡
+                                                      ∗
+                                  LLaDA-B    44.26          41.67       43.33   40.93    41.48     35.93   40.56     26.67    38.52
+                    BBH           LLaDA-I    53.89∗         51.48       51.67   47.59    50.37     44.26   50.93     41.67    50.37    52.59∗ / 59.63∗
+                                  Dream-I    58.15∗         55.93       54.81   50.93    53.52     47.04   50.56     36.30    37.41
+                                  LLaDA-B    39.82∗         36.07       41.96   32.14    37.32     24.11   32.50     16.07    30.36
+                    MMLU-Pro      LLaDA-I    40.89∗         34.46       35.89   25.71    34.64     31.07   34.64     16.07    32.68    37.86∗ / 52.68∗
+                                  Dream-I    50.89∗         46.43       48.04   36.96    47.32     27.50   48.39     13.75    39.64
+
+
+
+  2. EB- and CB-Sampler (literature baselines). Adap-                                     4. Experiments
+     tive samplers that unmask tokens by entropy bound γ
+     (Ben-Hamu et al., 2025) or confidence threshold τ (Wu                                We evaluate the generative and downstream performance
+     et al., 2025); we sweep γ and τ (Appendix B.9).                                      of DUS on mathematical reasoning, code generation, and
+                                                                                          general-knowledge chain-of-thought (COT) multiple-choice
+  3. DUS (ours). For each block length B the DUS is                                       tasks, using unified benchmarking protocols for three diffu-
+     applied (as defined in Section 3.5), that unmasks on                                 sion LLMs (LLaDA, Dream, and DiffuCoder). Full dataset
+     average k = log2 B tokens in denoiser iteration, across                              and evaluation details are provided in Appendix A.3. We
+     a block.                                                                             first present math and coding results (Section 4.1), then
+                                                                                          general-knowledge reasoning (Section 4.2), and finally ab-
+  4. Adaptive samplers with dilated spacing (ours). DUS                                   lations on planner parallelism and NFE (Section 4.3).
+     spacing applied as a post-filter on EB or CB selections
+     (Section 4.4).                                                                       4.1. Math and Coding Experiments
+
+Experiments report block size B and relative NFE speedup,                                 We evaluate GSM8K (Cobbe et al., 2021), MATH500 (Light-
+B/ log2 B (originates from (12)), defined as the ratio of                                 man et al., 2023), HumanEval (Chen et al., 2021), and
+token-by-token total NFE to the experiment’s total NFE;                                   MBPP (Austin et al., 2021) to study the speed-accuracy
+planners are compared at matched B and NFE budget, with                                   trade-off of semi-AR masked diffusion. Figure 1a plots ac-
+their final task scores reported accordingly. A GSM8K prob-                               curacy vs. speedup for 2.7×, 4×, 6.4×, and 10.7× (block
+lem, for B = 32, is visualized in Figure 1b and Figure 1c                                 sizes B ∈ {8, 16, 32, 64}): smaller blocks yield higher accu-
+for DUS and self-confidence respectively.
+
+                                                                                    7
+                                      Plan for Speed: Dilated Scheduling for Masked Diffusion Language Models
+
+                                                   CB-Sampler       EB-Sampler         DUS      Token-By-Token
+                               LLaDA-Base-8B                           LLaDA-Instruct-8B                          Dream-Instruct-7B
+                                                          65                                            45
+                   35.0
+
+
+
+IFEval score ( )
+                   32.5                                   60                                            40
+                   30.0
+                                                          55
+                   27.5                                                                                 35
+                   25.0                                   50
+                                                                                                        30
+                          0   100      200       300            0       100             200      300         0         100            200
+                                                                          NFE (until stop)
+
+Figure 2. IFEval score versus NFE (for early termination) for CB-Sampler (blue), EB-Sampler (orange), and DUS (green) on LLaDA-
+Base-8B, LLaDA-Instruct-8B, and Dream-Instruct-7B. CB varies the confidence temperature τ = {0.5, 0.6, 0.7, 0.9}, EB varies the
+entropy bound γ = {0.01, 0.1, 1, 2, 4}, and DUS varies the block size B = {8, 16, 32, 64}. For comparison, AR model, Llama-3-8B
+achieves score of 15.23 with 356 NFEs on average, and Qwen-3-8B achieves 41.73 with 577 NFEs on average. ⋆ denotes token-by-token
+greedy sampler. Higher accuracy (%) and lower NFE are better.
+
+
+racy but require more denoiser rounds (higher NFE), while                        allelism k = log2 B: (i) fixed-k (constant k each step) and
+larger blocks enable up to 10× fewer iterations with some                        (ii) dilated-incremental (small k early, larger k late; DUS-
+loss in final accuracy. At the same NFE budget, DUS im-                          like), conceptually related to cosine schedules (Shi et al.,
+proves performance by up to 27% over the self-confidence                         2024). We evaluate GSM8K accuracy (first 300 samples)
+baseline. GSM8K degrades smoothly with speed, whereas                            for LLaDA-Base and LLaDA-Instruct at B ∈ {16, 32} in
+MBPP trends are less smooth (likely due to already low                           Table 3.
+accuracy at higher speedups), but DUS remains consistently
+                                                                                 DUS performs best overall. For self-confidence, fixed-k
+better.
+                                                                                 slightly outperforms dilated-incremental, indicating that
+Table 1 reports results across all four benchmarks. Over-                        confidence-guided selection benefits from uniform paral-
+all, DUS matches or improves the self-confidence baseline,                       lelism. For random planners, dilated-incremental recovers
+reaching up to 40% gains on math and up to 20% on code,                          much of the fixed-k accuracy loss and can even surpass
+while using less NFE than token-by-token inference. For                          fixed-k self-confidence. Overall, spacing-aware scheduling
+reference, we also report token-by-token self-confidence                         (not just larger k) is key for maintaining accuracy under
+baselines (×1 speedup).                                                          aggressive parallel decoding.
+Notably, on code benchmarks, the LLaDA and DiffuCoder
+                                                                                 Guaranteed Speedups. We evaluate instruction following
+base models can outperform their instruct counterparts un-
+                                                                                 on IFEval (Zhou et al., 2023). Figure 2 plots score vs. NFE
+der DUS, in contrast to the self-confidence planner where
+                                                                                 until early stop (first <EOS>) for CB-Sampler, EB-Sampler,
+instruct tuning is generally superior.
+                                                                                 and DUS on LLaDA-Base-8B, LLaDA-Instruct-8B, and
+                                                                                 Dream-Instruct-7B (generation length 1024). CB/EB vary
+4.2. General Knowledge Experiments
+                                                                                 confidence/entropy thresholds, while DUS varies block size
+We evaluate general-knowledge reasoning on BBH (Suzgun                           B.
+et al., 2023) and MMLU-Pro (Wang et al., 2024) using a                           Across the three models, DUS reaches near-token-by-token
+few-shot chain-of-thought protocol. Table 2 reports token-                       accuracy at 3-4× fewer NFE, with EB and CB occupying
+by-token self-confidence baselines (×1) and semi-AR block                        higher-NFE operating points (Figure 2).
+diffusion results for B ∈ {8, 16, 32, 64} on LLaDA-Base,
+LLaDA-Instruct, and Dream-Instruct. Although gains are                           Across a broader 5-model × 4-benchmark sweep (Ap-
+smaller than for math and code, DUS consistently outper-                         pendix B.9), the adaptive samplers reach higher accuracy
+forms self-confidence at matched speedups (BBH: +1-5%;                           at higher NFE on most tasks, while DUS provides a pre-
+MMLU-Pro: +5-9%), confirming stronger reasoning under                            dictable, deterministic speedup - often beating the nominal
+constrained inference budgets.                                                   (G/B) log B budget - motivating the question of whether
+                                                                                 DUS-style spacing can be combined with adaptive selection
+4.3. Planners Parallelism Performance                                            (Section 4.4).
+
+Power of spreading. To isolate whether DUS helps due                             Practical Considerations. DUS is most effective with
+to its schedule (rather than simply revealing more tokens per                    moderate block sizes (B = 16-32), where the dilated pat-
+step), we compare two schedules with the same average par-
+
+                                                                            8
+                                 Plan for Speed: Dilated Scheduling for Masked Diffusion Language Models
+
+Table 3. Planners parallelism ablation on GSM8K (300 samples,                           Given the scheduler’s selected candidates I at step t within
+G = 256), comparing self-confidence (Conf.) vs. random planners
+under two unmasking schedules: fixed-k and dilated-incremental
+                                                                                        the current block of size B, we process I in descending
+(Inc., as in DUS). Accuracy (%) is shown for both base and instruct                     score order and partition it into an accepted set I ′ and a
+LLaDA models at B = {16, 32}. Best scores are bold, second-                             rejected set R (with I = I ′ ⊔ R): each candidate i is
+best are underlined.                                                                    accepted into I ′ if minj∈I ′ |i − j| ≥ gap and otherwise
+                                                                                        placed in R. Rejected tokens stay masked, and the scheduler
+            Model      Block      Conf.           Random         DUS
+                                                                                        reconsiders them at the next step. The minimum gap is
+                               fixed     inc.   fixed   inc.     inc.
+                                                                                        adaptive:
+            Base        16     55.00 49.33 24.67 43.67 61.33
+                        32     30.67 25.00 10.00 39.00 48.33                                                                     
+            Instruct    16     62.33 47.67 40.00 61.33 71.67                                         gap = max 1, Mrem · g0 /B ,                (13)
+                        32     39.67 23.67 23.33 53.67 66.67
+
+                                                                                        where Mrem = B − |Ut | is the count of still-masked posi-
+Table 4. Dilated spacing post-filter applied on top of EB-Sampler
+(γ=2) and CB-Sampler (τ =0.5) at B=32, with a fixed initial gap
+                                                                                        tions in the block and g0 is the initial gap: when the block
+g0 =8. Each cell is Acc / NFE. Bold indicates accuracy improve-                         is fully masked, gap = g0 . Larger g0 enforces sparser
+ment over the unspaced baseline. Full sweep over (γ, τ, g0 ) and                        early unmasking; as the block fills, Mrem shrinks and the
+pseudocode are in Appendix B.10.                                                        gap relaxes toward 1, recovering the underlying scheduler.
+                                                                                        Full pseudocode (Algorithm 1) and per-(γ, τ, g0 ) sweeps
+                                       EB (γ=2)                CB (τ =0.5)
+                                                                                        (Figure 6) are in Appendix B.10.
+    Model          Dataset         off      + spacing      off          + spacing
+                HumanEval 24.4 / 35 37.8 / 59 22.6 / 22 34.8 / 42                       Table 4 reports an aggressive EB-Sampler (γ=2) and CB-
+    LLaDA-Inst. MATH500 24.8 / 47 27.8 / 81 18.4 / 37 28.2 / 62                         Sampler (τ =0.5) at B=32, with and without the post-filter
+                IFEval    63.7 / 91 65.2 / 132 59.7 / 83 63.8 / 120
+                                                                                        at a fixed g0 =8, on LLaDA-Instruct-8B and Dream-Instruct-
+                   HumanEval 7.9 / 55 9.8 / 101 12.8 / 42 14.6 / 70
+    Dream-Inst.    MATH500 26.8 / 47 33.6 / 84 23.8 / 39 31.4 / 69                      7B across HumanEval, MATH500, and IFEval. Spacing
+                   IFEval    46.6 / 87 49.0 / 121 43.8 / 80 47.1 / 108                  improves accuracy in all cases, with gains of up to +13.4%
+                                                                                        for EB on HumanEval and +12.2% for CB on HumanEval.
+                                                                                        Aggressive base settings, where the unfiltered scheduler
+tern provides substantial token spacing while each block                                reveals tightly clustered indices, benefit most from the post-
+still benefits from rich left-context (prompt and previously                            filter; the broader sweep over (γ, τ, g0 ) in Figure 6 confirms
+generated blocks). Very small blocks (B = 8) limit DUS                                  that for every (model, dataset) at least one g0 improves both
+because the coarse-to-fine schedule has only ⌈log2 8⌉ = 3                               accuracy and NFE for EB and CB, supporting the view that
+levels. Larger blocks (B = 64+) require predicting more to-                             dilated spacing is complementary to score-based selection.
+kens from sparser within-block context, particularly in early
+levels where few positions have been revealed, and increase
+the entropy gap as more tokens are decoded in parallel. Nev-
+                                                                                        5. Conclusions
+ertheless, as shown in Sections 4.1-4.2, DUS outperforms                                We introduced DUS, a purely inference-time, model-free,
+confidence-based planners at any fixed B; the block size con-                           model-agnostic planner for MDLMs. In extensive ex-
+trols the quality-speed operating point. Beyond block size,                             periments on diffusion LLMs, DUS consistently outper-
+the remaining knobs (a = 2, base skip = 1, threshold                                    forms the traditional denoiser-confidence planner, improv-
+= 0) are robust across settings (Appendices B.4 and B.2);                               ing downstream task accuracy by up to 27% on challenging
+full single-block (B=G, ∼28× speedup) and wall-clock                                    math and code benchmarks, while simultaneously reducing
+results are in Appendices B.3 and B.8.                                                  the number of denoising iterations by an order of magni-
+                                                                                        tude. Unlike typical speed-quality trade-offs, our method
+4.4. Beyond DUS: Dilated Spacing as a Drop-in Filter                                    both accelerates inference and enhances output quality. The
+     for Adaptive Schedulers                                                            dilated-spacing principle is also complementary to per-token
+                                                                                        adaptive samplers - applied as a post-filter on EB-Sampler
+Adaptive token-selection schedulers such as the EB-Sampler
+                                                                                        and CB-Sampler selections it improves their accuracy at
+(Ben-Hamu et al., 2025) and the CB-Sampler (Wu et al.,
+                                                                                        matched or modestly higher NFE (Section 4.4) - and orthog-
+2025) reach higher accuracy than DUS at higher NFE on
+                                                                                        onal to KV-caching for diffusion models (Hu et al., 2025;
+some benchmarks (Appendix B.9). They decide how many
+                                                                                        Wu et al., 2025; Ma et al., 2026), which reduces per-step
+tokens to unmask per step from a per-token score, but place
+                                                                                        cost without altering the unmasking schedule. By unlocking
+no constraint on where those tokens are (except the semi-
+                                                                                        the parallelism inherent in diffusion decoding without any
+AR block constraint). We ask whether the dilated spacing
+                                                                                        modifications to model architecture or training, DUS re-
+principle from DUS can improve these strong baselines,
+                                                                                        veals a new path for inference-only planners to fully exploit
+while maintaining their core principles.
+                                                                                        MDLM parallelism.
+
+
+                                                                                    9
+                         Plan for Speed: Dilated Scheduling for Masked Diffusion Language Models
+
+Impact Statement                                                     Gong, S., Zhang, R., Zheng, H., Gu, J., Jaitly, N., Kong, L.,
+                                                                       and Zhang, Y. DiffuCoder: Understanding and improving
+This paper presents an inference-time optimization method              masked diffusion models for code generation. arXiv
+for masked diffusion language models. By reducing the                  preprint arXiv:2506.20639, 2025.
+number of calls required for text generation while maintain-
+ing or improving output quality, DUS has the potential to            Grattafiori, A., Dubey, A., Jauhri, A., Pandey, A., Kadian,
+lower computational costs and energy consumption associ-               A., Al-Dahle, A., Letman, A., Mathur, A., Schelten, A.,
+ated with using deployed diffusion-based language models.              Vaughan, A., et al. The llama 3 herd of models. arXiv
+More efficient inference enables broader access to these               preprint arXiv:2407.21783, 2024.
+models and reduces their environmental footprint. As with
+any advancement in large language model capabilities, prac-          Hendrycks, D., Burns, C., Kadavath, S., Arora, A., Basart,
+titioners should remain careful of potential misuse, however,          S., Tang, E., Song, D., and Steinhardt, J. Measuring
+DUS does not introduce new generative capabilities beyond              mathematical problem solving with the MATH dataset.
+what existing models already provide.                                  In Advances in Neural Information Processing Systems
+                                                                      Track on Datasets and Benchmarks, 2021.
+
+References                                                           Horvitz, Z., Singhal, R., Zou, H., Domingo-Enrich, C., Yu,
+                                                                       Z., Ranganath, R., and McKeown, K. No compute left
+Arriola, M., Gokaslan, A., Chiu, J. T., Yang, Z., Qi, Z.,
+                                                                       behind: Rethinking reasoning and sampling with masked
+  Han, J., Sahoo, S. S., and Kuleshov, V. Block diffusion:
+                                                                       diffusion models. arXiv preprint arXiv:2510.19990,
+  Interpolating between autoregressive and diffusion lan-
+                                                                       2025.
+  guage models. In International Conference on Learning
+  Representations, 2025.                                             Hu, Z., Meng, J., Akhauri, Y., Abdelfattah, M. S., Seo, J.-s.,
+                                                                       Zhang, Z., and Gupta, U. FlashDLM: Accelerating diffu-
+Austin, J., Odena, A., Nye, M., Bosma, M., Michalewski,
+                                                                       sion language model inference via efficient KV caching
+  H., Dohan, D., Jiang, E., Cai, C., Terry, M., Le, Q., and
+                                                                       and guided diffusion. arXiv preprint arXiv:2505.21467,
+  Sutton, C. Program synthesis with large language models.
+                                                                       2025.
+  arXiv preprint arXiv:2108.07732, 2021.
+Ben-Hamu, H., Gat, I., Severo, D., Nolte, N., and Kar-               Kim, J., Shah, K., Kontonis, V., Kakade, S., and Chen,
+  rer, B. Accelerated sampling from masked diffusion                   S. Train for the worst, plan for the best: Understand-
+  models via entropy bounded unmasking. arXiv preprint                 ing token ordering in masked diffusions. arXiv preprint
+  arXiv:2505.24857, 2025.                                              arXiv:2502.06768, 2025.
+
+Bradley, R. C. Basic properties of strong mixing conditions.         Leviathan, Y., Kalman, M., and Matias, Y. Fast inference
+  a survey and some open questions. Probability Surveys,               from transformers via speculative decoding. In Inter-
+  2:107–144, 2005.                                                     national Conference on Machine Learning, pp. 19274–
+                                                                       19286. PMLR, 2023.
+Campbell, A., Benton, J., De Bortoli, V., Rainforth, T.,
+  Deligiannidis, G., and Doucet, A. A continuous time                Lightman, H., Kosaraju, V., Burda, Y., Edwards, H., Baker,
+  framework for discrete denoising models. In Advances in              B., Lee, T., Leike, J., Schulman, J., Sutskever, I., and
+  Neural Information Processing Systems, volume 35, pp.                Cobbe, K. Let’s verify step by step. arXiv preprint
+  28266–28279, 2022.                                                   arXiv:2305.20050, 2023.
+
+Chen, M., Tworek, J., Jun, H., Yuan, Q., Pinto, H. P. d. O.,         Liu, S., Nam, J., Campbell, A., Stärk, H., Xu, Y., Jaakkola,
+  Kaplan, J., Edwards, H., Burda, Y., Joseph, N., Brockman,            T., and Gómez-Bombarelli, R. Think while you generate:
+  G., et al. Evaluating large language models trained on               Discrete diffusion with planned denoising. In Interna-
+  code. arXiv preprint arXiv:2107.03374, 2021.                         tional Conference on Learning Representations, 2025.
+
+Cobbe, K., Kosaraju, V., Bavarian, M., Chen, M., Jun, H.,            Lou, A., Meng, C., and Ermon, S. Discrete diffusion mod-
+  Kaiser, L., Plappert, M., Tworek, J., Hilton, J., Nakano,            eling by estimating the ratios of the data distribution. In
+  R., Hesse, C., and Schulman, J. Training verifiers to solve          International Conference on Machine Learning. PMLR,
+  math word problems. arXiv preprint arXiv:2110.14168,                 2024.
+  2021.
+                                                                     Ma, X., Yu, R., Fang, G., and Wang, X. dKV-Cache: The
+Fan, C., Heng, W., Li, B., Liu, S., Song, Y., Su, J., Qu,             cache for diffusion language models. Advances in Neu-
+  X., Shen, K., and Wei, W. Stable-diffcoder: Pushing the             ral Information Processing Systems, 38:149009–149033,
+  frontier of code diffusion large language model. arXiv              2026.
+  preprint arXiv:2601.15892, 2026.
+
+                                                                10
+                          Plan for Speed: Dilated Scheduling for Masked Diffusion Language Models
+
+Nie, S., Zhu, F., Du, C., Pang, T., Liu, Q., Zeng, G., Lin, M.,        Xia, H., Ge, T., Wang, P., Chen, S.-Q., Wei, F., and Sui,
+  and Li, C. Scaling up masked diffusion models on text. In              Z. Speculative decoding: Exploiting speculative execu-
+  International Conference on Learning Representations,                  tion for accelerating seq2seq generation. arXiv preprint
+  volume 2025, pp. 82974–82997, 2025a.                                   arXiv:2203.16487, 2022.
+Nie, S., Zhu, F., You, Z., Zhang, X., Ou, J., Hu, J., Zhou, J.,        Yang, A., Li, A., Yang, B., Zhang, B., Hui, B., Zheng, B.,
+  Lin, Y., Wen, J.-R., and Li, C. Large language diffusion               Yu, B., Gao, C., Huang, C., Lv, C., et al. Qwen3 technical
+  models. In Advances in Neural Information Processing                   report. arXiv preprint arXiv:2505.09388, 2025.
+  Systems, volume 38, 2025b.
+                                                                       Ye, J., Xie, Z., Zheng, L., Gao, J., Wu, Z., Jiang, X., Li,
+Park, Y.-H., Lai, C.-H., Hayakawa, S., Takida, Y., and Mitsu-            Z., and Kong, L. Dream 7b: Diffusion large language
+  fuji, Y. Jump your steps: Optimizing sampling schedule                 models. arXiv preprint arXiv:2508.15487, 2025.
+  of discrete diffusion models. In International Conference
+  on Learning Representations, 2025.                                   Zhang, Z. Estimating mutual information via Kolmogorov
+                                                                         distance. IEEE Transactions on Information Theory, 53
+Peng, F. Z., Bezemek, Z., Patel, S., Rector-Brooks, J., Yao,             (9):3280–3282, 2007.
+  S., Bose, A. J., Tong, A., and Chatterjee, P. Path planning
+  for masked diffusion model sampling. arXiv preprint                  Zhou, J., Lu, T., Mishra, S., Brahma, S., Basu, S.,
+  arXiv:2502.03540, 2025.                                                Luan, Y., Zhou, D., and Hou, L. Instruction-following
+                                                                         evaluation for large language models. arXiv preprint
+Prabhudesai, M., Wu, M., Zadeh, A., Fragkiadaki, K.,                     arXiv:2311.07911, 2023.
+  and Pathak, D. Diffusion beats autoregressive in data-
+  constrained settings. Advances in Neural Information
+  Processing Systems, 38:10581–10606, 2026.
+                                                                       A. Setup and Background
+Sahoo, S. S., Arriola, M., Schiff, Y., Gokaslan, A., Marro-
+                                                                       A.1. Use of Large Language Models
+  quin, E., Chiu, J. T., Rush, A., and Kuleshov, V. Simple
+  and effective masked diffusion language models. In Ad-               A large language model was used solely for minor editing
+  vances in Neural Information Processing Systems, vol-                of draft text. The model was not used for ideation, experi-
+  ume 37, 2024.                                                        mental design, implementation, analysis, data generation,
+                                                                       or to produce technical content. All scientific claims and
+Shi, J., Han, K., Wang, Z., Doucet, A., and Titsias, M. K.
+                                                                       results were produced and verified by the authors.
+  Simplified and generalized masked diffusion for discrete
+  data. In Advances in Neural Information Processing
+  Systems, volume 37, 2024.                                            A.2. Masked Diffusion: Forward Process and Training
+                                                                            Objective
+Suzgun, M., Scales, N., Schärli, N., Gehrmann, S., Tay,
+  Y., Chung, H. W., Chowdhery, A., Le, Q. V., Chi, E. H.,              We formally define the forward and reverse processes used
+  Zhou, D., and Wei, J. Challenging BIG-Bench tasks and                during training of masked diffusion language models (Sa-
+  whether chain-of-thought can solve them. In Findings                 hoo et al., 2024; Nie et al., 2025b; Ye et al., 2025), and
+  of the Association for Computational Linguistics: ACL                distinguish them from the inference procedure.
+  2023, pp. 13003–13051, 2023.
+                                                                       Forward process (training). Given a clean sequence
+Wang, Y., Ma, X., Zhang, G., Ni, Y., Chandra, A., Guo, S.,             X = (X1 , . . . , XG ) with Xi ∈ V, the forward process
+ Ren, W., Arulraj, A., He, X., Jiang, Z., et al. MMLU-Pro:             at noise level t ∈ (0, 1] produces a masked sequence
+ A more robust and challenging multi-task language under-              Mt = (Mt,1 , . . . , Mt,G ) by independently replacing each
+ standing benchmark. In Advances in Neural Information                 token with [MASK] with probability t:
+ Processing Systems Track on Datasets and Benchmarks,                                        (
+ 2024.                                                                                         Xi          w.p. 1 − t,
+                                                                                   Mt,i =                                      (14)
+Wu, C., Zhang, H., Xue, S., Liu, Z., Diao, S., Zhu, L.,                                        [MASK] w.p. t.
+ Luo, P., Han, S., and Xie, E. Fast-dLLM: Training-free
+                                                                       At t = 0 the sequence is fully observed; at t = 1 all tokens
+ acceleration of diffusion LLM by enabling KV cache
+                                                                       are masked.
+ and parallel decoding. arXiv preprint arXiv:2505.22618,
+ 2025.
+
+
+
+
+                                                                  11
+                          Plan for Speed: Dilated Scheduling for Masked Diffusion Language Models
+
+Reverse process (training). The reverse process recovers                to match the math/code protocol in the latter case.
+the clean sequence from the masked state. The denoiser Dθ
+is trained to reconstruct the original tokens by minimizing a              Formula                     Definition
+reweighted cross-entropy loss over masked positions:                       G                           Generation length.
+    L(θ) = −Et∼U(0,1], X , Mt                                              B                           Block size.
+         X  G                                                            k                           Average number of unmasked
+         1                                                                                             tokens per iteration.
+                1[Mt,i = [MASK]] log pθ (Xi | St ) ,
+          t i=1                                                                        G
+                                                                           nblocks =                   Number of blocks.
+                                                                                       B
+where St denotes the sampler state (the information in Mt ).
+                                                                                           B
+This objective upper-bounds the negative log-likelihood                    NFEblock =                  Number of function evalua-
+                                                                                           k           tions per block.
+− log pθ (X ) (Sahoo et al., 2024; Nie et al., 2025b). The 1/t
+reweighting compensates for fewer masked tokens at low                     NFE = nblocks · NFEblock Total number of function eval-
+noise levels.                                                                                       uations.
+                                                                            NFE       B
+                                                                                    =                  NFE speedup factor com-
+Inference. At inference time, θ is fixed and generation                    NFEblock   k                pared to token-by-token infer-
+mimics the reverse process: starting from a completely or                                              ence.
+partially masked state (e.g., an unmasked prompt followed                      Table 5. Inference NFE speedup conversion table.
+by masked generation tokens), a planner Pt iteratively se-
+lects indices It to unmask, the denoiser predicts token dis-
+tributions pθ (Xi | St ) for i ∈ It , tokens are sampled, and           All evaluations use a few-shot, COT prompting frame-
+the state is updated. This paper focuses on the design of the           work: GSM8K and MBPP with 4-shot contexts, HumanEval
+planner Pt .                                                            with 0-shot, MATH500 with 4-shot, BBH with 3-shot, and
+                                                                        MMLU-Pro with 5-shot.
+A.3. Datasets and Settings                                              Early stop for generation is implemented for all planners,
+All experiments were conducted on NVIDIA Tesla V100                     which ends generation if the [EOS] token is unmasked
+GPUs. Evaluation was performed using the Language                       and all previous tokens are unmasked too, since generating
+Model Evaluation Harness repository (https://                           text after this token would produce content unrelated to the
+github.com/EleutherAI/lm-eval-harness);                                 answer.
+our code, based on the LLaDA repository (https:                         Table 5 summarizes the notation and formulas used through-
+//github.com/ML-GSAI/LLaDA), is publicly avail-                         out this paper. In most experiments, the unmasking parame-
+able at https://github.com/omerlux/DUS for                              ter is set as k = log2 B unless otherwise specified.
+reproducibility. Average NFEs per block (and overall
+for each generation length) are reported to ensure a fair
+comparison across methods.                                              B. Experiments and Ablations
+For the standard benchmarks GSM8K (Cobbe et al., 2021),                 B.1. Block-Size Effect on Speedups
+MBPP (Austin et al., 2021), and HumanEval (Chen et al.,                 In this experiment, the effect of block size B on genera-
+2021), evaluation is conducted on the full datasets (1,319,             tion accuracy was evaluated under a fixed total NFEs, cor-
+500, and 164 samples, respectively), with GSM8K paral-                  responding to an 8× speedup relative to token-by-token
+lelism ablations limited to the first 300 samples. To facilitate        decoding. The DUS was configured to begin at a higher
+evaluation on MATH500 (Lightman et al., 2023), a new task               iteration t0 > 1, resulting in larger unmasking group sizes
+class is implemented for the 500 cherry-picked samples                  k per step (cf. (8)). Block sizes B = {8, 16, 32}, corre-
+from the MATH dataset (Hendrycks et al., 2021). Finally, to             sponding to NFEblock = {1, 2, 4}, were tested on GSM8K
+assess robustness on reasoning and professional-knowledge               (first 300 samples). Table 6 reports task accuracy (%) for
+benchmarks, subsets are sampled from BBH (Suzgun et al.,                LLaDA-Base and LLaDA-Instruct, revealing a monotonic
+2023) (20 examples from each of its 27 subgroups, 540 to-               increase in performance with B: the Base model rose from
+tal) and MMLU-Pro (Wang et al., 2024) (40 examples from                 13.33% at B = 8 to 32.33% at B = 32 (≈ 2.4× accu-
+each of its 14 subgroups, 560 total). Datasets’ generation              racy improvement), while the Instruct variant climbed from
+length G is set to 256, except for the coding datasets Hu-              12.00% to 56.67% (≈ 4.7× accuracy improvement).
+manEval and MBPP, where G = 512. For IFEval (Zhou
+et al., 2023), the generation length is G = 1024 for the                These gains are attributed to the fact that larger block sizes,
+planner parallelism experiments (Figure 2) and G = 256                  when combined with DUS, spread the initially predicted
+for the hybrid post-filter evaluation (Section 4.4, Table 4),           tokens farther apart. This spatial separation reduces MI
+
+                                                                   12
+                             Plan for Speed: Dilated Scheduling for Masked Diffusion Language Models
+
+Table 6. Speedup comparison on GSM8K (300 samples, G = 256)                           G ∈ {256, 512} this reduces the schedule to ⌈log2 G⌉ de-
+using DUS under an 8× inference budget (total NFE = 32).
+Block sizes B ∈ {8, 16, 32} correspond to average NFEs per
+                                                                                      noiser iterations, yielding a substantial NFE speedup. Ta-
+block of {1, 2, 4}. Results for both base and instruct LLaDA                          ble 8 sweeps the skip threshold c ∈ {0.0, 0.15, 0.3, 0.45} on
+models; best scores are bold and second-best are underlined.                          LLaDA-Base and LLaDA-Instruct across the three datasets.
+
+                Block Size               8        16        32                        Table 8. Single-block DUS at B=G - i.e., the entire generation
+                Avg NFEs@Block           1        2         4
+                                                                                      is one dilated block. Each cell is accuracy (%) at the given skip
+                                                                                      threshold c. NFE is 8-9 for G=256 (MATH500, GSM8K) and
+                Model                        Score (%, ↑)                             10-11 for G=512 (HumanEval), corresponding to a ∼ 28× and
+                Base                 13.33 11.00 32.33                                ∼ 51× relative NFE speedup over token-by-token. Bold marks
+                Instruct             12.00 16.00 56.67                                the best c per row.
+
+                                                                                                                               Skip threshold c
+among unmasked tokens in early iterations - consistent with                                 Model         Dataset        0.0      0.15    0.3    0.45    Speedup
+our analysis in Lemma 3.6 - and allows subsequent iterations                                              MATH500         8.2      6.4     7.0    4.4      ×28
+to fill in the gaps and more effectively correct existing errors                            LLaDA-Base    GSM8K          12.5     15.9    17.4   16.8      ×28
+                                                                                                          HumanEval      9.8      8.5     11.0   9.8       ×51
+introduced by coarse-grained parallelism. Tuning B thus
+                                                                                                          MATH500        17.2     11.8    10.4    7.8      ×28
+offers an additional lever to boost output quality without                                  LLaDA-Inst    GSM8K          42.3     41.9    37.9   33.1      ×28
+raising the compute budget, though excessively large B may                                                HumanEval      14.6     14.6    16.5   14.6      ×51
+force the model to predict tokens with insufficient nearby
+context, which can exceed the model capabilities.                                     Single-block DUS produces non-trivial accuracy at all
+                                                                                      settings, including 42.3% on GSM8K and 17.2% on
+B.2. Skip Threshold Ablation                                                          MATH500 for LLaDA-Instruct at ×28 speedup. The skip
+The skip heuristic introduced in Section 3.5 defers unmask-                           threshold c improves the best-row accuracy in three of six
+ing positions whose denoiser confidence is below a thresh-                            (model, dataset) settings, with the largest gain on GSM8K-
+old c, leaving them masked for reconsideration at the next                            Base (12.5% → 17.4%). For well-calibrated regimes
+iteration. Table 7 sweeps c ∈ {0.0, 0.1, 0.3, 0.5} on LLaDA-                          (LLaDA-Instruct on MATH500 and GSM8K), c=0 is best,
+Base and LLaDA-Instruct, on MATH500 (B=16) and Hu-                                    consistent with the broader skip ablation in Appendix B.2.
+manEval (B=32).                                                                       Overall, the B=G regime trades accuracy for an order-of-
+                                                                                      magnitude further speedup beyond the B ∈ {8, 16, 32, 64}
+Table 7. Skip-DUS ablation: confidence threshold c controls how                       operating points in Tables 1-2.
+aggressively DUS defers low-confidence tokens. Each cell is
+Acc / NFE; c=0 recovers standard DUS (matches Tables 1–2).
+MATH500 uses B=16, G=256; HumanEval uses B=32, G=512.                                 B.4. Parameter Sensitivity
+Bold marks the best score per row.
+                                                                                      We sweep the two remaining DUS knobs not covered by Ta-
+                                             Skip threshold c                         bles 1-2 (which span B ∈ {8, 16, 32, 64}) or Appendix B.2
+   Model         Dataset       0.0             0.1           0.3       0.5            (which sweeps the skip threshold c): the dilation base a and
+                 MATH500     16.8 / 36       17.0 / 37   17.2 / 39   17.6 / 42
+                                                                                      the level-skip parameter base skip. On LLaDA-Base
+   LLaDA-Base
+                 HumanEval    9.8 / 43        9.8 / 37   12.8 / 31   11.6 / 37        across MATH500 and GSM8K at B ∈ {16, 32}, Table 9
+                 MATH500     21.0 / 38       21.2 / 38   20.6 / 40   20.6 / 46        reports the default operating point (a=2, base skip=1)
+   LLaDA-Inst
+                 HumanEval   13.4 / 26       14.0 / 25    9.2 / 23   15.2 / 34        alongside two alternative bases (a ∈ {3, 4}) and the one
+                                                                                      alternative level-skip (base skip=2).
+The default c=0 (no skip) is competitive across all four
+cells, and skip improves the best score in three of them. The                         Table 9. Sensitivity of DUS to the remaining design choices on
+most pronounced gain is on HumanEval with LLaDA-Base,                                 LLaDA-Base. Each cell is Acc / NFE. The Default column (a=2,
+                                                                                      base skip=1) reproduces Tables 1-2; the other columns vary
+where c=0.3 both raises pass@1 from 9.8% to 12.8% and                                 one parameter at a time. Default settings consistently win.
+lowers NFE from 43 to 31. On MATH500 the threshold
+shifts NFE upward in exchange for modest accuracy gains,                                                     Default                 Base a             base skip
+while on HumanEval-Instruct c=0.5 is best despite higher                                  Dataset    B    a=2, skip=1           a=3        a=4             =2
+NFE. Optimal c is therefore task-dependent; the default c=0                                          16      19.2 / 64         6.4 / 22   4.4 / 22       6.0 / 48
+                                                                                          MATH500
+remains a safe baseline to guarantee speedups.                                                       32      13.6 / 40         6.2 / 17   4.0 / 20       7.8 / 32
+                                                                                                     16      59.5 / 64     26.3 / 23      29.3 / 32      38.7 / 48
+                                                                                          GSM8K
+                                                                                                     32      49.4 / 40     26.6 / 19      23.2 / 24      33.4 / 32
+B.3. Single-Block DUS (B=G)
+A natural concern is whether DUS still works in the limit                             The default settings dominate at every (dataset, B) pair.
+where each block spans the entire generation: B=G. With                               Raising a from 2 to 3 or 4 reduces the number of dilated
+
+                                                                                 13
+                              Plan for Speed: Dilated Scheduling for Masked Diffusion Language Models
+
+Table 10. Per-step runtime breakdown (1 NFE): model forward                   with B (≈ 1.26-2.01 ms). CB selection also incurs a non-
+pass and component overheads (DUS, confidence calculation, CB
+selection, entropy calculation, EB selection), in milliseconds.
+                                                                              trivial overhead that increases with B (≈ 0.15-0.72 ms),
+                                                                              whereas EB selection remains relatively small. Overall, all
+  Block    Steps Model     DUS     Conf      CB       Entr      EB            sampler components remain small compared to the model
+ size B log2 (B)  (ms)      (ms) calc (ms) sel (ms) calc (ms) sel (ms)
+                                                                              forward pass (247.34 ms per step).
+     8        4   247.34   0.0002   1.1630   0.1524    1.2643   0.1009
+    16        5   247.34   0.0002   1.1656   0.2775    1.3289   0.1089
+    32        6   247.34   0.0002   1.1698   0.4307    1.4720   0.1259        B.7. Token Distance Analysis Across Planners
+    64        7   247.34   0.0003   1.2578   0.7213    2.0095   0.0902
+                                                                              We measure the spatial pattern produced by each plan-
+                                                                              ner directly from generation traces. For each generation,
+levels from ⌈log2 B⌉ to ⌈loga B⌉, packing far more tokens                     we extract the set of token positions revealed at every
+into each level and breaking the coarse-to-fine structure;                    denoiser iteration and compute (i) the average pairwise
+accuracy drops by up to −77% relative on MATH500 and                          distance between simultaneously revealed tokens and (ii)
+−56% relative on GSM8K. Raising base skip from 1 to                           the fraction of revealed tokens that are isolated (no adja-
+2 removes the coarsest dilated level so the schedule starts                   cent co-decoded token). Table 11 reports these metrics on
+at the next-finer spacing, saving ≈ 25% NFE at the cost of                    LLaDA-8B-Base across MATH500 and HumanEval at block
+−32% to −69% relative accuracy across datasets. These                         sizes B ∈ {16, 32}, comparing DUS, self-confidence (SC),
+results justify a=2 and base skip=1 as the practitioner                       entropy-bounded (EB, γ = 1.0) and confidence-bounded
+defaults referenced in Section 4.3.                                           (CB, τ = 0.7) planners.
+                                                                              DUS attains 2-3× wider average spacing than every alterna-
+B.5. Speed-Quality Trade-off Analysis
+                                                                              tive and isolates essentially all co-decoded tokens; SC clus-
+Figure 3 presents the full speed-quality trade-off analy-                     ters most aggressively, with 49-58% of co-decoded tokens
+sis across GSM8K, HumanEval, and MBPP for all tested                          lying adjacent to another co-decoded token. This cluster-
+models. The plots show accuracy vs. speedup for 2.7×,                         ing arises because neighboring masked tokens often share
+4×, 6.4×, and 10.7× acceleration (block sizes B ∈                             similar context and therefore similar conditional entropy
+{8, 16, 32, 64}). Smaller blocks yield higher accuracy at                     or confidence; denoiser-guided self-planners consequently
+the cost of more denoiser rounds (higher NFE), while larger                   reveal multiple nearby tokens in the same step while leaving
+blocks enable up to 10× fewer iterations but lower end                        large masked regions elsewhere. Although these planners
+accuracy. Across all datasets and speedup factors, DUS                        minimize the sum of marginal entropies (cf. (5)), they can
+consistently achieves higher scores compared to the self-                     maintain higher overall uncertainty across iterations, since
+confidence planner. GSM8K shows a steady decline in                           selecting the easiest (lowest-entropy) tokens first postpones
+scores as inference speed increases, whereas the code bench-                  the hard tokens, which remain both (i) high-entropy and (ii)
+marks exhibit less smooth trends, likely reflecting their al-                 weakly supported by newly revealed context. The pattern
+ready low performance at higher speedups. Nonetheless,                        thus validates the schedule’s spacing guarantee on tasks
+DUS delivers more consistent improvements across all set-                     (code, reasoning) that violate strict fast mixing, supporting
+tings.                                                                        the discussion in Section 3.6.
+                                                                              DUS breaks this feedback loop by enforcing spatially dis-
+B.6. Runtime Breakdown: Sampler Overhead vs.                                  tributed reveals via the dilated pattern, improving context
+     Denoiser                                                                 propagation across the block: after each iteration, many
+We report a per-step (1 NFE) runtime breakdown decom-                         remaining masked tokens gain at least some nearby revealed
+posing the cost into the model forward pass and individual                    context from multiple regions, which tends to reduce their
+sampler component overheads. Each adaptive sampler com-                       entropies more uniformly in subsequent steps. Figure 4
+bines a scoring step and a selection step: the CB-Sampler                     illustrates this on a single block at B = 16, comparing en-
+uses confidence calculation + CB selection, while the EB-                     tropy (incremental k), entropy (fixed k), and DUS (dilated,
+Sampler uses entropy calculation + EB selection. DUS                          position-based).
+requires only a lightweight schedule lookup. All timings are
+in milliseconds, measured on LLaDA-8B-Base with a single                      B.8. Wall-Clock Throughput
+RTX 6000 Ada GPU across block sizes B ∈ {8, 16, 32, 64}.
+                                                                              We complement the per-step microbenchmark of the previ-
+As shown in Table 10, the scheduler selection step is neg-                    ous subsection with end-to-end wall-clock generation time
+ligible across block sizes (DUS selection is 2.6 × 10−4 -                     across all schedulers, on a fixed model/dataset/hardware
+3.1 × 10−4 ms per step). The dominant sampler costs come                      setup (LLaDA-8B-Base, GSM8K, RTX 6000 Ada). Ta-
+from scoring: confidence computation is ≈ 1.16-1.26 ms                        ble 12 reports the median per-sample wall-clock alongside
+per step, while entropy computation is higher and grows                       empirical NFE; the two quantities scale together because the
+
+                                                                         14
+                                         Plan for Speed: Dilated Scheduling for Masked Diffusion Language Models
+
+                                        LLaDA-Base-8B             LLaDA-Instruct-8B             Dream-Instruct-7B          Self-Confidence                  DUS
+                                  GSM8K                                                       HumanEval                                                       MBPP
+                                                                            25                                                          40
+                 60
+
+
+Accuracy % ( )
+                                                                            20
+                                                               Pass@1 ( )                                                  Pass@1 ( )
+                                                                                                                                        30
+                 40                                                         15                                                          20
+                 20                                                         10                                                          10
+                                                                             5
+                      2.7   4.0   6.4                   10.7                     2.7   4.0       6.4                10.7                     2.7    4.0       6.4    10.7
+                                                                                              Speedup (×)
+
+Figure 3. Speed-quality trade-off on GSM8K, HumanEval, and MBPP for various speedup factors defined by semi-AR inference block
+size B ∈ {8, 16, 32, 64}. Higher score (Accuracy / Pass@1) is better. Each color represents a different model; markers indicate planners:
+self-confidence (■) and DUS (▲).
+
+Table 11. Spatial pattern produced by each planner on LLaDA-8B-Base (150 samples per row). Left half: average pairwise distance
+between co-decoded tokens within a block. Right half: percentage of isolated tokens (no adjacent co-decoded token). DUS spreads
+simultaneously revealed tokens 2-3× wider than the alternatives, while almost every co-decoded token is isolated.
+
+                                                                             Avg Pairwise Distance              % Isolated Tokens
+                                        Dataset          B                  DUS    SC     EB     CB           DUS   SC     EB     CB
+                                                         16                 6.22       3.00   3.49     4.47   100      51.0                  64.8    70.7
+                                        MATH500
+                                                         32                 9.62       4.13   4.74     7.13   100      49.8                  66.0    71.1
+                                                         16                  6.22      2.81   4.37     4.71   100      49.0                  62.0    70.1
+                                        HumanEval
+                                                         32                 11.59      3.71   6.39     8.63   100      42.1                  66.2    70.0
+
+
+                                                                                                     over token-by-token decoding while reaching 59.51% ac-
+                                                                                                     curacy on GSM8K; at B = 32, the speedup grows to 5.8×
+                                                                                                     at 49.36%. As a reference point, LLaDA-8B with DUS
+                                                                                                     (B = 16) is 5.6× faster than the autoregressive Llama-3-8B
+                                                                                                     baseline on the same hardware.
+
+                                                                                                     B.9. Adaptive Scheduler Comparison
+                                                                                                     We additionally compare DUS against two adaptive token-
+                                                                                                     selection samplers from the literature: the entropy-bounded
+                                                                                                     sampler (EB-Sampler) (Ben-Hamu et al., 2025), which
+                                                                                                     unmasks the largest set of tokens whose cumulative con-
+                                                                                                     ditional entropy is below a user-specified bound γ, and
+                                                                                                     the confidence-bounded sampler (CB-Sampler) (Wu et al.,
+                                                                                                     2025), which unmasks every token whose confidence ex-
+                                                                                                     ceeds a threshold τ . Both methods are inference-only and
+                                                                                                     adaptive: the number of tokens unmasked per step varies
+                                                                                                     per sample.
+                                                                                                     Figure 5 plots accuracy versus empirical NFE across all
+                                                                                                     5 MDLMs and 4 benchmarks. DUS sweeps over B ∈
+Figure 4. Token selection strategies on a single block. Entropy-
+based methods (left, center) greedily select low-entropy tokens,                                     {8, 16, 32, 64}; EB-Sampler over γ ∈ {4.0, 1.0, 0.1, 0.01}
+leading to spatial clustering and persistent uncertainty in remaining                                (extended for DiffuCoder); CB-Sampler over τ ∈
+tokens. DUS (right) uses position-based selection, yielding more                                     {0.5, 0.7, 0.9} (extended for DiffuCoder). DUS sits at the
+uniform uncertainty reduction across the sequence.                                                   lowest-NFE end of every panel, providing the most aggres-
+                                                                                                     sive speedup at the cost of some accuracy; EB-Sampler
+model forward pass dominates per-step cost (cf. Table 10).                                           and CB-Sampler reach higher accuracy at higher NFE, with
+                                                                                                     task-dependent ordering.
+At B = 16, DUS achieves a 3.9× wall-clock speedup
+
+
+
+                                                                                               15
+                          Plan for Speed: Dilated Scheduling for Masked Diffusion Language Models
+
+Table 12. End-to-end wall-clock generation time on a single NVIDIA RTX 6000 Ada (LLaDA-8B-Base, GSM8K, generation length
+256; 105 samples after 5 warmup). Median per-sample wall-clock, empirical NFE, speedup vs. token-by-token, and full-dataset GSM8K
+accuracy from Tables 1-2. The model forward pass dominates per-step cost ( 99%), so wall-clock tracks NFE.
+
+                        Method               Config     Median (ms)         NFE        Speedup          GSM8K (%)
+                        Llama-3-8B (AR)      -                35,144         257         0.69×                   49.81
+                        Token-by-token       B=256            24,280         124            1×                   72.63
+                        Self-confidence      B=16              5,783        32.9          4.2×                   51.23
+                        DUS                  B=16              6,314        32.8          3.9×                   59.51
+                        DUS                  B=32              4,182        22.8          5.8×                   49.36
+                        EB (γ=1.0)           B=16              8,577        43.3          2.8×                   71.72
+                        CB (τ =0.7)          B=16              7,088        38.3          3.4×                   72.02
+
+
+B.10. Dilated Spacing Post-Filter Details                              Lemma 3.3 (Token-by-token vs. parallel bounds) (re-
+                                                                       stated). Let the current block indices be B := {b, . . . , b +
+This appendix gives the full pseudocode (Algorithm 1) of the
+                                                                       B − 1}. Consider any partition of the block into T ∈ N
+dilated spacing post-filter introduced in Section 4.4, together                                             ST
+                                                                       disjoint groups I1 , . . . , IT with t=1 It = B, and define
+with per-(γ, τ, g0 ) sweeps (Figure 6) that complement the                        S
+                                                                       I<t := s<t Is . Under the optimal estimator assump-
+summary in Table 4.
+                                                                       tion, the total
+                                                                                 PT loss induced by parallel
+                                                                                                              sampling within each
+Algorithm 1 Dilated Spacing Post-Filter                                group is t=1 L It ; S1 , XI<t . Then
+Require: block size B; selected indices I (sorted by score,                                   T
+                                                                                              X                                    X
+    descending); unmasked set Ut and masked set Mt in
+                                                                                                                           
+                                                                       H(XB | S1 ) ≤                L It ; S1 , XI<t           ≤         H(Xi | S1 ).
+    the block (with I ⊆ Mt ); initial gap g0                                                  t=1                                  i∈B
+ 1: gap ← max(1, ⌊|Mt | · g0 /B⌋)                                                                                                                   (15)
+ 2: I ′ ← ∅; R ← ∅
+ 3: for i ∈ I (high-score first) do                                    Proof of Lemma 3.3. Fix a block B := {b, . . . , b + B − 1},
+ 4:    if minj∈I ′ |i − j| ≥ gap then                                  aSstate S1 , and a partition I1 , . . . , IT of B, and write I<t :=
+ 5:       I ′ ← I ′ ∪ {i}                                                s<t Is . By the chain rule for entropy,
+ 6:    else
+                                                                                                         T
+ 7:       R ← R ∪ {i}                                                                                    X                       
+ 8:    end if                                                                      H(XB | S1 ) =                H XIt | S1 , XI<t .                 (16)
+ 9: end for                                                                                              t=1
+
+10: Mt ← (Mt \ I) ∪ R                                                                                    (t)         (t)
+11: return I ′
+                                                                       For each group It = {i1 , . . . , ikt }, applying the chain
+                                                                       rule again gives
+Figure 6 reports the full sweep across initial gaps g0 ∈                      H XIt | S1 , XI<t
+                                                                                                
+{off, 4, 8, 16}, base parameters (γ ∈ {1, 2, 4} for EB;
+                                                                                       k
+τ ∈ {0.3, 0.5, 0.7} for CB), 2 instruct models and 3 datasets.                         X                                                        
+                                                                                   =         H Xij | S1 , XI<t , Xi1 , . . . , Xij−1
+Because rejected indices stay masked, the post-filter gen-
+                                                                                       j=1
+erally requires equal or slightly more denoiser iterations
+                                                                                       k
+than the base scheduler at the same (γ, τ ); in most cases                             X                      
+this additional NFE translates into higher accuracy, with the                      ≤         H Xij | S1 , XI<t ,                                    (17)
+                                                                                       j=1
+largest gains for aggressive base parameters (large γ, low
+τ ) where the unfiltered scheduler reveals tightly clustered           where the inequality uses that conditioning reduces entropy.
+indices. Performance is not strictly monotone in g0 , with             Summing over t and using (16) yields the lower bound
+occasional regressions on Dream-Instruct CB. Overall the
+post-filter exposes a usable trade-off where additional NFE                                             T X
+                                                                                                        X                                   
+is converted into accuracy, leaving the underlying sched-                      H(XB | S1 ) ≤                       H Xi | S1 , XI<t
+uler’s score function and selection criterion unchanged.                                                t=1 i∈It
+                                                                                                        T
+                                                                                                        X                      
+C. Theory Guarantees                                                                                =          L It ; S1 , XI<t .                   (18)
+                                                                                                        t=1
+C.1. Surrogate-to-Joint Entropy Gap Decomposition
+This appendix provides the full statement and proof for
+Lemma 3.3.
+                                                                  16
+                                                             Plan for Speed: Dilated Scheduling for Masked Diffusion Language Models
+
+                                                                                                                                    DUS                      EB-Sampler                       CB-Sampler
+
+
+
+                                                 GSM8K
+                                               =0.9                                                                               MATH500
+                                                                                                                                    =0.9                                                 =0.9      HumanEval                                                        =0.9   MBPP
+                                                                             =0.01                       25                                                                                                                                  40                                              =0.01
+                                                                                                                 =0.5                                           =0.01
+                                                                                                                                                                         30=0.5
+
+        LLaDA-Base-8B
+                                 =0.5                 B=8                                                                                                                                                                            =0.01
+                            60            =4                                                             20                 B=16
+                                                                                                                                                                                                                 B=8
+                                                                                                                                                                                                                                             30       =0.5
+                                                                                                                                                                                                                                                                        B=8
+                                                                                                                                                                         20                     =4
+                                                                                                         15                  =4
+
+                            40                                                                                                                                                                                                               20               =4
+                                                                                                                                                                         10
+                                   B=64
+                                                                                                         10      B=64                                                                                   B=64                                          B=64
+                                 20       40           60         80   100                                       25          50            75          100                    20                   40             60           80                        20                   40        60
+                                                =0.9                                                                                           =0.9                                                                                                            =0.9
+                            80                                               =0.01                                                                              =0.1
+                                                                                                                                                                         40              =0.9
+
+
+
+
+        LLaDA-Instruct-8B
+                                                                                                                                                                                                                                     =0.01                              B=8                  =0.01
+                                                            B=8                                          25                               B=8                            30=0.5
+                            70   =0.5                                                                                 =0.5                                                                         B=8                                       30
+                                           =4
+                                                                                                         20                        =4
+                                                                                                                                                                         20              =4                                                       =0.5
+
+                            60                                                                                                                                                      B=64                                                     20                    =4
+                                   B=64                                                                  15      B=64                                                    10                                                                           B=64
+                                          50                100                                                 20          40            60           80     100             20            40            60            80     100                       20                   40       60
+                                                =0.9                                                                                    =0.9
+                                                                                                                                                                         15
+                                                                                                                                                                                                          =0.9
+                                                                                                                                                                                                        B=8                                  60                     =0.9
+                                                                                                                                                                                                                                                                                             =0.01
+                                                                                                                                                                =0.01
+
+
+
+
+        Dream-Instruct-7B
+                                                                             =0.01                                                                                                   =0.5
+                                  =0.5                B=8                                                30          =0.5
+                            60                                                                                                      B=8                                                                                                                                       B=8
+                                          =4
+                                                                                                                                                                         10         B=64
+                                                                                                                                                                                                                                             40=0.5
+                                                                                                         20                   =4
+                            40                                                                                                                                                                                                       =0.01
+                                                                                                                                                                                                                                                         =4
+                                   B=64                                                                          B=64                                                                                                                                 B=64
+                                                                                                                                                                                                   =4
+                                 20       40           60         80 100                                         25          50           75 100 125                                          50                  100              150            0                     100           200
+                                                                                                                             HumanEval
+                                                                                                                             =0.9                                                              =0.9      MBPP
+                                                                                                                                                                         60
+
+
+                                                                                DiffuCoder-Base-7B
+                                                                                                         40                                                     =0.01                                                                =0.01
+                                                                                                                                                                                                        B=8
+                                                                                                                            B=8
+                                                                                                          =0.5        =4                                                 40 =0.5
+                                                                                                         20
+                                                                                                                                                                                      =4
+                                                                                                                 B=64                                                    20         B=64
+                                                                                                                 40           60          80 100 120                                     100                  200            300
+                                                                                                                      =0.9   HumanEval                                                                   MBPP
+                                                                                                                                                                                                        =0.9
+                                                                                                                                                                         60
+
+
+
+                                                                                DiffuCoder-Instruct-7B
+                                                                                                                                                                                                                                     =0.01
+                                                                                                         =0.5                                                   =0.01
+                                                                                                         30                                                                                                            B=8
+                                                                                                                                                      B=8                40
+                                                                                                         20          =4
+                                                                                                                                                                                  =0.5
+                                                                                                                                                                                              =4
+                                                                                                         10          B=64                                                20         B=64
+                                                                                                                 40          60          80 100 120                                         100                    200
+                                                                                                                                        NFE                                                               NFE
+
+Figure 5. Accuracy vs. empirical NFE across 5 MDLMs and 4 benchmarks for DUS (green), EB-Sampler (orange), and CB-Sampler
+(blue). Parameter extremes are annotated next to the corresponding markers (e.g., B=64 and B=8 for DUS, γ=4 and γ=0.01 for EB,
+τ =0.5 and τ =0.9 for CB). DiffuCoder rows are code-only.
+
+
+For the upper bound, again
+                          by conditioning
+                                        reducing en-                                                                                                                     such that the pairwise distances satisfy |im − in | ≥ d for
+tropy, H Xi | S1 , XI<t ≤ H Xi | S1 for all i and t,                                                                                                                      all m ̸= n. Then, for any ε > 0, there exists a distance
+so                                                                                                                                                                        threshold Dε such that for all d ≥ Dε ,
+        T                     T X
+                                                                                                                                                                                                                                                         k
+       X                   X                  
+          L It ; S1 , XI<t ≤         H Xi | S1                                                                                                                                                                                                          X                        
+       t=1                                                                 t=1 i∈It
+                                                                                                                                                                                   H Xi1 , . . . , Xik | St                                       ≥                     H Xij | St − ε.              (20)
+                                                                           X                                                                                                                                                                            j=1
+                                                                       =               H Xi | S1 ,                                                          (19)
+                                                                           i∈B                                                                                            Proof of Lemma 3.5. Fix ε > 0. By Lemma 3.6, there ex-
+which completes the proof.                                                                                                                                                ists Dε such that for any pair of indices (i1 , . . . , ik ) with
+                                                                                                                                                                          |im − in | ≥ Dε for all m ̸= n, and any realization of St ,
+C.2. Lemma 3.5 - Restate and proof                                                                                                                                                                                                                                                    ε
+                                                                                                                                                                                           I Xik ; Xi1 , . . . , Xik−1 | St                                                   ≤              .       (21)
+Lemma 3.5 (restated). Assume that (X1 , . . . , XG ) is                                                                                                                                                                                                                             (k − 1)2
+a stationary, ergodic VLMC with finite order L with fast-
+mixing property. Let 1 ≤ i1 < · · · < ik ≤ B be indices                                                                                                                   Assume d ≥ Dε , so that (21) holds for all m ̸= n.
+
+
+                                                                                                                                                                    17
+                                                       Plan for Speed: Dilated Scheduling for Masked Diffusion Language Models
+
+                                                                         EB =1.0                         EB =2.0            EB =4.0         CB =0.3      CB =0.5                CB =0.7
+                                                                                                               no ds           ds=4         ds=8      ds=16
+
+                                                    HumanEval                                                                         MATH500                                                           IFEval
+                      40                                                                          30.0                                                                          66
+                      35                                                                          27.5                                                                          64
+                      30                                                                          25.0
+                                                                                                                                                                                62
+     LLaDA-Instruct
+                                                                                   Accuracy (%)
+                                                                                                  22.5
+                                                                                                                                                                    Score (%)
+                      25                                                                                                                                                        60
+      pass@1 (%)
+                                                                                                  20.0
+                      20                                                                                                                                                        58
+                                                                                                  17.5
+                      15                                                                                                                                                        56
+                                                                                                  15.0
+                      10                                                                                                                                                        54
+                                                                                                  12.5
+                       5
+                           20        30        40      50     60   70     80                                       40            60          80       100     120                         60   80       100      120    140   160
+                      16                                                                                                                                                        50
+                                                                                                        35
+                      14                                                                                                                                                        48
+                                                                                                        30
+                                                                                                                                                                                46
+     Dream-Instruct
+                      12
+
+                                                                                         Accuracy (%)                                                               Score (%)
+                                                                                                        25
+                                                                                                                                                                                44
+      pass@1 (%)
+                      10
+                                                                                                        20                                                                      42
+                      8
+                                                                                                        15                                                                      40
+                      6
+                                                                                                        10                                                                      38
+                                40        60        80       100   120      140                                        40           60          80      100                               60    80         100        120     140
+                                                NFE (until stop)                                                                   NFE (until stop)                                                  NFE (until stop)
+
+Figure 6. EB-Sampler and CB-Sampler with and without the dilated spacing post-filter, on LLaDA-Instruct-8B and Dream-Instruct-7B
+across HumanEval, MATH500, and IFEval (B=32). Color shades encode the base parameter (γ for EB, τ for CB; lighter to darker as the
+parameter increases); marker size encodes the initial gap g0 ∈ {off, 4, 8, 16}. Each line traces a single (scheduler, γ or τ ) operating point
+as g0 increases.
+
+
+Without loss of generality, let i1 < · · · < ik be the indices                                                                            Plugging this into the entropy decomposition above, with
+of the k tokens chosen in this iteration, each pair separated                                                                             k − 1 bounded terms of MI gives
+by at least Dε . The joint conditional entropy decomposes as
+                                                                                                                                                                                               k
+                                                                                                                                                                                               X
+                                                        k
+                                                        X                                                                                       H(Xi1 , . . . , Xik | St ) ≥                         H(Xij | St ) − ε,              (23)
+H(Xi1 , . . . , Xik | St ) =                                   H(Xij | Xi1 , . . . , Xij−1 , St )                                                                                              j=1
+                                                        j=1
+
+ = H(Xi1 | St )+                                                                                                                          which is exactly the claimed inequality (10).
+     k
+                                                                                                                                          C.3. MI Decay Under Fast Mixing
+     X                                                   
+        H(Xij | St ) − I(Xij ; Xi1 , . . . , Xij−1 | St )
+     j=2                                                                                                                                  This appendix justifies Lemma 3.6, which bounds the MI
+      k
+      X                                              k
+                                                     X                                                                                    between a token and a sparse block of future tokens under
+ =                    H(Xij | St ) −                        I(Xij ; Xi1 , . . . , Xij−1 | St ).                                           the fast-mixing VLMC assumption.
+      j=1                                            j=2
+                                                                                                                                          Assumption C.1 (Fast mixing VLMC). Let (Xi )i∈Z be
+                                                                                                                                          a VLMC with finite maximal context L < ∞ on a finite
+By Corollary 3.4, the sum of conditional mutual informa-
+                                                                                                                                          alphabet. Assuming the induced Markov chain on contexts
+tions above is exactly the entropy gap ∆(It ; St ) between
+                         Pk                                                                                                               of length L is irreducible and aperiodic, which implies a
+the factorized surrogate j=1 H(Xij | St ) and the joint
+                                                                                                                                          unique stationary distribution and geometric mixing.
+objective H(XIt | St ):
+                                          k
+                                          X                                                                                               Lemma 3.6 (MI decays under fast mixing) (restated).
+                                                                                                                                          Under Assumption C.1, there exist constants C < ∞ and
+                                                                                                             
+         ∆(It ; St ) =                          I Xij ; Xi1 , . . . , Xij−1 | St .                                          (22)
+                                          j=2                                                                                             ρ ∈ (0, 1) such that for any index i, spacing k ≥ 1, and any
+                                                                                                                                          finite M ≥ 0,
+Thus, minimizing this gap yields an ε-tight approximation
+of the joint entropy by the marginal-entropy surrogate.                                                                                       I Xi ; Xi+k , Xi+2k , . . . , Xi+(M +1)k ≤ C ρ k . (24)
+                                                                                                                                                                                      
+
+By (21),
+                           I(Xij ; Xi1 , . . . , Xij−1 | St )                                                                             Note that the distance between Xi and any symbol in the
+                                                    ε          ε                                                                          future block is at least k.
+                              ≤ (j − 1) ·                   ≤     .
+                                                 (k − 1)2     k−1
+                                                                                                                                    18
+                           Plan for Speed: Dilated Scheduling for Masked Diffusion Language Models
+
+Proof. Define contexts of length L as Ci                =                 The MI can be bounded in terms of TV distance (Zhang,
+(Xi , Xi+1 , . . . , Xi+(L−1) ) ∈ C. The sequence (Ci )                   2007). In particular, if ∥PAB − PA ⊗ PB ∥T V ≤ δ, then
+forms a finite-state Markov chain which is irreducible and                I(A; B) ≤ βδ log(1/ min(PB )) for some constant β. Plug-
+aperiodic, implying geometric mixing. Observe that a block                ging it in (27) gives,
+of M + 1 future symbols is a deterministic function of the
+future contexts,                                                          I(Ci ; Ci+k , Ci+2k , . . . , Ci+(M +1)k ) ≤ β(M + 1)αρk → 0
+                                                                            as k → ∞.
+            (Xi+k , Xi+2k , . . . , Xi+(M +1)k ) =
+              f (Ci+k , Ci+2k , . . . , Ci+(M +1)k ).        (25)
+                                                                          Combining these inequalities results in
+The data processing inequality (DPI) states that if Y =                        I(Xi ; Xi+k , Xi+2k , . . . , Xi+(M +1)k )
+f (Z) is a function of Z, then I(X; Y ) ≤ I(X; Z).
+                                                                                  ≤ I(Ci ; Ci+k , Ci+2k , . . . , Ci+(M +1)k ) → 0.
+Letting Y = (Xi+k , Xi+2k , . . . , Xi+(M +1)k ) and Z =
+(Ci+k , Ci+2k , . . . , Ci+(M +1)k ), it follows that                     Therefore, the MI between Xi and any finite block of suffi-
+      I(Xi ; Xi+k , Xi+2k , . . . , Xi+(M +1)k )                          ciently far future symbols vanishes with a geometric rate in
+                                                                          k.
+         ≤ I(Xi ; Ci+k , Ci+2k , . . . , Ci+(M +1)k ).       (26)
+
+Since Xi is a function of the current context Ci , applying               D. Qualitative Generation Trajectories
+DPI again yields                                                          This section qualitatively visualizes the generation process
+                                                                          of LLaDA-8B on several benchmarks under two decoding
+        I(Xi ; Ci+k , Ci+2k , . . . , Ci+(M +1)k )
+                                                                          strategies: our Dilated Unmasking Scheduler (DUS) and
+           ≤ I(Ci ; Ci+k , Ci+2k , . . . , Ci+(M +1)k ).                  a fixed block scheduler. For each dataset, a representative
+Thus, it suffices to show that the MI between the current                 example is selected, and the full generated answer for four
+context Ci and a block of future contexts decays with the                 decoding configurations is presented (DUS with two block
+separation k.                                                             sizes and fixed scheduling with self-confidence with two
+                                                                          block sizes). Tokens are colored according to the diffusion
+Since (Ci ) is finite-state, irreducible, and aperiodic, there            step at which they are first unmasked: early steps appear in
+exists α < ∞ and 0 < ρ < 1 such that for any state c the to-              blue, intermediate steps in green, and late steps in yellow
+tal variation (TV) between the stationary and conditioned on              to red. All prompts are given without their few-shots. The
+past probabilities are bounded by an exponentially decaying               prompt length is reported in tokens for each example.
+factor dependent on k (Bradley, 2005),
+                                                                          The background color of each token indicates when it was
+           ∥P (Ci+k | Ci = c) − π∥T V ≤ αρk .                (27)         unmasked during generation:
+For a block of M + 1 future contexts, standard finite-state                     Early (Stage 1) → Quarter → Middle → Three-Quarter →
+Markov chain bounds imply                                                                         Late (Final Stage)
+                                                        ⊗(M +1)
+∥P (Ci+k , Ci+2k , . . . , Ci+(M +1)k | Ci = c) − π               ∥T V
+                   k
+   ≤ (M + 1)αρ .
+
+
+
+
+                                                                     19
+                                             Plan for Speed: Dilated Scheduling for Masked Diffusion Language Models
+
+D.1. MATH500 - LLaDA-8B-Instruct                                                                Fixed B=32 (Steps: 15, Generation length: 72)
+Q UESTION ( NO FEW- SHOTS )
+                                                                                                  A    regular     pent agon        has    $ 5 $        sides ,      so       the   sum    of
+P ROMPT LENGTH : 504 TOKENS
+                                                                                                  of   its   angles    is    is     $ 5 8 0 ( 2 )             =          1 6 0 $
+
+      Problem: A regular pentagon is rotated counterclockwise                                     degrees .       Since ,    angle        angle   is    $ 1 6 0 / 5                 =     1 7
+      about its center. What is the minimum number of de-
+                                                                                                 2 $     degrees ,     the        number     of   rotation    $      $    $     $ 7 2 $
+      grees it must be rotated until it coincides with its original
+      position?                                                                                   degrees    is    $\{} boxed { 5 }$.
+
+
+DUS B=32 (Steps: 11, Generation length: 81)                                                     Fixed B=64 (Steps: 6, Generation length: 25)
+
+  A      regular        pent agon      has     five   lines     of   symmetry ,       so          A    regular     pent agon        has    $ 5 $        rotational       symmetries ,,      so
+
+  rotations    of        $ 3 6 0 ˆ\{} circ / 5                   =       7 2 ˆ\{} circ $          of   these ,      the $     the    be      rotation   by    $\{} boxed
+
+  will     bring        the   same     point    to    its     original   position .
+
+  Therefore ,           the   answer     is     $\{} boxed { 7 2 }$.
+
+
+DUS B=64 (Steps: 7, Generation length: 97)
+
+  A      regular        pent agon      has     rotational     symmetry     by   angle
+
+  multiples        of     $\{} frac { 3 6 0 ˆ\{} circ }{ 5 }= 1
+
+ }\{} circ \{}cdot 5 =\{} boxed { 7 2 0 ˆ\{} circ }$.
+
+
+
+
+                                                                                           20
+                                                                          Plan for Speed: Dilated Scheduling for Masked Diffusion Language Models
+
+D.2. GSM8K - LLaDA-8B-Instruct                                                                                                                               Fixed B=64 (Steps: 24, Generation length: 253)
+Q UESTION ( NO FEW- SHOTS )
+                                                                                                                                                                  If    find    the        age        of        Brandon ’s                   iPhone ,           we      need       to
+P ROMPT LENGTH : 1078 TOKENS
+                                                                                                                                                                  follow       the    steps :
+
+          Question: Brandon’s iPhone is four times as old as Ben’s                                                                                            1 .        Determine              the        age        of        Su ’s          iPhone           iPhone .
+          iPhone. Ben’s iPhone is two times older than Suzy’s
+          iPhone. If Suzy’s iPhone is 1 year old, how old is Bran-                                                                                            2 .        Determine              the        age        of        Ben ’s             iPhone           based     on 3 .
+          don’s iPhone?
+                                                                                                                                                                  Determine          the       age         of     Brandon ’s                   iPhone           based        on    the
+          Answer:
+                                                                                                                                                                  age     of    Ben ’s            iPhone .
+DUS B=32 (Steps: 15, Generation length: 96)
+                                                                                                                                                              Step . 1 :               Determine                 the        age         of     Su ’s            iPhone        iPhone
+     If       Su zy ’s                     iPhone                is             1        year      old ,           Ben ’s        iPhone            is
+                                                                                                                                                              We         know        that       Su         is zy ’s                 iPhone          is          1     year    old .
+ :
+                                                                                                                                                              Step 2 :               Determine              Determine               age        of        Ben ’s         iPhone
+ -                2    *           1        =            2            years              old .
+                                                                                                                                                                  iPhone
+ Brandon ’s                       iPhone                is        four          times            as        old     as     Ben ’s           iPhone
+                                                                                                                                                              Su zy ’s               iPhone           is     two            times           older        than        Ben ’s       iPhone .
+ ,        so          it        is :
+                                                                                                                                                                  Therefore ,          Ben ’s               of     is        age         of        is ’s
+ -                4    *           2        =            8            years              old .
+                                                                                                                                                              Ben ’s           iPhone ’s              age         =             2    *        Su zy ’s               iPhone ’s          age
+ Therefore ,                      Brandon ’s                          iPhone              is           8     years       old .
+                                                                                                                                                                  =       2     *          1     =          2      years            old
+ ####                      8
+                                                                                                                                                              3 :         Determine             the        age         of       Brandon ’s                iPhone        iPhone
+
+                                                                                                                                                              Brandon ’s              iPhone           is        four        times            as     old        as    Ben ’s        iPhone
+DUS B=64 (Steps: 12, Generation length: 128)
+                                                                                                                                                              .        Therefore ,             Brandon ’s               iPhone ’s                  age      is :
+     If       Su zy ’s                     iPhone                is             1        year      old ,           then     Ben ’s
+                                                                                                                                                              Brandon ’s              iPhone ’s                  age        =           4     *      Ben ’s           iPhone ’s          age
+     iPhone                is      2           *             1        =         << 2 >> 2                           years       old .
+                                                                                                                                                                  =       4     *          2     =          8      years            old .
+ Since                Brandon ’s                    iPhone                 is        four        times           older    than        Ben ’s
+                                                                                                                                                              So ,         Brandon ’s                 iPhone           is           8        years        old .
+     iPhone ,                   then        Brandon ’s                          iPhone            is         4      *       2     =       << 4
+
+ * 2 = 8 >> 8                                           years           old .              ####              8
+
+Fixed B=32 (Steps: 35, Generation length: 198)
+
+     To           determine            the              age           of        Brandon ’s                   iPhone ,           we        need
+
+     to       follow             the        relationships                       relationships                between        the       step         of
+
+     the          iPhones .
+
+ 1 .              **            know        iPhone                iPhone                  is       1        year        old :**                -
+
+     ’ st ext { Su zy ’s                                          iPhone                  age     =           1      year }
+
+ 2 .              ** Ben ’s                     iPhone                 is       two            times         older       than     Su zy ’s
+
+     iPhone :**                            -                 \{} text { Ben ’s                                    iPhone        age }          =
+
+ 2            \{} times                    \{} text { Su zy ’s                                             iPhone        age }             2
+
+     \{} times                         1        =             2        \{} text {                          years }
+
+ 3 .              ** Brandon ’s                              iPhone                 is     four        times        as    old        as     Ben
+
+ ’s           iPhone :**                            -                 \{} text { Brandon ’s                                 iPhone          age
+
+ }            =            4     \{} times                        \{} text { Ben ’s                                 iPhone       age }
+
+          4       \{} times                         2        =              8            \{} text {               years }
+
+ Therefore ,                      Brandon ’s                          iPhone              is           8     years       old .
+
+          8 8
+
+
+                                                                                                                                                        21
+                                      Plan for Speed: Dilated Scheduling for Masked Diffusion Language Models
+
+D.3. HumanEval - LLaDA-8B-Instruct                                              Fixed B=32 (Steps: 10, Generation length: 44)
+Q UESTION ( NO FEW- SHOTS )
+                                                                                     return   =    str ( 0 )
+P ROMPT LENGTH : 71 TOKENS
+                                                                                     return   +=       sequence
+
+   def string sequence(n: int) -> str:                                                  name           ==   ”     main   ”:
+   ””” Return a string containing space-delimited numbers
+   starting from 0 upto n inclusive.                                                 import    do ct est
+   >>> string sequence(0)
+                                                                                     do ct est .test mod ()
+   ’0’
+   >>> string sequence(5)
+   ’0 1 2 3 4 5’                                                                Fixed B=64 (Steps: 6, Generation length: 19)
+   ”””
+                                                                                     return   =    ’   ’. join (map (i )      for   i   in   range (n + 1
+DUS B=32 (Steps: 5, Generation length: 32)
+                                                                                 1
+
+    return       ’    ’. join (i    for   i    in    range (n   +   1 ))
+
+
+DUS B=64 (Steps: 7, Generation length: 97)
+
+    result       =    []
+
+    for      i   in       range (int (n   +         1 )):
+
+      result .append (str (i ))
+
+    result       =    ’    ’. join (result )
+
+    return       result
+
+
+
+
+                                                                           22
+                                       Plan for Speed: Dilated Scheduling for Masked Diffusion Language Models
+
+D.4. MBPP - LLaDA-8B-Instruct                                                 Fixed B=32 (Steps: 10, Generation length: 53)
+Q UESTION ( NO FEW- SHOTS )
+                                                                               import       math
+P ROMPT LENGTH : 699 TOKENS
+                                                                               def    get     g cd (arr ):
+
+   Write a function to find the gcd of the given array elements.                     gcd      =       arr [ 0 ]
+   Your code should pass these tests:
+   assert get gcd([2, 4, 6, 8, 16]) == 2                                             for    num         in   arr [ 1 : ]:
+   assert get gcd([1, 2, 3]) == 1
+                                                                                        gcd       =     math .g cd (g cd ,    num )
+   assert get gcd([2, 4, 6, 8]) == 2
+   [BEGIN]                                                                           return       gcd
+
+DUS B=32 (Steps: 10, Generation length: 64)
+                                                                              Fixed B=64 (Steps: 6, Generation length: 30)
+ import       math
+                                                                               import       math
+ def    get     g cd (arr ):
+                                                                               def    get     g cd (arr ):
+       gcd      =         1
+                                                                                     gcd      =       math .g cd (* arr ,    reduce
+       for    num         in   arr :
+                                                                               )
+          gcd       =     math .g cd (g cd ,   num )
+                                                                               ONE ]]
+       return       gcd
+
+
+DUS B=64 (Steps: 7, Generation length: 97)
+
+ import       math
+
+ def    get     g cd (arr ):
+
+       gcd      =       math .g cd (abs (arr [ 0 ],    arr [ 1 ]))
+
+       return       gcd
+
+
+
+
+                                                                         23
+                                                       Plan for Speed: Dilated Scheduling for Masked Diffusion Language Models
+
+D.5. MMLU-Pro Biology - LLaDA-8B-Instruct                                                                                              Fixed B=32 (Steps: 40, Generation length: 256)
+Q UESTION ( NO FEW- SHOTS )
+                                                                                                                                            Ap opt osis            is    a   known    process            of     cell       death ,,       is     is
+P ROMPT LENGTH : 1400 TOKENS
+                                                                                                                                            not    a      cell    cell   of ,,   which       is      out        ( A ).            Ap opt osis
+
+       Question:                                                                                                                            is    is   a     to    several    kingdoms ,,,,          which ,               is ,    out ,,,, ,
+       Which of the following statements is NOT correct about
+       apoptosis?                                                                                                                           out ,,,, ,,,, ,,,, ,         out ,,,, ,    out ,         out ,            out ,       out ,        out ,
+       Options:
+                                                                                                                                            out ,      out ,       out ,     out ,    out ,         out ,            out ,        out ,        out ,
+       A. Apoptosis, a special type of cell division, requires mul-
+       tiple cell signaling.                                                                                                                out ,      out ,       out ,     out ,    out ,         out ,            out ,        out ,        out ,
+       B. The fact that apoptosis is widespread across several
+       kingdoms is evidence that it evolved early in the evolution                                                                          out ,      out ,       out ,     out ,    out ,         out ,            out ,        out ,        out ,
+       of eukaryotes.
+                                                                                                                                            out ,      out ,       out ,     out ,    out ,         out ,            out ,        out ,        out ,
+       C. Apoptosis plays a crucial role in the development of
+       fingers in embryonic development.                                                                                                    out ,      out ,       out ,     out ,    out ,         out ,            out ,        out ,        out ,
+       D. Apoptosis prevents an aging and dying cell from dam-
+       aging neighboring cells.                                                                                                             out ,      out ,       out ,     out ,    out ,         out ,            out ,        out ,        out ,
+
+                                                                                                                                            out ,      out ,       out ,     out ,    out ,         out ,            out ,        out ,        out ,
+DUS B=32 (Steps: 15, Generation length: 96)
+                                                                                                                                            out ,      out ,       out ,     out ,    out ,         out ,            out ,        out ,        out ,
+  Ap opt osis                  is    a       form      of       programmed              cell           death       that
+                                                                                                                                            out ,      out ,       out ,     out ,    out ,         out ,            out ,        out ,        out ,
+  requires       multiple            cell        signaling        pathways .                It        is     indeed
+                                                                                                                                            out ,      out ,       out ,     out ,    out ,         out ,            out
+  widespread              across         several       kingdoms ,                which           is        evidence        that
+
+  it     evolved          early      in         the    evolution           of        eukary otes .                  Ap opt
+                                                                                                                                       Fixed B=64 (Steps: 6, Generation length: 44)
+
+ osis     plays           a     crucial         role      in    embryonic               development ,                                       Ap opt osis            is    a   known    cell        cell        cell     cell   that    is        a     to
+  including          in        finger        development .             However ,                  it        is    not      true             the    cell     of ....
+  that     apoptosis            is       a      special        type    of        cell       division .The                               .
+  answer        is        ( A ).                                                                                                        .......
+
+                                                                                                                                        .
+DUS B=64 (Steps: 13, Generation length: 161)
+                                                                                                                                        .
+  Ap opt osis                  is    a       form      of       programmed              cell           death       and
+
+  does     not        involve            cell     division .          Ap opt osis                      is        widespread
+
+  across        several         kingdoms              and      does        not        require          multiple           cell
+
+  signaling ,             so        ( A )          statement          is    incorrect .                    Ap opt osis
+
+  is     widespread             across          kingdoms ,            but        it     evolved              relatively
+
+  later    in        the       evolution          of      eukary otes ,                 so        ( B )
+
+  statement          is       incorrect .             Ap opt osis                does        play           a     crucial
+
+  role     in     the          development             of      fingers          in    embryonic
+
+  development ,                 so       ( C )          is      correct .             The        answer           is    ( A
+
+ ).
+
+
+
+
+                                                                                                                                  24
+

@@ -1,0 +1,717 @@
+                            MaskGIT: Masked Generative Image Transformer
+
+                      Huiwen Chang             Han Zhang Lu Jiang Ce Liu˚                   William T. Freeman
+                                                       Google Research
+
+(a) Class-conditional Image Generation   (b) Image Manipulation                              (c) Image Extrapolation
+
+
+
+
+                                                 Flamingo                                            Input
+
+
+
+
+                                                      Tram                                            Input
+
+Figure 1. Example generation by MaskGIT on image synthesis and manipulation tasks. We show that MaskGIT is a flexible model
+that can generate high-quality samples on (a) class-conditional synthesis, (b) class-conditional image manipulation, e.g. replacing selected
+objects in the bounding box with ones from the given classes, and (c) image extrapolation. Examples shown here have resolutions 512ˆ512,
+512ˆ512, and 512ˆ2560 in the three columns, respectively. Zoom in to see the details.
+
+                             Abstract                                    Generative Adversarial Networks (GANs), which are capa-
+    Generative transformers have experienced rapid popu-                 ble of synthesizing high-fidelity images at blazing speeds.
+larity growth in the computer vision community in synthe-                They suffer from, however, well known issues include train-
+sizing high-fidelity and high-resolution images. The best                ing instability and mode collapse, which lead to a lack of
+generative transformer models so far, however, still treat an            sample diversity. Addressing these issues still remains open
+image naively as a sequence of tokens, and decode an image               research problems.
+sequentially following the raster scan ordering (i.e. line-                  Inspired by the success of Transformer [46] and GPT [5]
+by-line). We find this strategy neither optimal nor efficient.           in NLP, generative transformer models have received grow-
+This paper proposes a novel image synthesis paradigm us-                 ing interests in image synthesis [7, 15, 37]. Generally, these
+ing a bidirectional transformer decoder, which we term                   approaches aim at modeling an image like a sequence and
+MaskGIT. During training, MaskGIT learns to predict ran-                 leveraging the existing autoregressive models to generate
+domly masked tokens by attending to tokens in all direc-                 image. Images are generated in two stages; the first stage
+tions. At inference time, the model begins with generating               is to quantize an image to a sequence of discrete tokens (or
+all tokens of an image simultaneously, and then refines the              visual words). In the second stage, an autoregressive model
+image iteratively conditioned on the previous generation.                (e.g., transformer) is learned to generate image tokens se-
+Our experiments demonstrate that MaskGIT significantly                   quentially based on the previously generated result (i.e. au-
+outperforms the state-of-the-art transformer model on the                toregressive decoding). Unlike the subtle min-max opti-
+ImageNet dataset, and accelerates autoregressive decoding                mization used in GANs, these models are learned by max-
+by up to 48x. Besides, we illustrate that MaskGIT can be                 imum likelihood estimation. Because of the design differ-
+easily extended to various image editing tasks, such as in-              ences, existing works have demonstrated their advantages
+painting, extrapolation, and image manipulation. Project                 over GANs in offering stabilized training and improved dis-
+page: masked-generative-image-transformer.github.io.                     tribution coverage or diversity.
+                                                                            Existing works on generative transformers mostly focus
+1. Introduction                                                          on the first stage, i.e. how to quantize images such that in-
+    Deep image synthesis as a field has seen a lot of progress           formation loss is minimized, and share the same second
+in recent years. Currently holding state-of-the-art results are          stage borrowed from NLP. Consequently, even the state-
+                                                                         of-the-art generative transformers [15, 35] still treat an im-
+    ˚ Currently affiliated with Microsoft Azure AI.                      age naively as a sequence, where an image is flattened into
+
+
+
+                                                                     11315
+       
+                                                  ...                      ...                       ...
+           
+           
+
+
+                                  t=0         t=1                      t = 120                   t = 200                   t = 255
+
+
+
+
+        
+         
+        
+         
+
+                                  t=0         t=1           t=2         t=3          t=4          t=5          t=6          t=7
+
+Figure 2. Comparison between sequential decoding and MaskGIT’s scheduled parallel decoding. Rows 1 and 3 are the input latent
+masks at each iteration, and rows 2 and 4 are samples generated by each model at that iteration. Our decoding starts with all unknown
+codes (marked in lighter gray), and gradually fills up the latent representation with more and more scattered predictions in parallel (marked
+in darker gray), where the number of predicted tokens increases sharply over iterations. MaskGIT finishes its decoding in 8 iterations
+compared to the 256 rounds the sequential method takes.
+
+a 1D sequence of tokens following a raster scan order-                   on previous tokens in the order of raster scan, bidirectional
+ing, i.e. from left to right line-by-line (cf . Figure 2). We            self-attention allows the model to generate new tokens from
+find this representation neither optimal nor efficient for im-           generated tokens in all directions. We find that the mask
+ages. Unlike text, images are not sequential. Imagine how                scheduling (i.e. fraction of the image masked each iteration)
+an artwork is created. A painter starts with a sketch and                significantly affects generation quality. We propose to use
+then progressively refines it by filling or tweaking the de-             the cosine schedule and substantiate its efficacy in the abla-
+tails, which is in clear contrast to the line-by-line printing           tion study.
+used in previous work [7, 15]. Additionally, treating image                  On the ImageNet benchmark, we empirically demon-
+as a flat sequence means that the autoregressive sequence                strate that MaskGIT is both significantly faster (by up
+length grows quadratically, easily forming an extremely                  to 48x) and capable of generating higher quality samples
+long sequence–longer than any natural language sentence.                 than the state-of-the-art autoregressive transformer, i.e. VQ-
+This poses challenges for not only modeling long-term cor-               GAN, on class-conditional generation with 256ˆ256 and
+relation but also renders the decoding intractable. For exam-            512ˆ512 resolution. Even compared with the leading GAN
+ple, it takes a considerable 30 seconds to generate a single             model, i.e. BigGAN, and diffusion model, i.e. ADM [12],
+image on a GPU autoregressively with 32x32 tokens.                       MaskGIT offers comparable sample quality while yield-
+    This paper introduces a new bidirectional transformer                ing more favourable diversity. Notably, our model estab-
+for image synthesis called Masked Generative Image Trans-                lishes new state-of-the-arts on classification accuracy scores
+former (MaskGIT). During training, MaskGIT is trained on                 (CAS) [36] for synthesizing 256ˆ256 and 512ˆ512 im-
+a similar proxy task to the mask prediction in BERT [11]. At             ages. To our knowledge, this paper provides the first ev-
+inference time, MaskGIT adopts a novel non-autoregressive                idence demonstrating the efficacy of the masked modeling
+decoding method to synthesize an image in constant number                for image generation on the common ImageNet benchmark.
+of steps. Specifically, at each iteration, the model predicts                Furthermore, MaskGIT’s multidirectional nature makes
+all tokens simultaneously in parallel but only keeps the most            it readily extendable to image manipulation tasks that are
+confident ones. The remaining tokens are masked out and                  otherwise difficult for autoregressive models. Fig. 1 shows
+will be re-predicted in the next iteration. The mask ratio               a new application of class-conditional image editing in
+is decreased until all tokens are generated with a few itera-            which MaskGIT re-generates content inside the bounding
+tions of refinement. As illustrated in Figure 2, MaskGIT’s               box based on the given class while keeping the context (out-
+decoding is an order-of-magnitude faster than the autoregre-             side of the box) unchanged. This task, which is either infea-
+sive decoding as it only takes 8 steps, instead of 256 steps,            sible for autoregressive model or difficult for GAN models,
+to generate an image and the predictions within each step                is trivial for our model. Quantitatively, we demonstrate this
+are parallelizable. Moreover, instead of conditioning only               flexibility by applying MaskGIT to image inpainting, and
+
+
+
+                                                                     11316
+                                                                                       Input                         Visual Tokens                 Reconstruction
+image extrapolation in arbitrary directions. Even though our
+model is not designed for such tasks, it obtains comparable
+                                                                                                      Encoder                        Decoder
+performance to the dedicated models on each task.                                                    VQ
+
+
+
+2. Related Work                                                                                Masked Tokens                                   Predicted Tokens
+
+2.1. Image Synthesis                                                                             Bidirectional
+                                                                                                      Transformer
+   Deep generative models [12, 17, 29, 34, 40, 43, 44, 51]
+have achieved lots of successes in image synthesis tasks.
+GAN based methods demonstrate amazing capability in                   Figure 3. Pipeline Overview. MaskGIT follows a two-stage de-
+yielding high-fidelity samples [4, 17, 27, 42, 51]. In con-           sign, with 1) a tokenizer that tokenizes images into visual tokens,
+trast, likelihood-based methods, such as Variational Au-              and 2) a bidirectional tranformer model that performs MVTM, i.e.
+toencoders (VAEs) [29, 43], Diffusion Models [12, 24, 40]             learns to predict visual tokens masked at random.
+and Autoregressive Models [34, 44], offer distribution cov-
+erage and hence can generate more diverse samples [40, 43,            MLM to be predicted utilizing context from both directions.
+44].                                                                  In vision, the masked modeling in BERT [11] has been ex-
+   However, maximizing likelihood directly in pixel space             tended to image representation learning [2, 21] with images
+can be challenging. So instead, VQVAE [37, 45] proposes               quantized to discrete tokens. However, few works have suc-
+to generate images in latent space in two stages. In the first        cessfully applied the same masked modeling to image gen-
+stage, which is known as tokenization, it tries to compress           eration [53] because of the difficulty in performing autore-
+images into discrete latent space, and primarily consists of          gressive decoding using bi-directional attentions. To our
+three components:                                                     knowledge, this paper provides the first evidence demon-
+   • an encoder E that learns to tokenize images x P                  strating the efficacy of masked modeling for image gener-
+      RHˆW ˆ3 into latent embedding Epxq,                             ation on the common ImageNet benchmark. Our work is
+   • a codebook ek P RD , k P 1, 2, ¨ ¨ ¨ , K which serves            inspired by bi-directional machine translation [16, 19, 20]
+      for a nearest neighbor look up used to quantize the em-         in NLP, and our novelty lies in the proposed new masking
+      bedding into visual tokens, and                                 strategy and decoding algorithm which, as substantiated by
+   • a decoder G which predicts the reconstructed image x̂            our experiments, are essential for image generation.
+      from the visual tokens e.
+                                                                      3. Method
+In the second stage, it first predicts the latent priors of the
+visual tokens using deep autoregressive models, and then                  Our goal is to design a new image synthesis paradigm
+uses the decoder from the first stage to map the token se-            utilizing parallel decoding and bi-directional generation.
+quences into image pixels. Several approaches have fol-                   We follow the two-stage recipe discussed in 2.1, as illus-
+lowed this paradigm due to the efficacy of the two-stage              trated in Figure 3. Since our goal is to improve the second
+approach. DALL-E [35] uses Transformers [46] to improve               stage, we employ the same setup for the first stage as in the
+token prediction in the second stage. VQGAN [15] adds ad-             VQGAN model [15], and leave potential improvements to
+versarial loss and perceptual loss [26,52] in the first stage to      the tokenization step to future work.
+improve the image fidelity. A contemporary work to ours,                  For the second stage, we propose to learn a bidirectional
+VIM [49], proposes to use a VIT backbone [13] to further              transformer by Masked Visual Token Modeling (MVTM).
+improve the tokenization stage. Since these approaches still          We introduce MVTM training in 3.1 and the sampling pro-
+employ an auto-regressive model, the decoding time in the             cedure in 3.2. We then discuss the key technique of masking
+second stage scales with the token sequence length.                   design in 3.3.
+
+2.2. Masked Modeling with Bi-directional Trans-                       3.1. MVTM in Training
+     formers
+                                                                         Let Y “ ryi sN
+                                                                                      i“1 denote the latent tokens obtained by in-
+   The transformer architecture [46], was first proposed in           putting the image to the VQ-encoder, where N is the length
+NLP, and has recently extended its reach to computer vi-              of the reshaped token matrix, and M “ rmi sN  i“1 the corre-
+sion [6, 13]. Transformer consists of multiple self-attention         sponding binary mask. During training, we sample a subset
+layers, allowing interactions between all pairs of elements           of tokens and replace them with a special [MASK] token.
+in the sequence to be captured. In particular, BERT [11]              The token yi is replaced with [MASK] if mi “ 1, other-
+introduces the masked language modeling (MLM) task for                wise, when mi “ 0, yi will be left intact.
+language representation learning. The bi-directional self-               The sampling procedure is parameterized by a mask
+attention used in BERT [11] allows the masked tokens in               scheduling function γprq P p0, 1s, and executes as follows:
+
+
+
+                                                                   11317
+                                                                                              pt`1q                              ptq
+we first sample a ratio from 0 to 1, then uniformly select            4. Mask. We obtain YM      by masking n tokens in YM .
+rγprq ¨ N s tokens in Y to place masks, where N is the                   The mask Mpt`1q for iteration t`1 is calculated from:
+length. The mask scheduling significantly affects the qual-                             "
+                                                                                      “ 1, if ci ă sortedj pcj qrns. ,
+                                                                                pt`1q
+ity of image generation and will be discussed in 3.3.                         mi
+    Denote YM the result after applying mask M to Y. The                                  0, otherwise.
+training objective is to minimize the negative log-likelihood             where ci is the confidence score for the i-th token.
+of the masked tokens:
+                         ”    ÿ                      ı                  The decoding algorithm synthesizes an image in T steps.
+        Lmask “ ´ E                    log ppyi |YM q , (1)          At each iteration, the model predicts all tokens simultane-
+                  YPD
+                         @iPr1,N s,mi “1                             ously but only keeps the most confident ones. The remain-
+                                                                     ing tokens are masked out and re-predicted in the next it-
+Concretely, we feed the masked YM into a multi-layer bidi-
+                                                                     eration. The mask ratio is made decreasing until all tokens
+rectional transformer to predict the probabilities P pyi |YM q
+                                                                     are generated within T iterations. In practice, the masking
+for each masked token, where the negative log-likelihood
+                                                                     tokens are randomly sampled with temperature annealing to
+is computed as the cross-entropy between the ground-truth
+                                                                     encourage more diversity, and we will discuss its effect in
+one-hot token and predicted token. Notice the key differ-
+                                                                     4.4. Figure 2 illustrates an example of our decoding process.
+ence to autoregressive modeling: the conditional depen-
+                                                                     It generates an image in T “ 8 iterations, where the un-
+dency in MVTM has two directions, which allows image
+                                                                     masked tokens at each iteration are highlighted in the grid,
+generation to utilize richer contexts by attending to all to-
+                                                                     e.g. when t “ 1 we only keep 1 token and mask out the rest.
+kens in the image.
+                                                                     3.3. Masking Design
+3.2. Iterative Decoding
+                                                                        We find that the quality of image generation is signif-
+    In autoregressive decoding, tokens are generated sequen-
+                                                                     icantly affected by the masking design. We model the
+tially based on previously generated output. This process
+                                                                     masking procedure by a mask scheduling function γp¨q
+is not parallelizable and thus very slow for image because
+                                                                     that computes the mask ratio for the given latent tokens.
+the image token length, e.g. 256 or 1024, is typically much
+                                                                     As discussed, the function γ is used in both training and
+larger than that of language. We introduce a novel decoding
+                                                                     inference. During inference time, it takes the input of
+method where all tokens in the image are generated simulta-
+                                                                     0{T, 1{T, ¨ ¨ ¨ , pT ´ 1q{T indicating the progress in decod-
+neously in parallel. This is feasible due to the bi-directional
+                                                                     ing. In training, we randomly sample a ratio r in r0, 1q to
+self-attention of MTVM.
+                                                                     simulate the various decoding scenarios.
+    In theory, our model is able to infer all tokens and gen-
+                                                                        BERT uses a fixed mask ratio of 15% [11], i.e., it always
+erate the entire image in a single pass. We find this chal-
+                                                                     masks 15% of the tokens, which is unsuitable for our task
+lenging due to inconsistency with the training task. Below,
+                                                                     since our decoder needs to generate images from scratch.
+the proposed iterative decoding is introduced. To generate
+                                                                     New masking scheduling is thus needed. Before discussing
+an image at inference time, we start from a blank canvas
+                                       p0q                           specific schemes, we first examine the property of the mask
+with all the tokens masked out, i.e. YM . For iteration t, our       scheduling function. First, γprq needs to be a continuous
+algorithm runs as follows:                                           function bounded between 0 and 1 for r P r0, 1s. Second,
+                                             ptq
+ 1. Predict. Given the masked tokens YM at the current               γprq should be (monotonically) decreasing with respect to
+    iteration, our model predicts the probabilities, denoted         r, and it holds that γp0q Ñ 1 and γp1q Ñ 0. The sec-
+    as pptq P RN ˆK , for all the masked locations in paral-         ond property ensures the convergence of our decoding al-
+    lel.                                                             gorithm.
+                                                                        This paper considers common functions and makes sim-
+ 2. Sample. At each masked location i, we sample a to-
+          ptq                                     ptq                ple transformations so that they satisfy the properties. Fig-
+    ken yi based on its prediction probabilities pi P RK             ure 8 visualizes these functions which are divided into three
+    over all possible tokens in the codebook. After a to-            groups:
+          ptq
+    ken yi is sampled, its corresponding prediction score               • Linear function is a straightforward solution, which
+    is used as a “confidence” score indicating the model’s                 masks an equal amount of tokens each time.
+    belief of this prediction. For the unmasked position in
+      ptq                                                               • Concave function captures the intuition that image
+    YM , we simply set its confidence score to 1.0.
+                                                                           generation follows a less-to-more information flow. In
+ 3. Mask Schedule. We compute the number of tokens to                      the beginning, most tokens are masked so the model
+    mask according to the mask scheduling function γ by                    only needs to make a few correct predictions for which
+    n “ rγp Tt qN s, where N is the input length and T is                  the model feel confident. Towards the end, the mask
+    the total number of iterations.                                        ratio sharply drops, forcing the model to make a lot
+
+
+
+                                                                  11318
+     more correct predictions. The effective information                                                                            
+                                                                                  
+     is increasing in this process. The concave family in-                                     
+
+     cludes cosine, square, cubic, and exponential.                                       
+                                                                                                                        
+
+
+                                                                    
+   • Convex function, conversely, implements a more-to-
+      less process. The model needs to finalize a vast major-                                                     
+                                                                                  
+      ity of tokens within the first couple of iterations. This                                  
+      family includes square root and logarithmic.                                                                          
+                                                                                                 
+                                                                                   
+   We empirically compare the above mask scheduling                                                                      
+                                                                                                                     ­   
+functions in 4.4 and find the cosine function works the best
+in all of our experiments.
+                                                                      Figure 4. Transformer wall-clock runtime comparison between
+                                                                      VQGAN [15] and ours. All results are run on a single GPU.
+4. Experiments
+    In this section, we empirically evaluate MaskGIT on               Distance (FID) [23] (6.18 vs 15.78) and Inception Score
+image generation in terms of quality, efficiency and flex-            (IS) (182.1 vs 78.3). We also train a VQGAN baseline
+ibility. In 4.2, we evaluate MaskGIT on the standard                  with the same tokenizer and hyperparameters as MaskGIT’s
+class-conditional image generation tasks on ImageNet [10]             in order to further highlight the difference between bi-
+256ˆ256 and 512ˆ512. In 4.3, we show MaskGIT’s versa-                 directional and uni-directional transformers, and find that
+tility by demonstrating its performance on three image edit-          on both resolutions, MaskGIT still outperforms our imple-
+ing tasks, image inpainting, outpainting, and editing. In 4.4,        mented baseline by a significant margin.
+we verify the necessity of our design of mask scheduling.                 Furthermore, we report the results with classifier-
+We will release the code and model for reproducible re-               based rejection sampling, following prior transformer-
+search.                                                               based methods [15, 37]. Specifically, we use a pre-trained
+                                                                      ResNet classifier [22] to score output samples based on the
+4.1. Experimental Setup                                               predicted probability and keep samples with an acceptance
+    For each dataset, we only train a single autoencoder, de-         rate of 0.05, as in VQGAN [15]. MaskGIT demonstrates
+coder, and codebook with 1024 tokens on cropped 256x256               consistent improvement over VQGAN, and is comparable
+images for all the experiments. The image is always com-              with ADM with classifier guidance [12].
+pressed by a fixed factor of 16, i.e. from H ˆ W to a grid of         Speed. We evaluate model speed by assessing the number
+tokens in the size of h ˆ w, where h=H{16 and w=W {16.                of steps, i.e. forward passes, each model requires to gen-
+We find that this autoencoder, together with the codebook,            erate a sample. As shown in Table 1, MaskGIT requires
+can be reused to synthesize 512ˆ512 images.                           the fewest steps among all non-GAN-based models on both
+    All models in this work have the same configuration: 24           resolutions.
+layers, 8 attention heads, 768 embedding dimensions and                   To further substantiate the speed difference between
+3072 hidden dimensions. Our models use learnable posi-                MaskGIT and autoregressive models, we perform a run-
+tional embedding [46], LayerNorm [1], and truncated nor-              time comparison between MaskGIT and VQGAN’s decod-
+mal initialization (stddev=0.02). We employ the following             ing processes. As illustrated in Figure 4, MaskGIT signifi-
+training hyperparameters: label smoothing=0.1, dropout                cantly accelerates VQGAN by 30-48x, with a speedup that
+rate=0.1, Adam optimizer [28] with β1 =0.9 and β2 =0.96.              gets more pronounced as the image resolution (and thus the
+We use RandomResizeAndCrop for data augmentation and                  input token length) grows.
+temperature=4.5 for decoding. All models are trained on               Diversity. We consider Classification Accuracy Score
+4x4 TPU devices with a batch size of 256. ImageNet mod-               (CAS) [36] and Precision/Recall [30] as two metrics for
+els are trained for 300 epochs while the Places2 model is             evaluating sample diversity, in addition to sample quality.
+trained for 200 epochs.                                                   CAS involves first training a ResNet-50 classifier [22]
+                                                                      solely on the samples generated by the candidate model,
+4.2. Class-conditional Image Synthesis
+                                                                      and then measuring the classifier’s classification accuracy
+   We evaluate the performance of our model on class-                 on the ImageNet validation set. The last two columns in Ta-
+conditional image synthesis on ImageNet 256ˆ256 and                   ble 1 present the CAS results, where the scores of the clas-
+512ˆ512. Our main results are summarized in Table 1.                  sifier trained on real ImageNet training data are included for
+Quality. On ImageNet 256ˆ256, without any special sam-                reference (76.6% and 93.1% for the top-1 and top-5 accu-
+pling strategies such as beam-search, top-k or nucleus sam-           racy). For image resolution 256ˆ256, we follow the com-
+pling heuristics [25] or classifier guidance [37], we signif-         mon practice of using data augmentation RandAugment [9],
+icantly outperform VQGAN [15] in both Fréchet Inception              and report the scores trained without augmentation in the
+
+
+
+                                                                  11319
+                             Model                          FID Ó    IS Ò    Prec Ò   Rec Ò       # params # steps           CAS ˆ100 Ò
+                             ImageNet 256ˆ256                                                                         Top-1 (76.6) Top-5 (93.1)
+
+                             DCTransformer [32] ˝           36.51     n/a    0.36     0.67         738M     ą1024
+                             BigGAN-deep [4]                6.95    198.2    0.87     0.28         160M        1         43.99        67.89
+                             Improved DDPM [33]˝            12.26     n/a    0.70     0.62         280M      250
+                             ADM [12]˝                      10.94   101.0    0.69     0.63         554M      250
+                             VQVAE-2 [37]˝                  31.11   „45      0.36     0.57         13.5B:    5120        54.83        77.59
+                             VQGAN [15]˝                    15.78    78.3     n/a      n/a          1.4B     256
+                             VQGAN˚                         18.65    80.4    0.78     0.26         227M      256         53.10        76.18
+                             MaskGIT                        6.18    182.1    0.80     0.51         227M       8          63.14        84.45
+                             ADM, 1.0 guidance [12]˝        4.59    186.70   0.82     0.52
+                             VQGAN, 0.05 acceptance [15]˝   5.88     304.8    n/a      n/a
+                             MaskGIT, 0.05 acceptance       4.02     355.6   0.83     0.50
+
+                             ImageNet 512ˆ512
+                             BigGAN-deep [4]                8.43    232.5    0.88     0.29         160M        1         44.02        68.22
+                             ADM [12]˝                      23.24   58.06    0.73     0.60         559M       250
+                             VQGAN˚                         26.52    66.8    0.73     0.31         227M      1024        51.29        74.24
+                             MaskGIT                        7.32    156.0    0.78     0.50         227M       12         63.43        84.79
+                             ADM, 1.0 guidance [12]˝        7.72    172.71   0.87     0.42
+                             MaskGIT, 0.05 acceptance       4.46     342.0   0.83     0.44
+
+Table 1. Quantitative comparison with state-of-the-art generative models on ImageNet 256ˆ256 and 512ˆ512. “# steps” refers to the number
+of neural network runs needed to generate a sample. ˚ denotes the model we train with the same architecture and setup with ours; ˝ denotes values taken
+from prior publications; : estimated based on the pytorch implementation [39].
+
+
+
+
+    BigGAN-deep (FID=6.95)
+
+
+
+
+    MaskGIT (FID=6.18)
+
+
+
+Figure 5. Sample Diversity Comparison between our proposed method MaskGIT and BigGAN-deep [4] on ImageNet 256ˆ256. The class
+ids of the samples from left to right are 980, 009 and 993 respectively. Please refer to the supplementary for more comparisons.
+
+supplementary. We find that MaskGIT significantly outper-                         models. Compared to our baseline VQGAN, we improve
+forms prior work VQVAE-2 and VQGAN, establishing a                                the diversity as measured by recall while slightly boosting
+new state-of-the-art of CAS on the ImageNet benchmark                             its precision.
+on both resolutions.
+    The Precision/Recall results in Table 1 show that                                In contrast to BigGAN’s samples, MaskGIT’s samples
+MaskGIT achieves better coverage (Recall) compared to                             are more diverse with more varied lighting, poses, scales
+BigGAN, and better sample quality (Precision) compared                            and context as shown in Figure 5. More comparisons are
+to likelihood-based models such as VQVAE-2 and diffusion                          available in the supplementary.
+
+
+
+                                                                              11320
+                                                                         4.3. Image Editing Applications
+                                                                             In this subsection, we present direct applications of
+                                                                         MaskGIT on three image editing tasks: class-conditional
+                                                                         image editing, image inpainting, and outpainting. All
+                                                                         three tasks can be almost trivially translated to ones that
+                                                                         MaskGIT can handle if we consider the task as just a con-
+                                                                         straint on the initial binary mask M MaskGIT uses in its it-
+                                                                         erative decoding, as discussed in 3.2. We show that without
+                                                                         modifications to the architecture or any task-specific train-
+                                                                         ing, MaskGIT is capable of generating very compelling re-
+                                                                         sults on all three applications. Furthermore, MaskGIT ob-
+                                                                         tains comparable performance to dedicated models on both
+                                                                         inpainting and outpainiting, even though it is not designed
+                                                                         specifically for either task.
+Figure 6. Class-conditional image editing. Given input images            Class-conditional Image Editing. We define a new class-
+on the left of each pair, and a target class ”tiger cat”, MaskGIT        conditional image editing task to showcase MaskGIT’s flex-
+replaces the bounding boxed regions with tiger cats, suggesting
+                                                                         ibility. In this task, the model regenerates content specified
+the composition ability of our model.
+                                                                         inside a bounding box on the given class while preserving
+                                                                         the context, i.e. content outside of the box. It is infeasible
+                                                                         for autoregressive methods due to the violation to their pre-
+                                                                         diction orders.
+                                                                             For MaskGIT, however, it is a trivial task if we consider
+                                                                         the bounding box region as the input of initial mask to the
+                                                                         iterative decoding algorithm. Figure 6 shows a few example
+                                                                         results. More can be found in the supplementary.
+                                                                             In these examples, we observe that MaskGIT can reason-
+                                                                         ably replace the selected object while preserving, or to some
+                                                                         extend even completing, the context in the background. Fur-
+                                                                         thermore, we find that MaskGIT seems to be capable of
+                                                                         synthesizing unnatural yet plausible combinations unseen
+                                                                         in the ImageNet training set, e.g. a flying cat, cat in a soup
+                                                                         bowl, and cat in a flower. This suggests that MaskGIT has
+      Input         —— MaskGIT (Our Samples) ——                          incidentally learned useful representations for composition,
+                                                                         which may be further exploited in related tasks in future
+Figure 7. Inpainting and outpainting. Given a single input im-
+                                                                         works.
+age, MaskGIT synthesizes diverse results for inpainting (first row)
+and outpainting in different directions (last two rows).                 Image Inpainting.         Image inpainting is a fundamental
+                                                                         image editing task to synthesize contents in missing re-
+  Task             Model                 Resolution FID Ó IS Ò           gions so that the completion looks visually realistic. Tra-
+  Outpainting      Boundless [41]˝         256     35.02    6.15
+                                                                         ditional patch-based methods [3] work well on texture re-
+  Right 50%        In&Out [8]˝             256     23.57    7.18         gions, while deep learning based methods [14,38,48,50,54]
+                   InfinityGAN [31]        256     10.60    5.57         have been demonstrated to synthesize images requiring bet-
+                   Boundless [41] TF ˛     256      7.80    5.99         ter semantic coherence. Both approaches have been are ex-
+                   MaskGIT (Ours)          512      6.78   11.69
+                                                                         tensively studied in computer vision.
+  Inpainting       DeepFill [50]           256     11.51   22.55             We extend MaskGIT to this problem by tokenizing the
+  Center 50%ˆ50% ICT [47]                  256      9.27   20.29
+                   HiFill [48]             512     16.60   19.93
+                                                                         masked image and interpreting the inpainting mask, dilated
+                   CoModGAN [54]           512      7.13   21.82         in latent space, as the initial mask in our iterative decoding.
+                   MaskGIT (Ours)          512      7.92   22.95         We then composite the output image by linearly blending it
+Table 2. Quantitative Comparisons for Inpainting and Out-
+                                                                         with the input based on the masking boundary following [8].
+painting on Places2. The models are evaluated on samples with            To match the training of our baselines, we train MaskGIT
+resolution consistent with their training. ˝ taken from the prior        on the 512ˆ512 center-cropped images from the Places2
+work; ˛ evaluated using the TFHub model [18].                            [55] dataset. All hyperparameters are kept the same as the
+                                                                         MaskGIT model trained on ImageNet.
+
+
+
+                                                                      11321
+                                                                                                     1.0
+                                                                                                                                          60
+           γ                T   FID Ó    IS Ò    NLL
+
+
+
+                                                                          γ
+                                                                                                                                          
+                                                                                                     0.8                                 
+                                                                                                                                         
+           Exponential     8    7.89     156.3   4.83                                                                                          40
+                                                                                                     0.6                                 
+           Cubic           9    7.26     165.2   4.63                                                                                    
+
+           Square          10   6.35     179.9   4.38                                                0.4
+                                                                                                                                                     20
+           Cosine          12    6.07    211.6   4.22                                                0.2                                           
+           Linear          16   7.51     113.2   3.75
+                                                                                                     0.0                                             0
+           Square Root     32   12.33     99.0   3.34                                                      0.0   0.2   0.4   0.6   0.8       1.0         55   10
+                                                                                                                                                              10   15
+                                                                                                                                                                   15       20
+                                                                                                                                                                            20   25
+                                                                                                                                                                                 25   30
+                                                                                                                                                                                      30
+
+                                                                                                                       t/T                                              T
+           Logarithmic     60   29.17     47.9   3.08
+                                                                              Figure 8. Choices of Mask Scheduling Functions γp Tt q, and
+Table 3. Ablation results on the mask scheduling functions. We                number of iterations T. On the left, we visualize seven functions
+report the best FID, IS, and Negative Log-Likelihood loss for each            we consider for γ. On the right, we show line graphs of models’
+candidate scheduling function.                                                FID scores against the number of decoding iterations T . Among
+                                                                              the candidates, we find that cosine achieves the best FID.
+   We compare MaskGIT against common GAN-based
+baselines, including DeepFillv2 [50] and HiFill [48], on in-                  ably because they 1) challenge training with more difficult
+painting with a central 50% ˆ 50% mask, which are eval-                       cases (i.e. encouraging larger mask ratios), and 2) appropri-
+uated on the Places2 validation set. Table 2 summarizes                       ately prioritize the less-to-more prediction throughout the
+the quantitative comparisons. MaskGIT beats both Deep-                        decoding. That said, over-prioritization seems to be costly
+Fill and HiFill in FID and IS by a significant margin, while                  as well, as shown by the cubic function being worse than
+achieving scores close to the state-of-the-art inpainting ap-                 square, and exponential being much worse than all other
+proaches such as CoModGAN [54] and ICT [47]. We show                          concave functions.
+more qualitative comparisons in the supplementary.                            Iteration number. We study the effect of the number of it-
+                                                                              erations (T ) on our model by running all candidate masking
+Image Outpainting. Outpainting, or image extrapolation,
+                                                                              functions with different T s. As shown in Figure 8, under
+is an image editing task that has received increased attention
+                                                                              the same setting, more iterations are not necessarily better:
+recently. Our adaptation of the problem and the model used
+                                                                              as T increases, aside from the logarithmic function which
+in the following evaluation is the same as in inpainting.
+                                                                              performs poorly throughout, all other functions hit a “sweet
+    We compare against common GAN-based baselines, in-
+                                                                              spot” where the model’s performance peaks before it wors-
+cluding Boundless [41], In&Out [8], InfinityGAN [31], and
+                                                                              ens again. The sweet spot also gets “delayed” as functions
+CoModGAN [54] on extrapolating rightward with a 50%
+                                                                              get less concave. Among functions that achieve strong FIDs
+ratio. We evaluate on the image set generously provided by
+                                                                              (i.e. cosine, square, and linear), cosine not only has the
+the authors of InfinityGAN [31] and In&Out [8].
+                                                                              strongest overall score, but also the earliest sweet spot at
+    Table 2 summarizes the quantitative comparisons.
+                                                                              a total of 8 to 12 iterations. We hypothesize that such sweet
+MaskGIT beats all baselines and achieves state-of-the-
+                                                                              spots exist because too many iterations may discourage the
+art FID and IS. As the examples in Figure 7 illustrate,
+                                                                              model from keeping less confident predictions, which wors-
+MaskGIT is also capable of synthesizing diverse results
+                                                                              ens the token diversity. We think further study on the mask-
+given the same input with different seeds. We observe that
+                                                                              ing design would be interesting for future work.
+MaskGIT completes objects and global structures particu-
+larly well, and hypothesize that this is thanks to the model
+learning useful representations with the global attentions in
+                                                                              5. Conclusion
+the transformer.                                                                 In this paper, we propose MaskGIT, a novel image syn-
+                                                                              thesis paradigm using a bidirectional transformer decoder.
+4.4. Ablation Studies
+                                                                              Trained on Masked Visual Token Modeling, MaskGIT
+   We conduct ablation experiments using the default set-                     learns to generate samples using an iterative decoding pro-
+ting on ImageNet 256ˆ256.                                                     cess within a constant number of iterations. Experimen-
+Mask scheduling. A key design of MaskGIT is the mask                          tal results show that MaskGIT significantly outperforms
+scheduling function used in both training and iterative de-                   the state-of-the-art transformer model on conditional image
+coding. We compare the functions discussed in 3.3, visual-                    generation, and our model is readily extendable to various
+ize them in Figure 8, and summarize the results in Table 3.                   image manipulation tasks. As MaskGIT achieves competi-
+   We observe that concave functions generally obtain bet-                    tive performance with GANs, applying it to other synthesis
+ter FID and IS than linear, followed by the convex func-                      tasks is a promising direction for future work. Please see
+tions. While cosine and square perform similarly relative                     the supplementary for the limitations and more discussion.
+to other functions, cosine slightly edges out square in all                   Acknowledgement The authors would like to thank Xiang
+scores, making cosine the default in our model.                               Kong for inspiring related works and anonymous reviewers
+   We hypothesize that concave functions perform favor-                       for helpful comments.
+
+
+
+                                                                     11322
+References                                                              Jill Burstein, Christy Doran, and Thamar Solorio, edi-
+                                                                        tors, NAACL-HLT, 2019. 2, 3, 4
+ [1] Jimmy Lei Ba, Jamie Ryan Kiros, and Geoffrey E.
+     Hinton. Layer normalization, 2016. 5                          [12] Prafulla Dhariwal and Alexander Quinn Nichol. Dif-
+                                                                        fusion models beat GANs on image synthesis. In
+ [2] Hangbo Bao, Li Dong, Songhao Piao, and Furu Wei.                   A. Beygelzimer, Y. Dauphin, P. Liang, and J. Wort-
+     BEit: BERT pre-training of image transformers. In In-              man Vaughan, editors, Advances in Neural Informa-
+     ternational Conference on Learning Representations,                tion Processing Systems, 2021. 2, 3, 5, 6
+     2022. 3
+                                                                   [13] Alexey Dosovitskiy, Lucas Beyer, Alexander
+ [3] Connelly Barnes, Eli Shechtman, Adam Finkelstein,                  Kolesnikov, Dirk Weissenborn, Xiaohua Zhai,
+     and Dan B Goldman. PatchMatch: A randomized                        Thomas Unterthiner, Mostafa Dehghani, Matthias
+     correspondence algorithm for structural image editing.             Minderer, Georg Heigold, Sylvain Gelly, Jakob
+     ACM Transactions on Graphics (Proc. SIGGRAPH),                     Uszkoreit, and Neil Houlsby. An image is worth
+     28(3), Aug. 2009. 7                                                16x16 words: Transformers for image recognition at
+ [4] Andrew Brock, Jeff Donahue, and Karen Simonyan.                    scale. In ICLR, 2021. 3
+     Large scale gan training for high fidelity natural image      [14] Patrick Esser, Robin Rombach, Andreas Blattmann,
+     synthesis. In ICLR, 2019. 3, 6                                     and Björn Ommer. Imagebart: Bidirectional context
+ [5] Tom Brown, Benjamin Mann, Nick Ryder, Melanie                      with multinomial diffusion for autoregressive image
+     Subbiah, Jared D Kaplan, Prafulla Dhariwal, Arvind                 synthesis, 2021. 7
+     Neelakantan, Pranav Shyam, Girish Sastry, Amanda              [15] Patrick Esser, Robin Rombach, and Björn Ommer.
+     Askell, Sandhini Agarwal, Ariel Herbert-Voss,                      Taming transformers for high-resolution image syn-
+     Gretchen Krueger, Tom Henighan, Rewon Child,                       thesis. In CVPR, 2021. 1, 2, 3, 5, 6
+     Aditya Ramesh, Daniel Ziegler, Jeffrey Wu, Clemens
+     Winter, Chris Hesse, Mark Chen, Eric Sigler, Ma-              [16] Marjan Ghazvininejad, Omer Levy, Yinhan Liu, and
+     teusz Litwin, Scott Gray, Benjamin Chess, Jack Clark,              Luke Zettlemoyer. Mask-predict: Parallel decoding of
+     Christopher Berner, Sam McCandlish, Alec Radford,                  conditional masked language models, 2019. 3
+     Ilya Sutskever, and Dario Amodei. Language models             [17] Ian Goodfellow, Jean Pouget-Abadie, Mehdi Mirza,
+     are few-shot learners. In NeurIPS, 2020. 1                         Bing Xu, David Warde-Farley, Sherjil Ozair, Aaron
+ [6] Mathilde Caron, Hugo Touvron, Ishan Misra, Hervé                  Courville, and Yoshua Bengio. Generative adversarial
+     Jégou, Julien Mairal, Piotr Bojanowski, and Armand                nets. In NeurIPS, 2014. 3
+     Joulin. Emerging properties in self-supervised vi-            [18] Google. Tfhub model of boundless. https :
+     sion transformers. In Proceedings of the International             //tfhub.dev/google/boundless/half/1,
+     Conference on Computer Vision (ICCV), 2021. 3                      2021. 7
+ [7] Mark Chen, Alec Radford, Rewon Child, Jeffrey Wu,             [19] Jiatao Gu, James Bradbury, Caiming Xiong, Vic-
+     Heewoo Jun, David Luan, and Ilya Sutskever. Gener-                 tor OK Li, and Richard Socher. Non-autoregressive
+     ative pretraining from pixels. In International Confer-            neural machine translation. In ICLR, 2018. 3
+     ence on Machine Learning, pages 1691–1703. PMLR,              [20] Jiatao Gu and Xiang Kong. Fully non-autoregressive
+     2020. 1, 2                                                         neural machine translation: Tricks of the trade, 2020.
+ [8] Yen-Chi Cheng, Chieh Hubert Lin, Hsin-Ying Lee,                    3
+     Jian Ren, Sergey Tulyakov, and Ming-Hsuan Yang.               [21] Kaiming He, Xinlei Chen, Saining Xie, Yanghao Li,
+     In&out: Diverse image outpainting via gan inversion.               Piotr Dollár, and Ross Girshick. Masked autoencoders
+     arXiv preprint arXiv:2104.00675, 2021. 7, 8                        are scalable vision learners, 2021. 3
+ [9] Ekin D. Cubuk, Barret Zoph, Jonathon Shlens, and              [22] Kaiming He, Xiangyu Zhang, Shaoqing Ren, and Jian
+     Quoc V. Le. Randaugment: Practical automated data                  Sun. Deep residual learning for image recognition. In
+     augmentation with a reduced search space, 2019. 5                  CVPR, 2016. 5
+[10] Jia Deng, Wei Dong, Richard Socher, Li-Jia Li, Kai            [23] Martin Heusel, Hubert Ramsauer, Thomas Un-
+     Li, and Li Fei-Fei. Imagenet: A large-scale hierarchi-             terthiner, Bernhard Nessler, and Sepp Hochreiter.
+     cal image database. In 2009 IEEE conference on com-                Gans trained by a two time-scale update rule converge
+     puter vision and pattern recognition, pages 248–255.               to a local nash equilibrium. In NeurIPS, 2017. 5
+     Ieee, 2009. 5                                                 [24] Jonathan Ho, Chitwan Saharia, William Chan, David J
+[11] Jacob Devlin, Ming-Wei Chang, Kenton Lee, and                      Fleet, Mohammad Norouzi, and Tim Salimans. Cas-
+     Kristina Toutanova. BERT: pre-training of deep bidi-               caded diffusion models for high fidelity image gener-
+     rectional transformers for language understanding. In              ation. arXiv preprint arXiv:2106.15282, 2021. 3
+
+
+
+                                                                11323
+[25] Ari Holtzman, Jan Buys, Li Du, Maxwell Forbes, and          [38] Chitwan Saharia, William Chan, Huiwen Chang,
+     Yejin Choi. The curious case of neural text degenera-            Chris A. Lee, Jonathan Ho, Tim Salimans, David J.
+     tion, 2019. 5                                                    Fleet, and Mohammad Norouzi. Palette: Image-to-
+[26] Justin Johnson, Alexandre Alahi, and Li Fei-Fei. Per-            image diffusion models, 2021. 7
+     ceptual losses for real-time style transfer and super-      [39] Kim Seonghyeon. Implementation of generating
+     resolution. In European conference on computer vi-               diverse high-fidelity images with vq-vae-2 in py-
+     sion, pages 694–711. Springer, 2016. 3                           torch. https://github.com/rosinality/
+[27] Tero Karras, Samuli Laine, Miika Aittala, Janne Hell-            vq-vae-2-pytorch, 2020. 6
+     sten, Jaakko Lehtinen, and Timo Aila. Analyzing and         [40] Yang Song and Stefano Ermon. Generative model-
+     improving the image quality of StyleGAN. In CVPR,                ing by estimating gradients of the data distribution. In
+     2020. 3                                                          Hanna M. Wallach, Hugo Larochelle, Alina Beygelz-
+[28] Diederik P Kingma and Jimmy Ba. Adam: A                          imer, Florence d’Alché-Buc, Emily B. Fox, and Ro-
+     method for stochastic optimization. arXiv preprint               man Garnett, editors, NeurIPS, 2019. 3
+     arXiv:1412.6980, 2014. 5                                    [41] Piotr Teterwak, Aaron Sarna, Dilip Krishnan, Aaron
+[29] Diederik P. Kingma and Max Welling. Auto-encoding                Maschinot, David Belanger, Ce Liu, and William T
+     variational bayes. In ICLR, 2014. 3                              Freeman. Boundless: Generative adversarial networks
+                                                                      for image extension. In Proceedings of the IEEE/CVF
+[30] Tuomas Kynkäänniemi, Tero Karras, Samuli Laine,
+                                                                      International Conference on Computer Vision, pages
+     Jaakko Lehtinen, and Timo Aila. Improved precision
+                                                                      10521–10530, 2019. 7, 8
+     and recall metric for assessing generative models. In
+     NeurIPS, 2019. 5                                            [42] Hung-Yu Tseng, Lu Jiang, Ce Liu, Ming-Hsuan Yang,
+[31] Chieh Hubert Lin, Hsin-Ying Lee, Yen-Chi Cheng,                  and Weilong Yang. Regularizing generative adversar-
+     Sergey Tulyakov, and Ming-Hsuan Yang. Infinitygan:               ial networks under limited data. In CVPR, 2021. 3
+     Towards infinite-resolution image synthesis. arXiv          [43] Arash Vahdat and Jan Kautz. NVAE: A deep hierar-
+     preprint arXiv:2104.03963, 2021. 7, 8                            chical variational autoencoder. In Hugo Larochelle,
+[32] Charlie Nash, Jacob Menick, Sander Dieleman, and                 Marc’Aurelio Ranzato, Raia Hadsell, Maria-Florina
+     Peter W. Battaglia. Generating images with sparse                Balcan, and Hsuan-Tien Lin, editors, NeurIPS, 2020.
+     representations, 2021. 6                                         3
+[33] Alex Nichol and Prafulla Dhariwal. Improved de-             [44] Aäron van den Oord, Nal Kalchbrenner, Lasse Es-
+     noising diffusion probabilistic models. arXiv preprint           peholt, Koray Kavukcuoglu, Oriol Vinyals, and Alex
+     arXiv:2102.09672, 2021. 6                                        Graves. Conditional image generation with pixelcnn
+                                                                      decoders. In Daniel D. Lee, Masashi Sugiyama, Ul-
+[34] Niki Parmar, Ashish Vaswani, Jakob Uszkoreit,
+                                                                      rike von Luxburg, Isabelle Guyon, and Roman Gar-
+     Lukasz Kaiser, Noam Shazeer, Alexander Ku, and
+                                                                      nett, editors, NeurIPS, 2016. 3
+     Dustin Tran. Image transformer. In Jennifer G. Dy
+     and Andreas Krause, editors, ICML, 2018. 3                  [45] Aäron van den Oord, Oriol Vinyals, and Koray
+                                                                      Kavukcuoglu. Neural discrete representation learn-
+[35] Aditya Ramesh, Mikhail Pavlov, Gabriel Goh, Scott
+                                                                      ing. In Isabelle Guyon, Ulrike von Luxburg, Samy
+     Gray, Chelsea Voss, Alec Radford, Mark Chen, and
+                                                                      Bengio, Hanna M. Wallach, Rob Fergus, S. V. N.
+     Ilya Sutskever. Zero-shot text-to-image generation. In
+                                                                      Vishwanathan, and Roman Garnett, editors, NeurIPS,
+     Marina Meila and Tong Zhang, editors, ICML, 2021.
+                                                                      2017. 3
+     1, 3
+                                                                 [46] Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob
+[36] Suman V. Ravuri and Oriol Vinyals. Classification
+                                                                      Uszkoreit, Llion Jones, Aidan N. Gomez, Lukasz
+     accuracy score for conditional generative models. In
+                                                                      Kaiser, and Illia Polosukhin. Attention is all you need.
+     Hanna M. Wallach, Hugo Larochelle, Alina Beygelz-
+                                                                      In NeurIPS, 2017. 1, 3, 5
+     imer, Florence d’Alché Buc, Emily B. Fox, and Ro-
+     man Garnett, editors, NeurIPS, pages 12247–12258,           [47] Ziyu Wan, Jingbo Zhang, Dongdong Chen, and Jing
+     2019. 2, 5                                                       Liao. High-fidelity pluralistic image completion with
+[37] Ali Razavi, Aäron van den Oord, and Oriol Vinyals.              transformers. arXiv preprint arXiv:2103.14031, 2021.
+     Generating diverse high-fidelity images with VQ-                 7, 8
+     VAE-2. In Hanna M. Wallach, Hugo Larochelle, Alina          [48] Zili Yi, Qiang Tang, Shekoofeh Azizi, Daesik Jang,
+     Beygelzimer, Florence d’Alché-Buc, Emily B. Fox,                and Zhan Xu. Contextual residual aggregation for ul-
+     and Roman Garnett, editors, NeurIPS, 2019. 1, 3, 5, 6            tra high-resolution image inpainting. In Proceedings
+
+
+
+                                                              11324
+     of the IEEE/CVF Conference on Computer Vision and
+     Pattern Recognition, pages 7508–7517, 2020. 7, 8
+[49] Jiahui Yu, Xin Li, Jing Yu Koh, Han Zhang, Ruoming
+     Pang, James Qin, Alexander Ku, Yuanzhong Xu, Ja-
+     son Baldridge, and Yonghui Wu. Vector-quantized im-
+     age modeling with improved VQGAN. arXiv preprint
+     arXiv:2110.04627, 2021. 3
+[50] Jiahui Yu, Zhe Lin, Jimei Yang, Xiaohui Shen, Xin
+     Lu, and Thomas S Huang. Free-form image inpaint-
+     ing with gated convolution. In Proceedings of the
+     IEEE/CVF International Conference on Computer Vi-
+     sion, pages 4471–4480, 2019. 7, 8
+[51] Han Zhang, Ian J. Goodfellow, Dimitris N. Metaxas,
+     and Augustus Odena. Self-attention generative adver-
+     sarial networks. In ICML, 2019. 3
+[52] Richard Zhang, Phillip Isola, Alexei A Efros, Eli
+     Shechtman, and Oliver Wang. The unreasonable ef-
+     fectiveness of deep features as a perceptual metric. In
+     Proceedings of the IEEE conference on computer vi-
+     sion and pattern recognition, pages 586–595, 2018. 3
+[53] Zhu Zhang, Jianxin Ma, Chang Zhou, Rui Men,
+     Zhikang Li, Ming Ding, Jie Tang, Jingren Zhou,
+     and Hongxia Yang. UFC-BERT: Unifying multi-
+     modal controls for conditional image synthesis. In
+     A. Beygelzimer, Y. Dauphin, P. Liang, and J. Wort-
+     man Vaughan, editors, Advances in Neural Informa-
+     tion Processing Systems, 2021. 3
+[54] Shengyu Zhao, Jonathan Cui, Yilun Sheng, Yue Dong,
+     Xiao Liang, Eric I Chang, and Yan Xu. Large scale im-
+     age completion via co-modulated generative adversar-
+     ial networks. In International Conference on Learning
+     Representations (ICLR), 2021. 7, 8
+[55] Bolei Zhou, Agata Lapedriza, Aditya Khosla, Aude
+     Oliva, and Antonio Torralba. Places: A 10 million im-
+     age database for scene recognition. IEEE Transactions
+     on Pattern Analysis and Machine Intelligence, 2017. 7
+
+
+
+
+                                                               11325
+

@@ -1,0 +1,1035 @@
+[
+ {
+  "title": "Linear-Quadratic Dynamic Games as Receding-Horizon Variational Inequalities",
+  "title_norm": "linear quadratic dynamic games as receding horizon variational inequalities",
+  "abstract": "We consider dynamic games with linear dynamics and quadratic objective functions. We observe that the unconstrained open-loop Nash equilibrium coincides with a linear quadratic regulator in an augmented space, thus deriving an explicit expression of the cost-to-go. With such cost-to-go as a terminal cost, we show asymptotic stability for the receding-horizon solution of the finite-horizon, constrained game. Furthermore, we show that the problem is equivalent to a non-symmetric variational inequality, which does not correspond to any Nash equilibrium problem. For unconstrained closed-loop Nash equilibria, we derive a receding-horizon controller that is equivalent to the infinite-horizon one and ensures asymptotic stability.",
+  "year": 2024,
+  "venue": "arXiv",
+  "authors": [
+   "Emilio Benenati",
+   "Sergio Grammatico"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2408.15703v2",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2408.15703v2",
+  "published_iso": "2024-08-28T11:02:31Z"
+ },
+ {
+  "title": "On receding-horizon approximation in time-varying optimal control",
+  "title_norm": "on receding horizon approximation in time varying optimal control",
+  "abstract": "The closed-loop stability and infinite-horizon performance of receding-horizon approximations are studied for non-stationary linear-quadratic regulator (LQR) problems. The approach is based on a lifted reformulation of the optimal control problem, under assumed uniform controllability and observability, leading to a strict contraction property of the corresponding Riccati operator. Leveraging this contraction property, a stabilizing linear time-varying state-feedback approximation of the infinite-horizon optimal control policy is constructed to meet a performance-loss specification. Its synthesis involves only finite preview of the time-varying problem data at each time step, over a sufficiently long prediction horizon.",
+  "year": 2023,
+  "venue": "arXiv",
+  "authors": [
+   "Jintao Sun",
+   "Michael Cantoni"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2305.06010v2",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2305.06010v2",
+  "published_iso": "2023-05-10T09:37:00Z"
+ },
+ {
+  "title": "Receding-Horizon Nonlinear Optimal Control With Safety Constraints Using Constrained Approximate Dynamic Programming",
+  "title_norm": "receding horizon nonlinear optimal control with safety constraints using constra",
+  "abstract": "We present a receding-horizon optimal control for nonlinear continuous-time systems subject to state constraints. The cost is a quadratic finite-horizon integral. The key enabling technique is a new constrained approximate dynamic programming (C-ADP) approach for finite-horizon nonlinear optimal control with constraints that are affine in the control. The C-ADP approach is intuitive because it uses a quadratic approximation of the cost-to-go function at each backward step. This method yields a sequence of analytic closed-form optimal control functions, which have identical structure and where parameters are obtained from 2 Riccati-like difference equations. This C-ADP method is well suited for real-time implementation. Thus, we use the C-ADP approach in combination with control barrier functions to obtain a continuous-time receding-horizon optimal control that is farsighted in the sense that it optimizes the integral cost subject to state constraints along the entire prediction horizon. Lastly, receding-horizon C-ADP control is demonstrated in simulation of a nonholonomic ground robot subject to velocity and no-collision constraints. We compare performance with 3 other approaches.",
+  "year": 2026,
+  "venue": "arXiv",
+  "authors": [
+   "Ricardo Gutierrez",
+   "Jesse B. Hoagg"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2604.01956v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2604.01956v1",
+  "published_iso": "2026-04-02T12:20:13Z"
+ },
+ {
+  "title": "Stability Certificates for Receding Horizon Games",
+  "title_norm": "stability certificates for receding horizon games",
+  "abstract": "Game-theoretic MPC (or Receding Horizon Games) is an emerging control methodology for multi-agent systems that generates control actions by solving a dynamic game with coupling constraints in a receding-horizon fashion. This control paradigm has recently received an increasing attention in various application fields, including robotics, autonomous driving, traffic networks, and energy grids, due to its ability to model the competitive nature of self-interested agents with shared resources while incorporating future predictions, dynamic models, and constraints into the decision-making process. In this work, we present the first formal stability analysis based on dissipativity and monotone operator theory that is valid also for non-potential games. Specifically, we derive LMI-based certificates that ensure asymptotic stability and are numerically verifiable. Moreover, we show that, if the agents have decoupled dynamics, the numerical verification can be performed in a scalable manner. Finally, we present tuning guidelines for the agents' cost function weights to fulfill the certificates and, thus, ensure stability.",
+  "year": 2024,
+  "venue": "arXiv",
+  "authors": [
+   "Sophie Hall",
+   "Dominic Liao-McPherson",
+   "Giuseppe Belgioioso",
+   "Florian Dörfler"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2404.12165v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2404.12165v1",
+  "published_iso": "2024-04-18T13:15:44Z"
+ },
+ {
+  "title": "Robust Data-Driven Receding-Horizon Control for LQR with Input Constraints",
+  "title_norm": "robust data driven receding horizon control for lqr with input constraints",
+  "abstract": "This letter presents a robust data-driven receding-horizon control framework for the discrete time linear quadratic regulator (LQR) with input constraints. Unlike existing data-driven approaches that design a controller from initial data and apply it unchanged throughout the trajectory, our method exploits all available execution data in a receding-horizon manner, thereby capturing additional information about the unknown system and enabling less conservative performance. Prior data-driven LQR and model predictive control methods largely rely on Willem's fundamental lemma, which requires noise-free data, or use regularization to address disturbances, offering only practical stability guarantees. In contrast, the proposed approach extends semidefinite program formulations for the data-driven LQR to incorporate input constraints and leverages duality to provide formal robust stability guarantees. Simulation results demonstrate the effectiveness of the method.",
+  "year": 2025,
+  "venue": "arXiv",
+  "authors": [
+   "Jian Zheng",
+   "Mario Sznaier"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2510.06117v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2510.06117v1",
+  "published_iso": "2025-10-07T16:52:10Z"
+ },
+ {
+  "title": "Receding-Horizon Games with Tullock-Based Profit Functions for Electric Ride-Hailing Markets",
+  "title_norm": "receding horizon games with tullock based profit functions for electric ride hai",
+  "abstract": "This paper proposes a receding-horizon, game-theoretic charging planning mechanism for electric ride-hailing markets. As the demand for ride-hailing services continues to surge and governments advocate for stricter environmental regulations, integrating electric vehicles into these markets becomes inevitable. The proposed framework addresses the challenges posed by dynamic demand patterns, fluctuating energy costs, and competitive dynamics inherent in such markets. Leveraging the concept of receding-horizon games, we propose a method to optimize proactive dispatching of vehicles for recharging over a predefined time horizon. We integrate a modified Tullock contest that accounts for customer abandonment due to long waiting times to model the expected market share, and by factoring in the demand-based electricity charging, we construct a game capturing interactions between two companies over the time horizon. For this game, we first establish the existence and uniqueness of the Nash equilibrium and then present a semi-decentralized, iterative method to compute it. Finally, the method is evaluated in an open-loop and a closed-loop manner in a simulated numerical case study.",
+  "year": 2024,
+  "venue": "arXiv",
+  "authors": [
+   "Marko Maljkovic",
+   "Gustav Nilsson",
+   "Nikolas Geroliminis"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2408.13595v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2408.13595v1",
+  "published_iso": "2024-08-24T14:41:44Z"
+ },
+ {
+  "title": "DiRecT: Safe Diffusion-Based Planning via Receding-Horizon Denoising",
+  "title_norm": "direct safe diffusion based planning via receding horizon denoising",
+  "abstract": "Diffusion models have emerged as powerful tools for planning and control by learning multimodal distributions over actions and trajectories. Yet reliable inference-time safety enforcement remains a key barrier to their deployment in safety-critical tasks. Existing approaches typically project each denoising iterate onto the feasible set, even though constraints are defined only on the final clean trajectory. Enforcing feasibility on noisy intermediate samples can therefore overconstrain the sampling dynamics, substantially degrading sample quality. To address this limitation, we introduce DiRecT (Diffusion-based planning via Receding-horizon denoising with Terminal constraints), a training-free algorithm for constrained sampling from diffusion models via stochastic optimal control (SOC). DiRecT enforces constraints only on the final clean sample, avoiding unnecessary restrictions on the intermediate denoising dynamics. Inspired by model predictive control, we derive a principled receding-horizon surrogate for the otherwise intractable constrained SOC formulation, yielding an efficient algorithm that cleanly separates stochastic denoising from constraint satisfaction, progressively steering samples toward feasible final trajectories without distorting the learned diffusion dynamics. Furthermore, DiRecT is highly flexible: it can leverage off-the-shelf or domain-specific optimizers, incorporate priors over environment dynamics, and optimize additional soft rewards. Extensive experiments on safe planning benchmarks demonstrate that DiRecT substantially improves deployment safety and task performance over existing diffusion-based planning baselines.",
+  "year": 2026,
+  "venue": "arXiv",
+  "authors": [
+   "Paolo Giaretta",
+   "Zeyang Li",
+   "Navid Azizan"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2606.15359v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2606.15359v1",
+  "published_iso": "2026-06-13T15:41:26Z"
+ },
+ {
+  "title": "Suboptimality analysis of receding horizon quadratic control with unknown linear systems and its applications in learning-based control",
+  "title_norm": "suboptimality analysis of receding horizon quadratic control with unknown linear",
+  "abstract": "This work analyzes how the trade-off between the modeling error, the terminal value function error, and the prediction horizon affects the performance of a nominal receding-horizon linear quadratic (LQ) controller. By developing a novel perturbation result of the Riccati difference equation, a novel performance upper bound is obtained and suggests that for many cases, the prediction horizon can be either one or infinity to improve the control performance, depending on the relative difference between the modeling error and the terminal value function error. The result also shows that when an infinite horizon is desired, a finite prediction horizon that is larger than the controllability index can be sufficient for achieving a near-optimal performance, revealing a close relation between the prediction horizon and controllability. The obtained suboptimality performance upper bound is applied to provide novel sample complexity and regret guarantees for nominal receding-horizon LQ controllers in a learning-based setting. We show that an adaptive prediction horizon that increases as a logarithmic function of time is beneficial for regret minimization.",
+  "year": 2023,
+  "venue": "arXiv",
+  "authors": [
+   "Shengling Shi",
+   "Anastasios Tsiamis",
+   "Bart De Schutter"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2301.07876v4",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2301.07876v4",
+  "published_iso": "2023-01-19T04:33:19Z"
+ },
+ {
+  "title": "Receding-Horizon Policy Gradient for Polytopic Controller Synthesis",
+  "title_norm": "receding horizon policy gradient for polytopic controller synthesis",
+  "abstract": "We propose the Polytopic Receding-Horizon Policy Gradient (P-RHPG) algorithm for synthesizing Parallel Distributed Compensation (PDC) controllers via Tensor Product (TP) model transformation. Standard LMI-based PDC synthesis grows increasingly conservative as model fidelity improves; P-RHPG instead solves a finite-horizon integrated cost via backward-stage decomposition. The key result is that each stage subproblem is a strongly convex quadratic in the vertex gains, a consequence of the linear independence of the HOSVD weighting functions, guaranteeing a unique global minimizer and linear convergence of gradient descent from any initialization. With zero terminal cost, the optimal cost increases monotonically to a finite limit and the gain sequence remains bounded; terminal costs satisfying a mild Lyapunov condition yield non-increasing convergence. Experiments on an aeroelastic wing benchmark confirm convergence to a unique infinite-horizon optimum across all tested terminal cost choices and near-optimal performance relative to the pointwise Riccati lower bound.",
+  "year": 2026,
+  "venue": "arXiv",
+  "authors": [
+   "Shiva Shakeri",
+   "Péter Baranyi",
+   "Mehran Mesbahi"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2603.29283v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2603.29283v1",
+  "published_iso": "2026-03-31T05:35:33Z"
+ },
+ {
+  "title": "On the Guarantees of Minimizing Regret in Receding Horizon",
+  "title_norm": "on the guarantees of minimizing regret in receding horizon",
+  "abstract": "Towards bridging classical optimal control and online learning, regret minimization has recently been proposed as a control design criterion. This competitive paradigm penalizes the loss relative to the optimal control actions chosen by a clairvoyant policy, and allows tracking the optimal performance in hindsight no matter how disturbances are generated. In this paper, we propose the first receding horizon scheme based on the repeated computation of finite horizon regret-optimal policies, and we establish stability and safety guarantees for the resulting closed-loop system. Our derivations combine novel monotonicity properties of clairvoyant policies with suitable terminal ingredients. We prove that our scheme is recursively feasible, stabilizing, and that it achieves bounded regret relative to the infinite horizon clairvoyant policy. Last, we show that the policy optimization problem can be solved efficiently through convex-concave programming. Our numerical experiments show that minimizing regret can outperform standard receding horizon approaches when the disturbances poorly fit classical design assumptions - even when the finite horizon planning is recomputed less frequently.",
+  "year": 2023,
+  "venue": "arXiv",
+  "authors": [
+   "Andrea Martin",
+   "Luca Furieri",
+   "Florian Dörfler",
+   "John Lygeros",
+   "Giancarlo Ferrari-Trecate"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2306.14561v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2306.14561v1",
+  "published_iso": "2023-06-26T10:15:36Z"
+ },
+ {
+  "title": "Revisiting LQR Control from the Perspective of Receding-Horizon Policy Gradient",
+  "title_norm": "revisiting lqr control from the perspective of receding horizon policy gradient",
+  "abstract": "We revisit in this paper the discrete-time linear quadratic regulator (LQR) problem from the perspective of receding-horizon policy gradient (RHPG), a newly developed model-free learning framework for control applications. We provide a fine-grained sample complexity analysis for RHPG to learn a control policy that is both stabilizing and $ε$-close to the optimal LQR solution, and our algorithm does not require knowing a stabilizing control policy for initialization. Combined with the recent application of RHPG in learning the Kalman filter, we demonstrate the general applicability of RHPG in linear control and estimation with streamlined analyses.",
+  "year": 2023,
+  "venue": "arXiv",
+  "authors": [
+   "Xiangyuan Zhang",
+   "Tamer Başar"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2302.13144v3",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2302.13144v3",
+  "published_iso": "2023-02-25T19:16:40Z"
+ },
+ {
+  "title": "Robust Data-Driven Receding Horizon Control",
+  "title_norm": "robust data driven receding horizon control",
+  "abstract": "This paper presents a data-driven receding horizon control framework for discrete-time linear systems that guarantees robust performance in the presence of bounded disturbances. Unlike the majority of existing data-driven predictive control methods, which rely on Willem's fundamental lemma, the proposed method enforces set-membership constraints for data-driven control and utilizes execution data to iteratively refine a set of compatible systems online. Numerical results demonstrate that the proposed receding horizon framework achieves better contractivity for the unknown system compared with regular data-driven control approaches.",
+  "year": 2025,
+  "venue": "arXiv",
+  "authors": [
+   "Jian Zheng",
+   "Sahand Kiani",
+   "Mario Sznaier",
+   "Constantino Lagoa"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2510.06153v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2510.06153v1",
+  "published_iso": "2025-10-07T17:22:29Z"
+ },
+ {
+  "title": "Receding-Horizon Maximum-Likelihood Estimation of Neural-ODE Dynamics and Thresholds from Event Cameras",
+  "title_norm": "receding horizon maximum likelihood estimation of neural ode dynamics and thresh",
+  "abstract": "Event cameras emit asynchronous brightness-change events where each pixel triggers an event when the last event exceeds a threshold, yielding a history-dependent measurement model. We address online maximum-likelihood identification of continuous-time dynamics from such streams. The latent state follows a Neural ODE and is mapped to predicted log-intensity through a differentiable state-to-image model. We model events with a history-dependent marked point process whose conditional intensity is a smooth surrogate of contrast-threshold triggering, treating the contrast threshold as an unknown parameter. The resulting log-likelihood consists of an event term and a compensator integral. We propose a receding-horizon estimator that performs a few gradient steps per update on a receding horizon window. For streaming evaluation, we store two scalars per pixel (last-event time and estimated log-intensity at that time) and approximate the compensator via Monte Carlo pixel subsampling. Synthetic experiments demonstrate joint recovery of dynamics parameters and the contrast threshold, and characterize accuracy--latency trade-offs with respect to the window length.",
+  "year": 2026,
+  "venue": "arXiv",
+  "authors": [
+   "Kazumune Hashimoto",
+   "Kazunobu Serizawa",
+   "Masako Kishida"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2603.05011v2",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2603.05011v2",
+  "published_iso": "2026-03-05T10:01:08Z"
+ },
+ {
+  "title": "Dense Fixed-Wing Swarming using Receding-Horizon NMPC",
+  "title_norm": "dense fixed wing swarming using receding horizon nmpc",
+  "abstract": "In this paper, we present an approach for controlling a team of agile fixed-wing aerial vehicles in close proximity to one another. Our approach relies on receding-horizon nonlinear model predictive control (NMPC) to plan maneuvers across an expanded flight envelope to enable inter-agent collision avoidance. To facilitate robust collision avoidance and characterize the likelihood of inter-agent collisions, we compute a statistical bound on the probability of the system leaving a tube around the planned nominal trajectory. Finally, we propose a metric for evaluating highly dynamic swarms and use this metric to evaluate our approach. We successfully demonstrated our approach through both simulation and hardware experiments, and to our knowledge, this the first time close-quarters swarming has been achieved with physical aerobatic fixed-wing vehicles.",
+  "year": 2025,
+  "venue": "arXiv",
+  "authors": [
+   "Varun Madabushi",
+   "Yocheved Kopel",
+   "Adam Polevoy",
+   "Joseph Moore"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2502.04174v2",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2502.04174v2",
+  "published_iso": "2025-02-06T16:07:06Z"
+ },
+ {
+  "title": "Receding-Horizon Control via Drifting Models",
+  "title_norm": "receding horizon control via drifting models",
+  "abstract": "We study the problem of trajectory optimization in settings where the system dynamics are unknown and it is not possible to simulate trajectories through a surrogate model. When an offline dataset of trajectories is available, an agent could directly learn a trajectory generator by distribution matching. However, this approach only recovers the behavior distribution in the dataset, and does not in general produce a model that minimizes a desired cost criterion. In this work, we propose Drifting MPC, an offline trajectory optimization framework that combines drifting generative models with receding-horizon planning under unknown dynamics. The goal of Drifting MPC is to learn, from an offline dataset of trajectories, a conditional distribution over trajectories that is both supported by the data and biased toward optimal plans. We show that the resulting distribution learned by Drifting MPC is the unique solution of an objective that trades off optimality with closeness to the offline prior. Empirically, we show that Drifting MPC can generate near-optimal trajectories while retaining the one-step inference efficiency of drifting models and substantially reducing generation time relative to diffusion-based baselines.",
+  "year": 2026,
+  "venue": "arXiv",
+  "authors": [
+   "Daniele Foffano",
+   "Alessio Russo",
+   "Alexandre Proutiere"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2604.04528v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2604.04528v1",
+  "published_iso": "2026-04-06T08:48:10Z"
+ },
+ {
+  "title": "Receding Horizon Multi-Agent Deceptive Path Planner",
+  "title_norm": "receding horizon multi agent deceptive path planner",
+  "abstract": "Deceptive path planning enables autonomous agents to obscure their true goals from observers by deviating from an expected optimal path. Prior work largely solves full-horizon, end-to-end optimization for single agents, which is expensive to recompute online and difficult to scale or adapt en route. We propose a unified framework for deceptive path planning using a Boltzmann distribution, computing over short-horizon candidate trajectories within a receding-horizon loop. By param- By iterating a user-defined cost that captures deception, resources, and smoothness, and optionally includes coupling terms between agents, the framework yields stochastic policies that balance the tradeoff between optimal paths and deceptive deviation. Policies are updated locally and do not require training. The level of deception and adherence to constraints can be dynamically tuned, enabling online adaptation to changes in goals and constraints such as obstacles. This step-by-step tuning opens the door to new forms of dynamic deception. Simulation studies demonstrate the flexibility of our approach, maintaining deception while adapting to environmental and constraint updates, avoiding the recomputation required by full-horizon methods, and supporting intuitive tuning via a small set of parameters",
+  "year": 2026,
+  "venue": "arXiv",
+  "authors": [
+   "Xubin Fang",
+   "Brian M. Sadler",
+   "Rick S. Blum"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2605.14085v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2605.14085v1",
+  "published_iso": "2026-05-13T20:10:35Z"
+ },
+ {
+  "title": "Energy-Gain Control of Time-Varying Systems: Receding Horizon Approximation",
+  "title_norm": "energy gain control of time varying systems receding horizon approximation",
+  "abstract": "Standard formulations of prescribed worst-case disturbance energy-gain control policies for linear time-varying systems depend on all forward model data. In discrete time, this dependence arises through a backward Riccati recursion. This article is about the infinite-horizon $\\ell_2$ gain performance of state feedback policies with only finite receding-horizon preview of the model parameters. The proposed synthesis of controllers subject to such a constraint leverages the strict contraction of lifted Riccati operators under uniform controllability and observability. The main approximation result is a sufficient number of preview steps for the incurred performance loss to remain below any set tolerance, relative to the baseline gain bound of the associated infinite-preview controller. Aspects of the result are explored in a numerical example.",
+  "year": 2025,
+  "venue": "arXiv",
+  "authors": [
+   "Jintao Sun",
+   "Michael Cantoni"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2512.21051v3",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2512.21051v3",
+  "published_iso": "2025-12-24T08:37:23Z"
+ },
+ {
+  "title": "Variational Analysis of Metric Projections onto Isotone Projection Cones via Coderivatives",
+  "title_norm": "variational analysis of metric projections onto isotone projection cones via cod",
+  "abstract": "In this paper, we study variational properties of the metric projection mapping onto isotone projection cones in finite-dimensional Euclidean spaces. We derive explicit formulas for both the Fréchet coderivative and the Mordukhovich coderivative of the projection operator. The analysis is based on a local description of the projection mapping via an associated generating system in a neighborhood of a reference point, which leads to computable coderivative characterizations. As an application, we compute the covering constant of the projection mapping, providing a quantitative description of its local regularity. Furthermore, we establish verifiable sufficient conditions for the Aubin property of the solution mapping associated with parametric nonlinear complementarity problems associated with isotone projection cones.\n  The obtained results contribute to the variational analysis of metric projections in a general cone setting where orthogonality arguments are not available, and to the stability theory of complementarity systems in finite dimensions.",
+  "year": 2026,
+  "venue": "arXiv",
+  "authors": [
+   "Le Van Hien"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2606.08386v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2606.08386v1",
+  "published_iso": "2026-06-07T00:46:51Z"
+ },
+ {
+  "title": "Receding Horizon Recursive Location Estimation",
+  "title_norm": "receding horizon recursive location estimation",
+  "abstract": "This paper presents a recursive solution to the receding or moving horizon estimation (MHE) problem for nonlinear time-variant systems. We provide the conditions under which the recursive MHE is equivalent to the extended Kalman filter (EKF), regardless of the horizon size. Theoretical and empirical evidence is also provided. Moreover, we clarify the connection between MHE and factor graph optimization (FGO). We apply the recursive MHE to GNSS localization and evaluate its performance using publicly available datasets. The paper is based on the deterministic least squares framework.",
+  "year": 2025,
+  "venue": "arXiv",
+  "authors": [
+   "Xu Weng",
+   "K. V. Ling",
+   "Ling Zhao"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2506.18430v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2506.18430v1",
+  "published_iso": "2025-06-23T09:10:45Z"
+ },
+ {
+  "title": "Scheduling Battery-Electric Bus Charging under Stochasticity using a Receding-Horizon Approach",
+  "title_norm": "scheduling battery electric bus charging under stochasticity using a receding ho",
+  "abstract": "A significant challenge of adopting battery electric buses into fleets lies in scheduling the charging, which in turn is complicated by considerations such as timing constraints imposed by routes, long charging times, limited numbers of chargers, and utility cost structures. This work builds on previous network-flow-based charge scheduling approaches and includes both consumption and demand time-of-use costs while accounting for uncontrolled loads on the same meter. Additionally, a variable-rate, non-linear partial charging model compatible with the mixed-integer linear program (MILP) is developed for increased charging fidelity. To respond to feedback in an uncertain environment, the resulting MILP is adapted to a hierarchical receding horizon planner that utilizes a static plan for the day as a reference to follow while reacting to stochasticity on a regular basis. This receding horizon planner is analyzed with Monte-Carlo techniques alongside two other possible planning methods. It is found to provide up to 52\\% cost savings compared to a non-time-of-use aware method and significant robustness benefits compared to an optimal open-loop method.",
+  "year": 2024,
+  "venue": "arXiv",
+  "authors": [
+   "Justin Whitaker",
+   "Derek Redmond",
+   "Greg Droge",
+   "Jacob Gunther"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2408.04087v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2408.04087v1",
+  "published_iso": "2024-08-07T20:57:06Z"
+ },
+ {
+  "title": "QuantGraph: A Receding-Horizon Quantum Graph Solver",
+  "title_norm": "quantgraph a receding horizon quantum graph solver",
+  "abstract": "Dynamic programming is a cornerstone of graph-based optimization. While effective, it scales unfavorably with problem size. In this work, we present QuantGraph, a two-stage quantum-enhanced framework that casts local and global graph-optimization problems as quantum searches over discrete trajectory spaces. The solver is designed to operate efficiently by first finding a sequence of locally optimal transitions in the graph (local stage), without considering full trajectories. The accumulated cost of these transitions acts as a threshold that prunes the search space (up to 60% reduction for certain examples). The subsequent global stage, based on this threshold, refines the solution. Both stages utilize variants of the Grover-adaptive-search algorithm. To achieve scalability and robustness, we draw on principles from control theory and embed QuantGraph's global stage within a receding-horizon model-predictive-control scheme. This classical layer stabilizes and guides the quantum search, improving precision and reducing computational burden. In practice, the resulting closed-loop system exhibits robust behavior and lower overall complexity. Notably, for a fixed query budget, QuantGraph attains a 2x increase in control-discretization precision while still benefiting from Grover-search's inherent quadratic speedup compared to classical methods.",
+  "year": 2025,
+  "venue": "arXiv",
+  "authors": [
+   "Pranav Vaidhyanathan",
+   "Aristotelis Papatheodorou",
+   "David R. M. Arvidsson-Shukur",
+   "Mark T. Mitchison",
+   "Natalia Ares",
+   "Ioannis Havoutis"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2512.15476v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2512.15476v1",
+  "published_iso": "2025-12-17T14:22:08Z"
+ },
+ {
+  "title": "Affine Isoperimetric Inequalities for Higher-Order Projection and Centroid Bodies",
+  "title_norm": "affine isoperimetric inequalities for higher order projection and centroid bodie",
+  "abstract": "In 1970, Schneider introduced the $m$th order difference body of a convex body, and also established the $m$th-order Rogers-Shephard inequality. In this paper, we extend this idea to the projection body, centroid body, and radial mean bodies, as well as prove the associated inequalities (analogues of Zhang's projection inequality, Petty's projection inequality, the Busemann-Petty centroid inequality and Busemann's random simplex inequality). We also establish a new proof of Schneider's $m$th-order Rogers-Shephard inequality. As an application, a $m$th-order affine Sobolev inequality for functions of bounded variation is provided.",
+  "year": 2023,
+  "venue": "arXiv",
+  "authors": [
+   "Julián Haddad",
+   "Dylan Langharst",
+   "Eli Putterman",
+   "Michael Roysdon",
+   "Deping Ye"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2304.07859v4",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2304.07859v4",
+  "published_iso": "2023-04-16T18:49:21Z"
+ },
+ {
+  "title": "Global Convergence of Receding-Horizon Policy Search in Learning Estimator Designs",
+  "title_norm": "global convergence of receding horizon policy search in learning estimator desig",
+  "abstract": "We introduce the receding-horizon policy gradient (RHPG) algorithm, the first PG algorithm with provable global convergence in learning the optimal linear estimator designs, i.e., the Kalman filter (KF). Notably, the RHPG algorithm does not require any prior knowledge of the system for initialization and does not require the target system to be open-loop stable. The key of RHPG is that we integrate vanilla PG (or any other policy search directions) into a dynamic programming outer loop, which iteratively decomposes the infinite-horizon KF problem that is constrained and non-convex in the policy parameter into a sequence of static estimation problems that are unconstrained and strongly-convex, thus enabling global convergence. We further provide fine-grained analyses of the optimization landscape under RHPG and detail the convergence and sample complexity guarantees of the algorithm. This work serves as an initial attempt to develop reinforcement learning algorithms specifically for control applications with performance guarantees by utilizing classic control theory in both algorithmic design and theoretical analyses. Lastly, we validate our theories by deploying the RHPG algorithm to learn the Kalman filter design of a large-scale convection-diffusion model. We open-source the code repository at \\url{https://github.com/xiangyuan-zhang/LearningKF}.",
+  "year": 2023,
+  "venue": "arXiv",
+  "authors": [
+   "Xiangyuan Zhang",
+   "Saviz Mowlavi",
+   "Mouhacine Benosman",
+   "Tamer Başar"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2309.04831v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2309.04831v1",
+  "published_iso": "2023-09-09T16:03:49Z"
+ },
+ {
+  "title": "Output-based receding horizon stabilizing control",
+  "title_norm": "output based receding horizon stabilizing control",
+  "abstract": "A receding horizon control framework is coupled with a Luenberger observer to construct an output-based control input stabilizing parabolic equations. The actuators and sensors are indicator functions of small subdomains, representing localized actuation and localized measurements. It is shown that, for a class of explicitly given sets of actuators and sensors, we can guarantee the stabilizing property of the constructed input. Results of numerical simulations are presented validating the theoretical findings.",
+  "year": 2024,
+  "venue": "arXiv",
+  "authors": [
+   "Behzad Azmi",
+   "Sérgio S. Rodrigues"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2407.11530v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2407.11530v1",
+  "published_iso": "2024-07-16T09:29:43Z"
+ },
+ {
+  "title": "Anytime Detection of Strategic Deviations in Multi-Agent Systems",
+  "title_norm": "anytime detection of strategic deviations in multi agent systems",
+  "abstract": "In many multi-agent systems, agents interact repeatedly and are expected to settle into stable, rational behavior over time. Yet in practice, behavior often drifts, and detecting such deviations in real time remains an open challenge. We introduce a sequential testing framework that monitors whether observed play is consistent with a benchmark of strategic behavior, without assuming a fixed sample size. Our approach builds on the e-value framework for safe anytime-valid inference: by \"betting\" against the benchmark, we construct a test supermartingale that accumulates evidence whenever observed payoffs systematically violate the expected conditions. For repeated normal-form games, we take equilibrium as the benchmark, yielding a statistically sound, interpretable measure of departure from equilibrium that can be monitored online; our framework unifies the treatment of Nash, correlated, and coarse correlated equilibria, offering finite-time guarantees and a detailed analysis of detection times. We also leverage Benjamini-Hochberg-type procedures to increase detection power in large games while rigorously controlling the false discovery rate. Finally, we extend our method to stochastic games, verifying online whether observed trajectories adhere to a specified target policy, such as a computed equilibrium, broadening the framework's applicability to dynamic, state-dependent settings.",
+  "year": 2026,
+  "venue": "arXiv",
+  "authors": [
+   "Etienne Gauthier",
+   "Francis Bach",
+   "Michael I. Jordan"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2601.05427v3",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2601.05427v3",
+  "published_iso": "2026-01-08T23:26:05Z"
+ },
+ {
+  "title": "Constant-time Motion Planning with Anytime Refinement for Manipulation",
+  "title_norm": "constant time motion planning with anytime refinement for manipulation",
+  "abstract": "Robotic manipulators are essential for future autonomous systems, yet limited trust in their autonomy has confined them to rigid, task-specific systems. The intricate configuration space of manipulators, coupled with the challenges of obstacle avoidance and constraint satisfaction, often makes motion planning the bottleneck for achieving reliable and adaptable autonomy. Recently, a class of constant-time motion planners (CTMP) was introduced. These planners employ a preprocessing phase to compute data structures that enable online planning provably guarantee the ability to generate motion plans, potentially sub-optimal, within a user defined time bound. This framework has been demonstrated to be effective in a number of time-critical tasks. However, robotic systems often have more time allotted for planning than the online portion of CTMP requires, time that can be used to improve the solution. To this end, we propose an anytime refinement approach that works in combination with CTMP algorithms. Our proposed framework, as it operates as a constant time algorithm, rapidly generates an initial solution within a user-defined time threshold. Furthermore, functioning as an anytime algorithm, it iteratively refines the solution's quality within the allocated time budget. This enables our approach to strike a balance between guaranteed fast plan generation and the pursuit of optimization over time. We support our approach by elucidating its analytical properties, showing the convergence of the anytime component towards optimal solutions. Additionally, we provide empirical validation through simulation and real-world demonstrations on a 6 degree-of-freedom robot manipulator, applied to an assembly domain.",
+  "year": 2023,
+  "venue": "arXiv",
+  "authors": [
+   "Itamar Mishani",
+   "Hayden Feddock",
+   "Maxim Likhachev"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2311.00837v2",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2311.00837v2",
+  "published_iso": "2023-11-01T20:40:10Z"
+ },
+ {
+  "title": "A-MHA*: Anytime Multi-Heuristic A*",
+  "title_norm": "a mha anytime multi heuristic a",
+  "abstract": "Designing good heuristic functions for graph search requires adequate domain knowledge. It is often easy to design heuristics that perform well and correlate with the underlying true cost-to-go values in certain parts of the search space but these may not be admissible throughout the domain thereby affecting the optimality guarantees of the search. Bounded suboptimal search using several such partially good but inadmissible heuristics was developed in Multi-Heuristic A* (MHA*). Although MHA* leverages multiple inadmissible heuristics to potentially generate a faster suboptimal solution, the original version does not improve the solution over time. It is a one shot algorithm that requires careful setting of inflation factors to obtain a desired one time solution. In this work, we tackle this issue by extending MHA* to an anytime version that finds a feasible suboptimal solution quickly and continually improves it until time runs out. Our work is inspired from the Anytime Repairing A* (ARA*) algorithm. We prove that our precise adaptation of ARA* concepts in the MHA* framework preserves the original suboptimal and completeness guarantees and enhances MHA* to perform in an anytime fashion. Furthermore, we report the performance of A-MHA* in 3-D path planning domain and sliding tiles puzzle and compare against MHA* and other anytime algorithms.",
+  "year": 2025,
+  "venue": "arXiv",
+  "authors": [
+   "Ramkumar Natarajan",
+   "Muhammad Suhail Saleem",
+   "William Xiao",
+   "Sandip Aine",
+   "Howie Choset",
+   "Maxim Likhachev"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2508.21637v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2508.21637v1",
+  "published_iso": "2025-08-29T14:00:45Z"
+ },
+ {
+  "title": "Feasible-Set Reshaping for Constraint Qualification in Optimization-Based Control",
+  "title_norm": "feasible set reshaping for constraint qualification in optimization based contro",
+  "abstract": "This paper presents a novel feasible-set reshaping technique to optimization-based control with ensured constraint qualification. In our problem setting, the feasible set of admissible control inputs depends on the real-time state of the plant, and the linear independence constraint qualification (LICQ) may not be satisfied in some regions of interest. By feasible-set reshaping, we project the constraints of the original feasible set onto an appropriately chosen constant matrix with its rows forming a positive span of the space of the optimization variable. It is proved that the reshaped feasible set is nonempty and satisfies LICQ, as long as the original feasible set is nonempty. The effectiveness of the proposed method is verified by constructing Lipschitz continuous quadratic-program-based (QP-based) controllers based on the reshaped feasible sets.",
+  "year": 2025,
+  "venue": "arXiv",
+  "authors": [
+   "Si Wu",
+   "Tengfei Liu",
+   "Yiguang Hong",
+   "Zhong-Ping Jiang",
+   "Tianyou Chai"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2512.12600v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2512.12600v1",
+  "published_iso": "2025-12-14T08:43:39Z"
+ },
+ {
+  "title": "Loss-Guided Adaptive Scale Refinement for Molecular Force Prediction",
+  "title_norm": "loss guided adaptive scale refinement for molecular force prediction",
+  "abstract": "Molecular systems involve interactions across multiple spatial scales, from local coordination and short-range perturbations to long-range electrostatic and solvent-mediated effects. However, most molecular representation learning methods rely on manually predefined scales, and the task-optimal modeling scale may not coincide with these fixed levels. This study introduces a loss-guided adaptive scale refinement framework for molecular force prediction, treating predefined scales as initial anchors and discovering task-effective resolutions through interpolation, routing, differentiable scale updates, and scale pool refinement.\n  Using a NaCl aqueous ionic system as a minimal testbed, this study constructs short-scale and long-range force prediction branches and analyzes their complementarity. Oracle hard routing reduces the overall force MAE from 399.65 to 382.67, while continuous oracle interpolation further reduces it to 380.96. In close-contact regimes with nearest-ion distance below 0.6 nm, the close-contact MAE decreases from 327.22 to 260.51. A minimal scale pool update experiment shows that starting from endpoint anchors {0,1}, loss-guided updates automatically generate intermediate scales and recover most of the continuous oracle performance. The final updated scale pool {0,0.125,0.25,0.375,0.5,0.75,1} achieves an overall MAE of 381.23.\n  These results support adaptive scale refinement as a promising direction for molecular representation learning, especially when fixed-scale modeling is insufficient.",
+  "year": 2026,
+  "venue": "arXiv",
+  "authors": [
+   "Limin Yu"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2606.09480v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2606.09480v1",
+  "published_iso": "2026-06-08T13:39:02Z"
+ },
+ {
+  "title": "Anytime Single-Step MAPF Planning with Anytime PIBT",
+  "title_norm": "anytime single step mapf planning with anytime pibt",
+  "abstract": "PIBT is a popular Multi-Agent Path Finding (MAPF) method at the core of many state-of-the-art MAPF methods including LaCAM, CS-PIBT, and WPPL. The main utility of PIBT is that it is a very fast and effective single-step MAPF solver and can return a collision-free single-step solution for hundreds of agents in less than a millisecond. However, the main drawback of PIBT is that it is extremely greedy in respect to its priorities and thus leads to poor solution quality. Additionally, PIBT cannot use all the planning time that might be available to it and returns the first solution it finds. We thus develop Anytime PIBT, which quickly finds a one-step solution identically to PIBT but then continuously improves the solution in an anytime manner. We prove that Anytime PIBT converges to the optimal solution given sufficient time. We experimentally validate that Anytime PIBT can rapidly improve single-step solution quality within milliseconds and even find the optimal single-step action. However, we interestingly find that improving the single-step solution quality does not have a significant effect on full-horizon solution costs.",
+  "year": 2025,
+  "venue": "arXiv",
+  "authors": [
+   "Nayesha Gandotra",
+   "Rishi Veerapaneni",
+   "Muhammad Suhail Saleem",
+   "Daniel Harabor",
+   "Jiaoyang Li",
+   "Maxim Likhachev"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2504.07841v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2504.07841v1",
+  "published_iso": "2025-04-10T15:21:23Z"
+ },
+ {
+  "title": "Anytime-Constrained Equilibria in Polynomial Time",
+  "title_norm": "anytime constrained equilibria in polynomial time",
+  "abstract": "We extend anytime constraints to the Markov game setting and the corresponding solution concept of an anytime-constrained equilibrium (ACE). Then, we present a comprehensive theory of anytime-constrained equilibria that includes (1) a computational characterization of feasible policies, (2) a fixed-parameter tractable algorithm for computing ACE, and (3) a polynomial-time algorithm for approximately computing ACE. Since computing a feasible policy is NP-hard even for two-player zero-sum games, our approximation guarantees are optimal so long as $P \\neq NP$. We also develop the first theory of efficient computation for action-constrained Markov games, which may be of independent interest.",
+  "year": 2024,
+  "venue": "arXiv",
+  "authors": [
+   "Jeremy McMahan"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2410.23637v2",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2410.23637v2",
+  "published_iso": "2024-10-31T05:07:01Z"
+ },
+ {
+  "title": "Optimal Linear Decay Learning Rate Schedules and Further Refinements",
+  "title_norm": "optimal linear decay learning rate schedules and further refinements",
+  "abstract": "Learning rate schedules used in practice bear little resemblance to those recommended by theory. We close much of this theory/practice gap, and as a consequence are able to derive new problem-adaptive learning rate schedules. Our main technical contribution is a refined analysis of learning rate schedules for a wide class of optimization algorithms (including SGD). When considering only worst-case analysis, our theory predicts that the optimal choice is the linear decay schedule where the step-size is set proportional to 1 - t/T, where t is the current iteration and T is the total number of steps. To go beyond this worst-case analysis, we use the observed gradient norms to derive schedules refined for any particular task. These refined schedules exhibit learning rate warm-up and rapid learning rate annealing near the end of training. Ours is the first systematic approach to automatically yield both of these properties. We perform the most comprehensive evaluation of learning rate schedules to date, evaluating across 10 diverse deep learning problems, a series of LLMs, and a suite of logistic regression problems. We validate that overall, the linear-decay schedule outperforms all commonly used default schedules including cosine annealing. Our adaptive schedule refinement method gives further improvements.",
+  "year": 2023,
+  "venue": "arXiv",
+  "authors": [
+   "Aaron Defazio",
+   "Ashok Cutkosky",
+   "Harsh Mehta",
+   "Konstantin Mishchenko"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2310.07831v2",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2310.07831v2",
+  "published_iso": "2023-10-11T19:16:35Z"
+ },
+ {
+  "title": "Bandits with Anytime Knapsacks",
+  "title_norm": "bandits with anytime knapsacks",
+  "abstract": "We consider bandits with anytime knapsacks (BwAK), a novel version of the BwK problem where there is an \\textit{anytime} cost constraint instead of a total cost budget. This problem setting introduces additional complexities as it mandates adherence to the constraint throughout the decision-making process. We propose SUAK, an algorithm that utilizes upper confidence bounds to identify the optimal mixture of arms while maintaining a balance between exploration and exploitation. SUAK is an adaptive algorithm that strategically utilizes the available budget in each round in the decision-making process and skips a round when it is possible to violate the anytime cost constraint. In particular, SUAK slightly under-utilizes the available cost budget to reduce the need for skipping rounds. We show that SUAK attains the same problem-dependent regret upper bound of $ O(K \\log T)$ established in prior work under the simpler BwK framework. Finally, we provide simulations to verify the utility of SUAK in practical settings.",
+  "year": 2025,
+  "venue": "arXiv",
+  "authors": [
+   "Eray Can Elumar",
+   "Cem Tekin",
+   "Osman Yagan"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2501.18560v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2501.18560v1",
+  "published_iso": "2025-01-30T18:36:13Z"
+ },
+ {
+  "title": "Anytime Planning for End-Effector Trajectory Tracking",
+  "title_norm": "anytime planning for end effector trajectory tracking",
+  "abstract": "End-effector trajectory tracking algorithms find joint motions that drive robot manipulators to track reference trajectories. In practical scenarios, anytime algorithms are preferred for their ability to quickly generate initial motions and continuously refine them over time. In this paper, we present an algorithmic framework that adapts common graph-based trajectory tracking algorithms to be anytime and enhances their efficiency and effectiveness. Our key insight is to identify guide paths that approximately track the reference trajectory and strategically bias sampling toward the guide paths. We demonstrate the effectiveness of the proposed framework by restructuring two existing graph-based trajectory tracking algorithms and evaluating the updated algorithms in three experiments.",
+  "year": 2025,
+  "venue": "arXiv",
+  "authors": [
+   "Yeping Wang",
+   "Michael Gleicher"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2502.03676v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2502.03676v1",
+  "published_iso": "2025-02-05T23:49:45Z"
+ },
+ {
+  "title": "Anytime Safe Reinforcement Learning",
+  "title_norm": "anytime safe reinforcement learning",
+  "abstract": "This paper considers the problem of solving constrained\n  reinforcement learning problems with anytime guarantees, meaning\n  that the algorithmic solution returns a safe policy regardless of\n  when it is terminated. Drawing inspiration from anytime constrained\n  optimization, we introduce Reinforcement Learning-based Safe\n  Gradient Flow (RL-SGF), an on-policy algorithm which employs\n  estimates of the value functions and their respective gradients\n  associated with the objective and safety constraints for the current\n  policy, and updates the policy parameters by solving a convex\n  quadratically constrained quadratic program. We show that if the\n  estimates are computed with a sufficiently large number of episodes\n  (for which we provide an explicit bound), safe policies are updated\n  to safe policies with a probability higher than a prescribed\n  tolerance. We also show that iterates asymptotically converge to a\n  neighborhood of a KKT point, whose size can be arbitrarily reduced\n  by refining the estimates of the value function and their gradients.\n  We illustrate the performance of RL-SGF in a navigation example.",
+  "year": 2025,
+  "venue": "arXiv",
+  "authors": [
+   "Pol Mestres",
+   "Arnau Marzabal",
+   "Jorge Cortés"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2504.16417v2",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2504.16417v2",
+  "published_iso": "2025-04-23T04:51:31Z"
+ },
+ {
+  "title": "Lower Bounds for Anytime Acceleration of Gradient Descent",
+  "title_norm": "lower bounds for anytime acceleration of gradient descent",
+  "abstract": "Recent work suggests that the convergence rate of gradient descent (GD) in smooth convex optimization can be significantly improved by employing large stepsizes that may violate the descent property. In particular, if the total number of iterations $n$ is given, an $O(n^{-1.271})$ convergence rate can be achieved for both function value and squared gradient norm minimization. On the other hand, in the setting of anytime convergence, where $n$ is not known in advance, the best known rates of GD are much slower: $O(n^{-1.119})$ for function value minimization and $O(n^{-1})$ for squared gradient norm minimization. It remains open whether any of these upper bounds can be improved, as they are far from the classical $Ω(n^{-2})$ lower bound for any first-order method.\n  In this work, we establish two lower bounds on the anytime convergence of GD. We show that no positive stepsize schedule can achieve an $o(n^{-1.334})$ anytime rate for function value minimization, nor an $o(n^{-1})$ anytime rate for squared gradient norm minimization. The key ingredients of our analysis are novel upper bounds on the number and the magnitude of large stepsizes, derived by analyzing GD on quadratic functions and variants of Huber functions. Our work provides the first lower bounds for the COLT 2024 open problem posed by Kornowski and Shamir regarding the optimal anytime convergence rates of GD.",
+  "year": 2026,
+  "venue": "arXiv",
+  "authors": [
+   "Chung-En Tsai",
+   "Ilyas Fatkhullin",
+   "Liang Zhang",
+   "Niao He"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2607.02053v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2607.02053v1",
+  "published_iso": "2026-07-02T11:29:02Z"
+ },
+ {
+  "title": "Distributed and Anytime Algorithm for Network Optimization Problems with Separable Structure",
+  "title_norm": "distributed and anytime algorithm for network optimization problems with separab",
+  "abstract": "This paper considers the problem of designing a dynamical system to solve constrained optimization problems in a distributed way and in an anytime fashion (i.e., such that the feasible set is forward invariant). For problems with separable objective function and constraints, we design an algorithm with the desired properties and establish its convergence. Simulations illustrate our results.",
+  "year": 2023,
+  "venue": "arXiv",
+  "authors": [
+   "Pol Mestres",
+   "Jorge Cortés"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2309.03174v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2309.03174v1",
+  "published_iso": "2023-09-06T17:23:21Z"
+ },
+ {
+  "title": "Anytime Acceleration of Gradient Descent",
+  "title_norm": "anytime acceleration of gradient descent",
+  "abstract": "This work investigates stepsize-based acceleration of gradient descent with {\\em anytime} convergence guarantees. For smooth (non-strongly) convex optimization, we propose a stepsize schedule that allows gradient descent to achieve convergence guarantees of $O(T^{-1.119})$ for any stopping time $T$, where the stepsize schedule is predetermined without prior knowledge of the stopping time. This result provides an affirmative answer to a COLT open problem \\citep{kornowski2024open} regarding whether stepsize-based acceleration can yield anytime convergence rates of $o(T^{-1})$. We further extend our theory to yield anytime convergence guarantees of $\\exp(-Ω(T/κ^{0.893}))$ for smooth and strongly convex optimization, with $κ$ being the condition number.",
+  "year": 2024,
+  "venue": "arXiv",
+  "authors": [
+   "Zihan Zhang",
+   "Jason D. Lee",
+   "Simon S. Du",
+   "Yuxin Chen"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2411.17668v2",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2411.17668v2",
+  "published_iso": "2024-11-26T18:29:44Z"
+ },
+ {
+  "title": "A Generic Complete Anytime Beam Search for Optimal Decision Tree",
+  "title_norm": "a generic complete anytime beam search for optimal decision tree",
+  "abstract": "Finding an optimal decision tree that minimizes classification error is known to be NP-hard. While exact algorithms based on MILP, CP, SAT, or dynamic programming guarantee optimality, they often suffer from poor anytime behavior -- meaning they struggle to find high-quality decision trees quickly when the search is stopped before completion -- due to unbalanced search space exploration. To address this, several anytime extensions of exact methods have been proposed, such as LDS-DL8.5, Top-k-DL8.5, and Blossom, but they have not been systematically compared, making it difficult to assess their relative effectiveness. In this paper, we propose CA-DL8.5, a generic, complete, and anytime beam search algorithm that extends the DL8.5 framework and unifies some existing anytime strategies. In particular, CA-DL8.5 generalizes previous approaches LDS-DL8.5 and Top-k-DL8.5, by allowing the integration of various heuristics and relaxation mechanisms through a modular design. The algorithm reuses DL8.5's efficient branch-and-bound pruning and trie-based caching, combined with a restart-based beam search that gradually relaxes pruning criteria to improve solution quality over time. Our contributions are twofold: (1) We introduce this new generic framework for exact and anytime decision tree learning, enabling the incorporation of diverse heuristics and search strategies; (2) We conduct a rigorous empirical comparison of several instantiations of CA-DL8.5 -- based on Purity, Gain, Discrepancy, and Top-k heuristics -- using an anytime evaluation metric called the primal gap integral. Experimental results on standard classification benchmarks show that CA-DL8.5 using LDS (limited discrepancy) consistently provides the best anytime performance, outperforming both other CA-DL8.5 variants and the Blossom algorithm while maintaining completeness and optimality guarantees.",
+  "year": 2025,
+  "venue": "arXiv",
+  "authors": [
+   "Harold Silvère Kiossou",
+   "Siegfried Nijssen",
+   "Pierre Schaus"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2508.06064v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2508.06064v1",
+  "published_iso": "2025-08-08T06:53:50Z"
+ },
+ {
+  "title": "Anytime-Competitive Reinforcement Learning with Policy Prior",
+  "title_norm": "anytime competitive reinforcement learning with policy prior",
+  "abstract": "This paper studies the problem of Anytime-Competitive Markov Decision Process (A-CMDP). Existing works on Constrained Markov Decision Processes (CMDPs) aim to optimize the expected reward while constraining the expected cost over random dynamics, but the cost in a specific episode can still be unsatisfactorily high. In contrast, the goal of A-CMDP is to optimize the expected reward while guaranteeing a bounded cost in each round of any episode against a policy prior. We propose a new algorithm, called Anytime-Competitive Reinforcement Learning (ACRL), which provably guarantees the anytime cost constraints. The regret analysis shows the policy asymptotically matches the optimal reward achievable under the anytime competitive constraints. Experiments on the application of carbon-intelligent computing verify the reward performance and cost constraint guarantee of ACRL.",
+  "year": 2023,
+  "venue": "arXiv",
+  "authors": [
+   "Jianyi Yang",
+   "Pengfei Li",
+   "Tongxin Li",
+   "Adam Wierman",
+   "Shaolei Ren"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2311.01568v3",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2311.01568v3",
+  "published_iso": "2023-11-02T19:44:59Z"
+ },
+ {
+  "title": "When Latent Geometry Is Not Enough: Draft-Conditioned Latent Refinement for Non-Autoregressive Text Generation",
+  "title_norm": "when latent geometry is not enough draft conditioned latent refinement for non a",
+  "abstract": "Continuous diffusion and flow models are attractive for non-autoregressive text generation because they can update all positions in parallel. A major difficulty is the interface between continuous latent states and discrete tokens. This report studies a draft-conditioned latent refinement model built from a frozen BERT encoder, a parallel decoder, a denoising DraftPrior, a local FlowNet, and a learned diagonal MetricNet. Early Gaussian-start experiments showed that good latent-space metrics, such as scale matching or cosine similarity, do not guarantee good decoding. Generated latents can be close to real encoder latents but still produce high-entropy, biased, or repetitive token distributions. We therefore frame the task as controlled local refinement rather than full generation from noise. On ROCStories, using the first two sentences as prompt and the last three as target, full 768-dimensional BERT latents recover tokens much better than compressed 256-dimensional latents. With 768-dimensional latents, DraftPrior target-token probability is 0.938 for clean drafts, 0.613 for 3% token dropout, 0.483 for 5% dropout, and 0.272 for 10% dropout. Local flow refinement and fused decoder-aware readout give modest additional gains, while metric learning and OT-style alignment improve geometry but do not close the decoder gap. The main result is a diagnostic one: latent geometry alone is not enough. Continuous latent text generation should be evaluated by decoder recoverability, the quality of the start distribution, and whether refinement preserves decoder-readable structure.",
+  "year": 2026,
+  "venue": "arXiv",
+  "authors": [
+   "De Shuai Zhang"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2605.15557v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2605.15557v1",
+  "published_iso": "2026-05-15T02:53:49Z"
+ },
+ {
+  "title": "Rectangle Search: An Anytime Beam Search (Extended Version)",
+  "title_norm": "rectangle search an anytime beam search extended version",
+  "abstract": "Anytime heuristic search algorithms try to find a (potentially suboptimal) solution as quickly as possible and then work to find better and better solutions until an optimal solution is obtained or time is exhausted. The most widely-known anytime search algorithms are based on best-first search. In this paper, we propose a new algorithm, rectangle search, that is instead based on beam search, a variant of breadth-first search. It repeatedly explores alternatives at all depth levels and is thus best-suited to problems featuring deep local minima. Experiments using a variety of popular search benchmarks suggest that rectangle search is competitive with fixed-width beam search and often performs better than the previous best anytime search algorithms.",
+  "year": 2023,
+  "venue": "arXiv",
+  "authors": [
+   "Sofia Lemons",
+   "Wheeler Ruml",
+   "Robert C. Holte",
+   "Carlos Linares López"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2312.12554v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2312.12554v1",
+  "published_iso": "2023-12-19T19:50:45Z"
+ },
+ {
+  "title": "A-ePA*SE: Anytime Edge-Based Parallel A* for Slow Evaluations",
+  "title_norm": "a epa se anytime edge based parallel a for slow evaluations",
+  "abstract": "Anytime search algorithms are useful for planning problems where a solution is desired under a limited time budget. Anytime algorithms first aim to provide a feasible solution quickly and then attempt to improve it until the time budget expires. On the other hand, parallel search algorithms utilize the multithreading capability of modern processors to speed up the search. One such algorithm, ePA*SE (Edge-Based Parallel A* for Slow Evaluations), parallelizes edge evaluations to achieve faster planning and is especially useful in domains with expensive-to-compute edges. In this work, we propose an extension that brings the anytime property to ePA*SE, resulting in A-ePA*SE. We evaluate A-ePA*SE experimentally and show that it is significantly more efficient than other anytime search methods. The open-source code for A-ePA*SE, along with the baselines, is available here: https://github.com/shohinm/parallel_search",
+  "year": 2023,
+  "venue": "arXiv",
+  "authors": [
+   "Hanlan Yang",
+   "Shohin Mukherjee",
+   "Maxim Likhachev"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2305.04408v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2305.04408v1",
+  "published_iso": "2023-05-08T01:21:27Z"
+ },
+ {
+  "title": "Anytime Sorting Algorithms (Extended Version)",
+  "title_norm": "anytime sorting algorithms extended version",
+  "abstract": "This paper addresses the anytime sorting problem, aiming to develop algorithms providing tentative estimates of the sorted list at each execution step. Comparisons are treated as steps, and the Spearman's footrule metric evaluates estimation accuracy. We propose a general approach for making any sorting algorithm anytime and introduce two new algorithms: multizip sort and Corsort. Simulations showcase the superior performance of both algorithms compared to existing methods. Multizip sort keeps a low global complexity, while Corsort produces intermediate estimates surpassing previous algorithms.",
+  "year": 2024,
+  "venue": "arXiv",
+  "authors": [
+   "Emma Caizergues",
+   "François Durand",
+   "Fabien Mathieu"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2405.08564v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2405.08564v1",
+  "published_iso": "2024-05-14T12:52:42Z"
+ },
+ {
+  "title": "Resource-Aware Evolutionary Neural Architecture Search for Cardiac MRI Segmentation",
+  "title_norm": "resource aware evolutionary neural architecture search for cardiac mri segmentat",
+  "abstract": "Cardiac magnetic resonance (CMR) segmentation underpins quantitative assessment of ventricular structure and function, yet reliable delineation remains difficult due to low tissue contrast, fuzzy boundaries, and inter scan variability. We present CardiacNAS, an evolutionary neural architecture search (NAS) framework that couples a UNet like supernet with a cardiac aware search space spanning depth width, kernel size, filter size, attention, fusion, activation, dropout, and residual scaling. The search is explicitly resource aware, jointly optimizing dice similarity coefficient (DSC) and 95th percentile Hausdorff distance (HD95) versus model size and floating point operations (FLOPs) under fixed compute budgets. Candidate architectures are instantiated from the supernet, trained with proxy budgets, and evolved through crossover, mutation, and elitist selection. We evaluate on the ACDC dataset and compare against six state of the art methods, using qualitative comparisons, learning curve analyses, and design factor correlation studies. The resulting model attains 93.22% average DSC and 4.73 mm HD95 with 3.58M parameters and 14.56 GFLOPs, demonstrating a favorable accuracy efficiency trade off. Analyses indicate that searched attention and fusion choices, together with residual scaling, contribute to improved boundary fidelity and stability. CardiacNAS offers a principled, resource aware approach to deployable CMR segmentation with transparent reporting of architectural complexity and compute budgets.",
+  "year": 2026,
+  "venue": "arXiv",
+  "authors": [
+   "Farhana Yasmin",
+   "Mahade Hasan",
+   "Haipeng Liu",
+   "Amjad Ali",
+   "Ghulam Muhammad",
+   "Yu Xue"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2605.08238v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2605.08238v1",
+  "published_iso": "2026-05-07T03:38:51Z"
+ },
+ {
+  "title": "Semantic-Aware Resource Allocation Based on Deep Reinforcement Learning for 5G-V2X HetNets",
+  "title_norm": "semantic aware resource allocation based on deep reinforcement learning for 5g v",
+  "abstract": "This letter proposes a semantic-aware resource allocation (SARA) framework with flexible duty cycle (DC) coexistence mechanism (SARADC) for 5G-V2X Heterogeneous Network (HetNets) based on deep reinforcement learning (DRL) proximal policy optimization (PPO). Specifically, we investigate V2X networks within a two-tiered HetNets structure. In response to the needs of high-speed vehicular networking in urban environments, we design a semantic communication system and introduce two resource allocation metrics: high-speed semantic transmission rate (HSR) and semantic spectrum efficiency (HSSE). Our main goal is to maximize HSSE. Additionally, we address the coexistence of vehicular users and WiFi users in 5G New Radio Unlicensed (NR-U) networks. To tackle this complex challenge, we propose a novel approach that jointly optimizes flexible DC coexistence mechanism and the allocation of resources and base stations (BSs). Unlike traditional bit transmission methods, our approach integrates the semantic communication paradigm into the communication system. Experimental results demonstrate that our proposed solution outperforms traditional bit transmission methods with traditional DC coexistence mechanism in terms of HSSE and semantic throughput (ST) for both vehicular and WiFi users.",
+  "year": 2024,
+  "venue": "arXiv",
+  "authors": [
+   "Zhiyu Shao",
+   "Qiong Wu",
+   "Pingyi Fan",
+   "Nan Cheng",
+   "Qiang Fan",
+   "Jiangzhou Wang"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2406.07996v2",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2406.07996v2",
+  "published_iso": "2024-06-12T08:42:23Z"
+ },
+ {
+  "title": "LRScheduler: A Layer-aware and Resource-adaptive Container Scheduler in Edge Computing",
+  "title_norm": "lrscheduler a layer aware and resource adaptive container scheduler in edge comp",
+  "abstract": "Lightweight containers provide an efficient approach for deploying computation-intensive applications in network edge. The layered storage structure of container images can further reduce the deployment cost and container startup time. Existing researches discuss layer sharing scheduling theoretically but with little attention paid to the practical implementation. To fill in this gap, we propose and implement a Layer-aware and Resource-adaptive container Scheduler (LRScheduler) in edge computing. Specifically, we first utilize container image layer information to design and implement a node scoring and container scheduling mechanism. This mechanism can effectively reduce the download cost when deploying containers, which is very important in edge computing with limited bandwidth. Then, we design a dynamically weighted and resource-adaptive mechanism to enhance load balancing in edge clusters, increasing layer sharing scores when resource load is low to use idle resources effectively. Our scheduler is built on the scheduling framework of Kubernetes, enabling full process automation from task information acquisition to container dep=loyment. Testing on a real system has shown that our design can effectively reduce the container deployment cost as compared with the default scheduler.",
+  "year": 2025,
+  "venue": "arXiv",
+  "authors": [
+   "Zhiqing Tang",
+   "Wentao Peng",
+   "Jianxiong Guo",
+   "Jiong Lou",
+   "Hanshuai Cui",
+   "Tian Wang",
+   "Yuan Wu",
+   "Weijia Jia"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2506.03694v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2506.03694v1",
+  "published_iso": "2025-06-04T08:26:43Z"
+ },
+ {
+  "title": "Semantic-Aware Resource Management for C-V2X Platooning via Multi-Agent Reinforcement Learning",
+  "title_norm": "semantic aware resource management for c v2x platooning via multi agent reinforc",
+  "abstract": "Semantic communication transmits the extracted features of information rather than raw data, significantly reducing redundancy, which is crucial for addressing spectrum and energy challenges in 6G networks. In this paper, we introduce semantic communication into a cellular vehicle-to-everything (C-V2X)- based autonomous vehicle platoon system for the first time, aiming to achieve efficient management of communication resources in a dynamic environment. Firstly, we construct a mathematical model for semantic communication in platoon systems, in which the DeepSC model and MU-DeepSC model are used to semantically encode and decode unimodal and multi-modal data, respectively. Then, we propose the quality of experience (QoE) metric based on semantic similarity and semantic rate. Meanwhile, we consider the success rate of semantic information transmission (SRS) metric to ensure the fairness of channel resource allocation. Next, the optimization problem is posed with the aim of maximizing the QoE in vehicle-to-vehicle (V2V) links while improving SRS. To solve this mixed integer nonlinear programming problem (MINLP) and adapt to time-varying channel conditions, the paper proposes a distributed semantic-aware multi-modal resource allocation (SAMRA) algorithm based on multi-agent reinforcement learning (MARL), referred to as SAMRAMARL. The algorithm can dynamically allocate channels and power and determine semantic symbol length based on the contextual importance of the transmitted information, ensuring efficient resource utilization. Finally, extensive simulations have demonstrated that SAMRAMARL outperforms existing methods, achieving significant gains in QoE, SRS, and communication delay in C-V2X platooning scenarios.",
+  "year": 2024,
+  "venue": "arXiv",
+  "authors": [
+   "Wenjun Zhang",
+   "Qiong Wu",
+   "Pingyi Fan",
+   "Kezhi Wang",
+   "Nan Cheng",
+   "Wen Chen",
+   "Khaled B. Letaief"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2411.04672v2",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2411.04672v2",
+  "published_iso": "2024-11-07T12:55:35Z"
+ },
+ {
+  "title": "Decentralized Fair Exchange with Advertising",
+  "title_norm": "decentralized fair exchange with advertising",
+  "abstract": "Before a fair exchange takes place, there is typically an advertisement phase with the goal of increasing the appeal of possessing a digital asset while keeping it sufficiently hidden. Advertisement phases are implicit in mainstream definitions, and therefore are not explicitly integrated within fair-exchange protocols. In this work we give an explicit definition for such a fair exchange in a setting where parties communicate via broadcast messages only (i.e., no point-to-point connection between seller and buyer is needed). Next, we construct a fair-exchange protocol satisfying our new definition using zk-SNARKs and relying on mainstream decentralized platforms (i.e., a blockchain with smart contracts like Ethereum and a decentralized storage system like IPFS). Experimental results confirm the practical relevance of our decentralized approach, paving the road towards building decentralized marketplaces where users can, even anonymously, and without direct off-chain communications, effectively advertise and exchange their digital assets as part of a system of enhanced NFTs.",
+  "year": 2025,
+  "venue": "arXiv",
+  "authors": [
+   "Pierpaolo Della Monica",
+   "Ivan Visconti",
+   "Andrea Vitaletti",
+   "Marco Zecchini"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2503.10411v2",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2503.10411v2",
+  "published_iso": "2025-03-13T14:35:32Z"
+ },
+ {
+  "title": "EnFed: An Energy-aware Federated Learning in Resource Constrained Environments for Human Activity Recognition",
+  "title_norm": "enfed an energy aware federated learning in resource constrained environments fo",
+  "abstract": "The human activity recognition (HAR) and recommendation applications for mobile users require a privacy-aware and accurate data analysis model with lower time and lower energy consumption. The use of federated learning (FL) to develop a privacy-aware HAR model is an emerging research topic. However, the participating mobile devices in the FL process may slow down due to their limited computational resources, connectivity interruption, and limited battery life. To address these challenges, this paper proposes an energy-efficient FL method referred to as EnFed, with a case study on HAR. In EnFed, a mobile device that needs a model for an application requests its nearby devices with respect to an incentive. The nearby devices, which agree to the offered incentive, send their local model updates, i.e., updated local model parameters for that application, to the requesting device. The device, after receiving local model updates from the contributors, aggregates them to build a global model and then fits the model to its own dataset to build its own local model. The results show that using EnFed a resource-limited device obtains an accurate prediction model at lower time and lower energy consumption. The experimental results show that EnFed achieves above 95% prediction accuracy and outperforms the baselines. EnFed also reduces the response time above 90% than the cloud-only framework. The comparative study shows that EnFed outperforms the existing HAR approaches.",
+  "year": 2024,
+  "venue": "arXiv",
+  "authors": [
+   "Anwesha Mukherjee",
+   "Rajkumar Buyya"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2412.00768v2",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2412.00768v2",
+  "published_iso": "2024-12-01T11:19:11Z"
+ },
+ {
+  "title": "Fair Termination for Resource-Aware Active Objects",
+  "title_norm": "fair termination for resource aware active objects",
+  "abstract": "Active object systems are a model of distributed computation that has been adopted for modelling distributed systems and business process workflows. This field of modelling is, in essence, concurrent and resource-aware, motivating the development of resource-aware formalisations on the active object model. The contributions of this work are the development of a core calculus for resource-aware active objects together with a type system ensuring that well-typed programs are fairly terminating, i.e., they can always eventually terminate. To achieve this, we combine techniques from graded semantics and type systems, which are quite well understood for sequential programs, with those for fair termination, which have been developed for synchronous~sessions.",
+  "year": 2025,
+  "venue": "arXiv",
+  "authors": [
+   "Francesco Dagnino",
+   "Paola Giannini",
+   "Violet Ka I Pun",
+   "Ulises Torrella"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2508.15333v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2508.15333v1",
+  "published_iso": "2025-08-21T07:56:23Z"
+ },
+ {
+  "title": "Holomorphic General Coordinate Invariant Modified Measure Gravitational Theory",
+  "title_norm": "holomorphic general coordinate invariant modified measure gravitational theory",
+  "abstract": "Complexifying space time has many interesting applications, from the construction of higher dimensional unification, to provide a useful framework for quantum gravity and to better define some local symmetries that suffer singularities in real space time. In this context here spacetime is extended to complex spacetime and standard general coordinate invariance is also extended to complex holomorphic general coordinate transformations. This is possible by introducing a non Riemannian Measure of integration, which transforms avoiding non holomorphic behavior . Instead the measure transforms according to the inverse of the jacobian of the coordinate transformation and avoids the traditional square root of the determinant of the metric $\\sqrt{-g}$. which is not globally holomorphic , or the determinant of the vierbein which is sensitive to the vierbein orientations and not invariant under local lorentz transformations with negative determinants. A contribution to the cosmological term appears as an integration constant in the equations of motion. A proposed action for Finsler geometry, which involves $-g$ rather than $\\sqrt{-g}$ will also constitute an example of a Holomorphic General Coordinate Invariant Modified Measure Gravitational Theory.",
+  "year": 2023,
+  "venue": "arXiv",
+  "authors": [
+   "Eduardo Guendelman"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2308.09246v3",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2308.09246v3",
+  "published_iso": "2023-08-18T02:14:37Z"
+ },
+ {
+  "title": "ASTER: Adaptive Spatio-Temporal Early Decision Model for Dynamic Resource Allocation",
+  "title_norm": "aster adaptive spatio temporal early decision model for dynamic resource allocat",
+  "abstract": "Supporting decision-making has long been a central vision in the field of spatio-temporal intelligence. While prior work has improved the timeliness and accuracy of spatio-temporal forecasting, converting these forecasts into actionable strategies remains a key challenge. A main limitation is the decoupling of the prediction and the downstream decision phases, which can significantly degrade the downstream efficiency. For example, in emergency response, the priority is successful resource allocation and intervention, not just incident prediction. To this end, it is essential to propose an Adaptive Spatio-Temporal Early Decision model (ASTER) that reforms the forecasting paradigm from event anticipation to actionable decision support. This framework ensures that information is directly used for decision-making, thereby maximizing overall effectiveness. Specifically, ASTER introduces a new Resource-aware Spatio-Temporal interaction module (RaST) that adaptively captures long- and short-term dependencies under dynamic resource conditions, producing context-aware spatiotemporal representations. To directly generate actionable decisions, we further design a Preference-oriented decision agent (Poda) based on multi-objective reinforcement learning, which transforms predictive signals into resource-efficient intervention strategies by deriving optimal actions under specific preferences and dynamic constraints. Experimental results on four benchmark datasets demonstrate the state-of-the-art performance of ASTER in improving both early prediction accuracy and resource allocation outcomes across six downstream metrics.",
+  "year": 2025,
+  "venue": "arXiv",
+  "authors": [
+   "Shulun Chen",
+   "Wei Shao",
+   "Flora D. Salim",
+   "Hao Xue"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2506.17929v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2506.17929v1",
+  "published_iso": "2025-06-22T07:49:37Z"
+ },
+ {
+  "title": "HANDFUL: Sequential Grasp-Conditioned Dexterous Manipulation with Resource Awareness",
+  "title_norm": "handful sequential grasp conditioned dexterous manipulation with resource awaren",
+  "abstract": "Dexterous robot hands offer rich opportunities for multifunctional manipulation, where a robot must execute multiple skills in sequence while maintaining control over previously grasped objects. Most prior work in dexterous manipulation focuses on single-object, single-skill tasks. In contrast, our insight is that many sequential tasks require resource-aware grasps that conserve fingers for future actions. In this paper, we study sequential grasp-conditioned dexterous manipulation, where a robot first grasps an object and then performs a second, distinct manipulation subtask while preserving the initial grasp. We introduce HANDFUL, a learning framework that models finger usage as a limited resource and encourages exploration of resource-aware grasps through finger-level contact rewards. These grasps are subsequently selected for downstream tasks via curriculum-based policy learning. We further propose HANDFUL-Bench, a simulation benchmark that introduces sequential dexterous manipulation tasks across multiple secondsubtask objectives, including pushing, pulling, and pressing, under a shared grasp-conditioned setup. Extensive simulation results demonstrate that prioritizing resource-aware grasps improves second-subtask success and robustness compared to a baseline that greedily optimizes the initial grasp before attempting the second subtask. We additionally validate our approach on a real dexterous LEAP hand. Together, this work establishes resource-aware grasp planning as a key principle for multifunctional dexterous manipulation. Supplementary material is available on our website: https://handful-dex.github.io.",
+  "year": 2026,
+  "venue": "arXiv",
+  "authors": [
+   "Ethan Foong",
+   "Yunshuang Li",
+   "Hao Jiang",
+   "Gaurav S. Sukhatme",
+   "Daniel Seita"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2604.25126v2",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2604.25126v2",
+  "published_iso": "2026-04-28T02:04:50Z"
+ },
+ {
+  "title": "Learning with a Budget: Identifying the Best Arm with Resource Constraints",
+  "title_norm": "learning with a budget identifying the best arm with resource constraints",
+  "abstract": "In many applications, evaluating the effectiveness of different alternatives comes with varying costs or resource usage. Motivated by such heterogeneity, we study the Best Arm Identification with Resource Constraints (BAIwRC) problem, where an agent seeks to identify the best alternative (aka arm) in the presence of resource constraints. Each arm pull consumes one or more types of limited resources. We make two key contributions. First, we propose the Successive Halving with Resource Rationing (SH-RR) algorithm, which integrates resource-aware allocation into the classical successive halving framework on best arm identification. The SH-RR algorithm unifies the theoretical analysis for both the stochastic and deterministic consumption settings, with a new \\textit{effective consumption measure",
+  "year": 2026,
+  "venue": "arXiv",
+  "authors": [
+   "Zitian Li",
+   "Wang Chi Cheung"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2602.24146v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2602.24146v1",
+  "published_iso": "2026-02-27T16:21:33Z"
+ },
+ {
+  "title": "Resource-Aware Heterogeneous Federated Learning using Neural Architecture Search",
+  "title_norm": "resource aware heterogeneous federated learning using neural architecture search",
+  "abstract": "Federated Learning (FL) is extensively used to train AI/ML models in distributed and privacy-preserving settings. Participant edge devices in FL systems typically contain non-independent and identically distributed (Non-IID) private data and unevenly distributed computational resources. Preserving user data privacy while optimizing AI/ML models in a heterogeneous federated network requires us to address data and system/resource heterogeneity. To address these challenges, we propose Resource-aware Federated Learning (RaFL). RaFL allocates resource-aware specialized models to edge devices using Neural Architecture Search (NAS) and allows heterogeneous model architecture deployment by knowledge extraction and fusion. Combining NAS and FL enables on-demand customized model deployment for resource-diverse edge devices. Furthermore, we propose a multi-model architecture fusion scheme allowing the aggregation of the distributed learning results. Results demonstrate RaFL's superior resource efficiency compared to SoTA.",
+  "year": 2022,
+  "venue": "arXiv",
+  "authors": [
+   "Sixing Yu",
+   "J. Pablo Muñoz",
+   "Ali Jannesari"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2211.05716v2",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2211.05716v2",
+  "published_iso": "2022-11-09T09:38:57Z"
+ }
+]

@@ -1,0 +1,1792 @@
+{
+  "title": "Deadline Paths for Training-Free Masked Diffusion Decoding",
+  "title_zh": "<TODO[title_zh]: Chinese translation; keep proper nouns and method acronyms in English>",
+  "method_name": "<TODO[method_name]: short handle for the proposed method, e.g. 'Persistent Baseline GRPO (PB-GRPO)'>",
+  "hook": "A masked diffusion decoder need not spend separate calls on progress and repair: one budget-indexed projection can perform both while reaching zero masks exactly at the deadline. Relative to Saber, it removes the separately controlled unmask threshold and rollback quota without adding training or denoiser calls.",
+  "abstract_draft": "<TODO[abstract_draft]: 150-250 words. Order: problem → bottleneck (cite ≥ 1 Phase 0 paper) → contribution (one sentence) → falsification prediction → expected outcome.>",
+  "motivation": {
+    "problem_framing": "<TODO[motivation.problem_framing]: 2-3 paragraphs framing the user's problem. Reference the bottleneck_statement from Phase 1 and the closest_adjacent papers. NOT a category label.>",
+    "why_now": "<TODO[motivation.why_now]: one paragraph on what makes this gap timely. Cite the most recent Phase 0 papers (within last 4-12 months) that get close but stop short.>",
+    "why_prior_stopped": [
+      {
+        "paper_id": "semanticscholar:4c95b1cef66cda6693fa6ab192698703dd3c070f",
+        "venue_year": "arXiv 2025-10",
+        "what_they_did": "<TODO[motivation.why_prior_stopped[0].what_they_did]: one sentence>",
+        "what_they_did_not_do": "<TODO[motivation.why_prior_stopped[0].what_they_did_not_do]: one sentence — the specific limit being lifted by the candidate>",
+        "structural_reason_they_stopped": "<TODO[motivation.why_prior_stopped[0].structural_reason_they_stopped]: one sentence — missing tool / missing assumption-relaxation / missing mechanism / missing measurement>"
+      },
+      {
+        "paper_id": "semanticscholar:9ccbb820261b9141e46de121ed26ae3e3b16772b",
+        "venue_year": "Conference of the European Chapter of the Association for Computational Linguistics 2025",
+        "what_they_did": "<TODO[motivation.why_prior_stopped[1].what_they_did]: one sentence>",
+        "what_they_did_not_do": "<TODO[motivation.why_prior_stopped[1].what_they_did_not_do]: one sentence — the specific limit being lifted by the candidate>",
+        "structural_reason_they_stopped": "<TODO[motivation.why_prior_stopped[1].structural_reason_they_stopped]: one sentence — missing tool / missing assumption-relaxation / missing mechanism / missing measurement>"
+      },
+      {
+        "paper_id": "arxiv:2606.10829v2",
+        "venue_year": "arXiv 2026-06",
+        "what_they_did": "<TODO[motivation.why_prior_stopped[2].what_they_did]: one sentence>",
+        "what_they_did_not_do": "<TODO[motivation.why_prior_stopped[2].what_they_did_not_do]: one sentence — the specific limit being lifted by the candidate>",
+        "structural_reason_they_stopped": "<TODO[motivation.why_prior_stopped[2].structural_reason_they_stopped]: one sentence — missing tool / missing assumption-relaxation / missing mechanism / missing measurement>"
+      }
+    ],
+    "what_changes_when_gap_closes": "<TODO[motivation.what_changes_when_gap_closes]: 2-3 sentences naming downstream consequences. NOT \"better numbers\" — name the specific capability or theoretical statement that becomes available>"
+  },
+  "core_claim": "<TODO[core_claim]: one sentence; should mirror the candidate's hook stripped to its load-bearing assertion>",
+  "sub_claims": "<TODO[sub_claims]: list of {id, statement, supports_which_aspect}; 2-4 entries>",
+  "key_equations": "<TODO[key_equations]: optional 3-6 equations; each {id, linked_step_id, latex, description, description_zh}. Emit [] (literal empty list) for a pure-prose candidate.>",
+  "method_flow": {
+    "high_level_pipeline": "<TODO[method_flow.high_level_pipeline]: 3-5 sentences narrating the method end-to-end as a story: input → key transformation → output>",
+    "steps": "<TODO[method_flow.steps]: derive from candidate.core_mechanism_steps; emit a list where each entry is {step_id, title, what_changes, why_this_step, linked_component, linked_falsification, input, output}. Each step_id MUST be S1, S2, ... in reading order. linked_component ∈ {theory, engineering, both}; linked_falsification ∈ {metric_specification, mechanism_distinguisher, both}.>",
+    "design_reasoning_echo": "<TODO[method_flow.design_reasoning_echo]: one paragraph echoing or condensing candidate.core_mechanism_reasoning>"
+  },
+  "plain_motivation_en": "<TODO[plain_motivation_en]: plain-language English rendering of motivation for a reader outside this subfield. Simplify LANGUAGE only — never drop the load-bearing mechanism. Spell out every abbreviation on first use.>",
+  "plain_motivation_zh": "<TODO[plain_motivation_zh]: Chinese 普通版 counterpart. Same content; keep identifiers/symbols/acronyms in English.>",
+  "plain_method_steps_en": "<TODO[plain_method_steps_en]: list of {step_id, what_to_do, why_this_makes_sense}; SAME step_ids and SAME order as method_flow.steps.>",
+  "plain_method_steps_zh": "<TODO[plain_method_steps_zh]: Chinese 普通版 counterpart; English for identifiers/symbols/acronyms.>",
+  "plain_method_modules_en": "<TODO[plain_method_modules_en]: group the CONTRIBUTION steps into named modules; list of {module_id, purpose_oneline, step_ids}.>",
+  "plain_method_modules_zh": "<TODO[plain_method_modules_zh]: Chinese 普通版 counterpart.>",
+  "falsification_prediction": "Run LLaDA-8B on HumanEval at hard caps B in {16,32,64}, comparing the full projection with matched-call Saber, ADAS, Fast-dLLM, and the no-exchange mask-path ablation, and measure Pass@1, unfinished-mask rate, and end-to-end latency. If the mechanism works, unfinished-mask rate is exactly zero at every B and Pass@1 is higher than the strongest matched-call baseline, especially at B=16 and B=32. The one named load-bearing variable is the exchange count r_b. As a negative control, force r_b=0 by pinning every earlier commitment while preserving the same mask-count path, calls, and masked-position ranking; downstream HumanEval Pass@1 should return to the no-exchange baseline while completion remains unchanged, otherwise budget-neutral repair is not the source of the quality gain.",
+  "compute_budget": "72 80GB-GPU-days for two open 7B-8B masked DLMs, five datasets, three primary call caps, all matched baselines, ablations, profiling, and reruns; $0 paid-API cost because execution-based and exact-match metrics replace closed-model judging. This is tight but feasible within the default 150 GPU-day, five-month envelope.",
+  "almost_prior_paper_id": "semanticscholar:4c95b1cef66cda6693fa6ab192698703dd3c070f",
+  "almost_prior_venue_year": "arXiv 2025-10",
+  "what_step_was_missed": "Saber would have needed to replace its independent adaptive-unmask threshold and rollback quota with a single cross-status projection whose cardinality is fixed by calls remaining, making every remask an exchange inside mandatory net progress rather than a separately scheduled recovery operation.",
+  "feasibility_validation": {
+    "compute": {
+      "verdict": "tight",
+      "rationale": "GPU line ≈ 150 vs 150 GPU-day (100%) → tight; API line ≈ $0 vs $10000 (0%) → feasible. Overall (worse line) → tight."
+    },
+    "data": {
+      "verdict": "<TODO[feasibility_validation.data.verdict]: feasible | tight | infeasible>",
+      "rationale": "<TODO[feasibility_validation.data.rationale]: one sentence: required data sources accessible; if any closed/private, name a public substitute>"
+    },
+    "theoretical": {
+      "verdict": "<TODO[feasibility_validation.theoretical.verdict]: feasible | tight | infeasible | n/a (only when the candidate has no theoretical contribution)>",
+      "rationale": "<TODO[feasibility_validation.theoretical.rationale]: one sentence; if tight, name the missing prerequisite>"
+    },
+    "engineering": {
+      "verdict": "<TODO[feasibility_validation.engineering.verdict]: feasible | tight | infeasible | n/a (only when the candidate has no engineering contribution)>",
+      "rationale": "<TODO[feasibility_validation.engineering.rationale]: one sentence; if tight, name the binding implementation cost>"
+    },
+    "falsification": {
+      "verdict": "<TODO[feasibility_validation.falsification.verdict]: feasible | tight | infeasible>",
+      "rationale": "<TODO[feasibility_validation.falsification.rationale]: one sentence: the falsification_prediction experiment is concrete enough to run with available tooling>"
+    },
+    "overall": "<TODO[feasibility_validation.overall]: feasible | tight | infeasible>"
+  },
+  "differentiation_from_lit": [
+    {
+      "paper_id": "semanticscholar:4c95b1cef66cda6693fa6ab192698703dd3c070f",
+      "venue_year": "arXiv 2025-10",
+      "delta": "Saber separately chooses a history-thresholded unmask set and a fixed-size confidence-drop rollback set, whereas this candidate constructs one remaining-budget cardinality projection over both masked and committed positions that permits repair yet reaches zero masks in exactly B forwards."
+    },
+    {
+      "paper_id": "arxiv:2606.10829v2",
+      "venue_year": "arXiv 2026-06",
+      "delta": "ADAS reranks only currently masked positions and deliberately leaves stopping and remasking to the base sampler, whereas this candidate recomputes membership across both position statuses under a deadline-indexed mask count."
+    },
+    {
+      "paper_id": "semanticscholar:81f6858d2554b87fc3e639cdbef402a6e4656abb",
+      "venue_year": "arXiv 2026-05",
+      "delta": "Predict-then-Diffuse trains a CatBoost module to choose response length once before generation, whereas this candidate keeps the canvas and denoiser fixed and injects remaining budget online through every successive mask-state transition without auxiliary training or fallback reruns."
+    }
+  ],
+  "reviewer_concerns_and_responses": [
+    {
+      "attack": "Paper-pointed threat: semanticscholar:4c95b1cef66cda6693fa6ab192698703dd3c070f (lit_table). Saber is the closest retrieved competitor because it already combines adaptive unmasking with backtracking-enhanced remasking to repair irreversible early commitments in a training-free diffusion-language-model sampler. The candidate's contribution therefore stands or falls on whether one fixed-cardinality cross-status projection, at identical denoiser-call and measured-latency budgets, achieves better terminal Pass@1 and guaranteed zero masks than Saber's separately controlled unmask threshold and rollback quota; the retrieved description does not itself disclose that exact unified projection.",
+      "severity": "non_blocking",
+      "response": "<TODO[reviewer_concerns_and_responses[0].response]: 2-3 sentences: explain where in the candidate (which field) the defense is anchored; reference the Phase 3.2 verdict_rationale when relevant>",
+      "fields_changed_to_address": []
+    },
+    {
+      "attack": "Un-retrieved mechanism family flagged by the audit (parametric knowledge, not in the retrieved pool): Mask-Predict/MaskGIT-style confidence-based iterative refinement and low-confidence token remasking; a scoop-check should query \"iterative mask-predict low-confidence remasking\" and \"MaskGIT confidence schedule token remasking\" before investing. — novelty vs this family is UNVERIFIED; run a targeted scoop-check on that vocabulary before investing.",
+      "severity": "non_blocking",
+      "response": "<TODO[reviewer_concerns_and_responses[1].response]: 1-2 sentences: state what a scoop-check on the named family must establish for the candidate's delta to survive (do NOT claim the check already passed)>",
+      "fields_changed_to_address": []
+    }
+  ],
+  "domain_landscape": {
+    "n_papers": 29,
+    "pattern_distribution": [
+      {
+        "pattern_id": "assumption_audit_and_pivot",
+        "count": 4,
+        "share": 0.14,
+        "saturation_band": "mid_frequency"
+      },
+      {
+        "pattern_id": "architectural_operator_substitution",
+        "count": 8,
+        "share": 0.28,
+        "saturation_band": "mid_frequency"
+      },
+      {
+        "pattern_id": "generative_process_redesign",
+        "count": 8,
+        "share": 0.28,
+        "saturation_band": "mid_frequency"
+      },
+      {
+        "pattern_id": "controlled_diagnostic_design",
+        "count": 2,
+        "share": 0.07,
+        "saturation_band": "mid_frequency"
+      },
+      {
+        "pattern_id": "unify_into_shared_representation",
+        "count": 2,
+        "share": 0.07,
+        "saturation_band": "mid_frequency"
+      },
+      {
+        "pattern_id": "reframe_as_solvable_object",
+        "count": 3,
+        "share": 0.1,
+        "saturation_band": "mid_frequency"
+      },
+      {
+        "pattern_id": "self_supervised_signal_engineering",
+        "count": 0,
+        "share": 0.0,
+        "saturation_band": "untested"
+      },
+      {
+        "pattern_id": "structural_prior_encoding",
+        "count": 4,
+        "share": 0.14,
+        "saturation_band": "mid_frequency"
+      },
+      {
+        "pattern_id": "algebraic_equivalence_unification",
+        "count": 0,
+        "share": 0.0,
+        "saturation_band": "untested"
+      },
+      {
+        "pattern_id": "heterogeneous_decomposition",
+        "count": 5,
+        "share": 0.17,
+        "saturation_band": "mid_frequency"
+      },
+      {
+        "pattern_id": "decompose_and_delegate",
+        "count": 2,
+        "share": 0.07,
+        "saturation_band": "mid_frequency"
+      },
+      {
+        "pattern_id": "relax_discrete_search_to_continuous",
+        "count": 1,
+        "share": 0.03,
+        "saturation_band": "untested"
+      },
+      {
+        "pattern_id": "adapt_via_conditioning",
+        "count": 1,
+        "share": 0.03,
+        "saturation_band": "untested"
+      },
+      {
+        "pattern_id": "characterize_limit_then_surpass",
+        "count": 0,
+        "share": 0.0,
+        "saturation_band": "untested"
+      },
+      {
+        "pattern_id": "targeted_self_supervised_objective",
+        "count": 0,
+        "share": 0.0,
+        "saturation_band": "untested"
+      }
+    ],
+    "candidate_uses": [
+      {
+        "pattern_id": "generative_process_redesign",
+        "role": "closes Gap 1",
+        "sub_pattern_id": "C24 (Liberate a Fixed Generative Component)",
+        "saturation_in_domain": "mid_frequency"
+      },
+      {
+        "pattern_id": "generative_process_redesign",
+        "role": "closes Gap 2",
+        "sub_pattern_id": "C24 (Liberate a Fixed Generative Component)",
+        "saturation_in_domain": "mid_frequency"
+      }
+    ],
+    "position_note": "<TODO[domain_landscape.position_note]: one sentence describing how the candidate's chosen patterns sit relative to the area's pattern usage; descriptive, not prescriptive>"
+  },
+  "literature_breakdown": {
+    "summary": {
+      "n_phase0_total": 41,
+      "n_phase0_on_topic": 29,
+      "n_phase0_outside_taxonomy": 12,
+      "n_phase3_collision": 240
+    },
+    "phase0_by_pattern": [
+      {
+        "pattern_id": "adapt_via_conditioning",
+        "pattern_name": "Adapt by Conditioning, Not Retraining",
+        "papers": [
+          {
+            "paper_id": "semanticscholar:bec64abca5c370a0d4c09bb499b146601622e6f6",
+            "title": "TESS 2: A Large-Scale Generalist Diffusion Language Model",
+            "venue_year": "Annual Meeting of the Association for Computational Linguistics 2025",
+            "bottleneck_targeted": "Instruction-following diffusion models lag strong autoregressive models and lack modular inference-time alignment."
+          }
+        ]
+      },
+      {
+        "pattern_id": "architectural_operator_substitution",
+        "pattern_name": "Substitute the Operator or Representation",
+        "papers": [
+          {
+            "paper_id": "semanticscholar:44bd8de6318a1adf67703876875218af77193b72",
+            "title": "Seed Diffusion: A Large-Scale Diffusion Language Model with High-Speed Inference",
+            "venue_year": "arXiv 2025-08",
+            "bottleneck_targeted": "Autoregressive token-by-token decoding imposes high latency and poor parallel hardware utilization."
+          },
+          {
+            "paper_id": "openalex:W4406355697",
+            "title": "A Lightweight Mamba Backbone for Diffusion Models",
+            "venue_year": "arXiv 2024-10",
+            "bottleneck_targeted": "U-ViT diffusion backbones are parameter-heavy, while sequential Visual Mamba overlooks image locality and spatial continuity."
+          },
+          {
+            "paper_id": "arxiv:2603.20466v1",
+            "title": "Diffutron: A Masked Diffusion Language Model for Turkish Language",
+            "venue_year": "arXiv 2026-03",
+            "bottleneck_targeted": "Morphologically rich Turkish lacks resource-efficient, non-autoregressive generative language models."
+          }
+        ]
+      },
+      {
+        "pattern_id": "architectural_operator_substitution, decompose_and_delegate",
+        "pattern_name": "architectural_operator_substitution, decompose_and_delegate",
+        "papers": [
+          {
+            "paper_id": "semanticscholar:d116105534980a0e5619c98a66a3b101ea48ed2a",
+            "title": "Accelerating Diffusion Language Model Inference via Efficient KV Caching and Guided Diffusion",
+            "venue_year": "arXiv 2025-05",
+            "bottleneck_targeted": "Repeated full-sequence denoising is slow, while aggressive step reduction causes incoherent tokens and quality loss."
+          }
+        ]
+      },
+      {
+        "pattern_id": "architectural_operator_substitution, heterogeneous_decomposition",
+        "pattern_name": "architectural_operator_substitution, heterogeneous_decomposition",
+        "papers": [
+          {
+            "paper_id": "semanticscholar:47bcd99521b23e6a9749f64913edf6fa213347dc",
+            "title": "LLaDA-MoE: A Sparse MoE Diffusion Language Model",
+            "venue_year": "arXiv 2025-09",
+            "bottleneck_targeted": "Dense diffusion language models incur high inference compute even when full parameter capacity is unnecessary per token."
+          }
+        ]
+      },
+      {
+        "pattern_id": "assumption_audit_and_pivot",
+        "pattern_name": "Audit and Pivot an Assumption",
+        "papers": [
+          {
+            "paper_id": "semanticscholar:410d8f0451384237b054b3f06cd8eab1c9f72104",
+            "title": "Theoretical Benefit and Limitation of Diffusion Language Model",
+            "venue_year": "arXiv 2025-02",
+            "bottleneck_targeted": "The presumed parallel efficiency of masked diffusion lacks metric-sensitive theoretical characterization."
+          },
+          {
+            "paper_id": "openalex:W4415112214",
+            "title": "Performance Plateaus in Inference-Time Scaling for Text-to-Image Diffusion Without External Models",
+            "venue_year": "arXiv (Cornell University) 2025",
+            "bottleneck_targeted": "More initial-noise search compute is assumed to keep improving diffusion generation without external evaluators."
+          }
+        ]
+      },
+      {
+        "pattern_id": "assumption_audit_and_pivot, controlled_diagnostic_design",
+        "pattern_name": "assumption_audit_and_pivot, controlled_diagnostic_design",
+        "papers": [
+          {
+            "paper_id": "arxiv:2602.15014v1",
+            "title": "Scaling Beyond Masked Diffusion Language Models",
+            "venue_year": "arXiv 2026-02",
+            "bottleneck_targeted": "Perplexity-based scaling comparisons can falsely imply masked diffusion categorically dominates other discrete diffusion families."
+          }
+        ]
+      },
+      {
+        "pattern_id": "controlled_diagnostic_design",
+        "pattern_name": "Design a Confound-Isolating Diagnostic",
+        "papers": [
+          {
+            "paper_id": "openalex:W7117881514",
+            "title": "Parallel Decoding as Intrinsic Uncertainty: Tokens-Per-Forward Reveals Generation Confidence in Diffusion Language Models",
+            "venue_year": "Zenodo (CERN European Organization for Nuclear Research) 2025",
+            "bottleneck_targeted": "Diffusion language models lack an intrinsic, inexpensive confidence measure for distinguishing retrieval from genuine computation."
+          }
+        ]
+      },
+      {
+        "pattern_id": "decompose_and_delegate",
+        "pattern_name": "Decompose and Delegate to Solvers",
+        "papers": [
+          {
+            "paper_id": "openalex:W7090315770",
+            "title": "dInfer: An Efficient Inference Framework for Diffusion Language Models",
+            "venue_year": "arXiv (Cornell University) 2025",
+            "bottleneck_targeted": "Diffusion language models lack a standardized, efficient inference stack combining decoding, iteration, caching, and system optimizations."
+          }
+        ]
+      },
+      {
+        "pattern_id": "generative_process_redesign",
+        "pattern_name": "Liberate a Fixed Generative Component",
+        "papers": [
+          {
+            "paper_id": "semanticscholar:81f6858d2554b87fc3e639cdbef402a6e4656abb",
+            "title": "Predict-then-Diffuse: Adaptive Response Length for Compute-Budgeted Inference in Diffusion LLMs",
+            "venue_year": "arXiv 2026-05",
+            "bottleneck_targeted": "Fixed response canvases waste FLOPs when oversized and truncate outputs when undersized."
+          },
+          {
+            "paper_id": "semanticscholar:b2f74b9493f1dd63ae20ece94aaf85b9d170c0cf",
+            "title": "BlockBatch: Multi-Scale Consensus Decoding for Efficient Diffusion Language Model Inference",
+            "venue_year": "arXiv 2026-05",
+            "bottleneck_targeted": "A single block size forces a speed-quality trade-off between local conditioning, parallelism, and cache error."
+          },
+          {
+            "paper_id": "arxiv:2605.28919v1",
+            "title": "CosmicFish-HRM: Adaptive Reasoning via Hierarchical Recurrent Mechanisms in Compact Language Models",
+            "venue_year": "arXiv 2026-05",
+            "bottleneck_targeted": "Fixed reasoning depth allocates equal inference compute to inputs of unequal complexity."
+          },
+          {
+            "paper_id": "arxiv:2602.00150v1",
+            "title": "Reversible Diffusion Decoding for Diffusion Language Models",
+            "venue_year": "arXiv 2026-01",
+            "bottleneck_targeted": "Irreversible block commitments can trap reverse diffusion in stagnant, suboptimal contexts."
+          }
+        ]
+      },
+      {
+        "pattern_id": "generative_process_redesign, assumption_audit_and_pivot",
+        "pattern_name": "generative_process_redesign, assumption_audit_and_pivot",
+        "papers": [
+          {
+            "paper_id": "arxiv:2602.07546v1",
+            "title": "Improving Variable-Length Generation in Diffusion Language Models via Length Regularization",
+            "venue_year": "arXiv 2026-02",
+            "bottleneck_targeted": "Fixed canvases and length-biased confidence make unknown-length completion and infilling unreliable."
+          }
+        ]
+      },
+      {
+        "pattern_id": "generative_process_redesign, heterogeneous_decomposition",
+        "pattern_name": "generative_process_redesign, heterogeneous_decomposition",
+        "papers": [
+          {
+            "paper_id": "semanticscholar:4c95b1cef66cda6693fa6ab192698703dd3c070f",
+            "title": "Saber: An Efficient Sampling with Adaptive Acceleration and Backtracking Enhanced Remasking for Diffusion Language Model",
+            "venue_year": "arXiv 2025-10",
+            "bottleneck_targeted": "Static acceleration ignores nonuniform decoding difficulty, and irreversible early commitments become errors as context evolves."
+          }
+        ]
+      },
+      {
+        "pattern_id": "generative_process_redesign, structural_prior_encoding",
+        "pattern_name": "generative_process_redesign, structural_prior_encoding",
+        "papers": [
+          {
+            "paper_id": "semanticscholar:83e3bb785cc56093b9cdac84e9bcacdb0f092d44",
+            "title": "Dimple: Discrete Diffusion Multimodal Large Language Model with Parallel Decoding",
+            "venue_year": "arXiv 2025-05",
+            "bottleneck_targeted": "Pure diffusion multimodal training is unstable, length-biased, and inefficient under fixed-rate decoding."
+          }
+        ]
+      },
+      {
+        "pattern_id": "heterogeneous_decomposition, architectural_operator_substitution",
+        "pattern_name": "heterogeneous_decomposition, architectural_operator_substitution",
+        "papers": [
+          {
+            "paper_id": "semanticscholar:1d5c429a4b3b5811cd59c3a3243e1b9aae5f5de2",
+            "title": "Window-Diffusion: Accelerating Diffusion Language Model Inference with Windowed Token Pruning and Caching",
+            "venue_year": "arXiv 2026-01",
+            "bottleneck_targeted": "Full-sequence attention repeatedly computes masked, distant, or temporally stable tokens during every denoising iteration."
+          },
+          {
+            "paper_id": "openalex:W7101615252",
+            "title": "Encoder-Decoder Diffusion Language Models for Efficient Training and Inference",
+            "venue_year": "arXiv (Cornell University) 2025",
+            "bottleneck_targeted": "Decoder-only diffusion repeatedly recomputes clean-token representations through the full network at every denoising step."
+          }
+        ]
+      },
+      {
+        "pattern_id": "heterogeneous_decomposition, structural_prior_encoding",
+        "pattern_name": "heterogeneous_decomposition, structural_prior_encoding",
+        "papers": [
+          {
+            "paper_id": "arxiv:2606.04236v1",
+            "title": "Supportive Token Revealing for Fast Diffusion Language Model Decoding",
+            "venue_year": "arXiv 2026-06",
+            "bottleneck_targeted": "Safe-token selection alone leaves uncertain tokens starved of the masked context needed for later denoising."
+          }
+        ]
+      },
+      {
+        "pattern_id": "reframe_as_solvable_object",
+        "pattern_name": "Reframe as a Solvable Object",
+        "papers": [
+          {
+            "paper_id": "semanticscholar:9ccbb820261b9141e46de121ed26ae3e3b16772b",
+            "title": "Diffusion Language Model Inference with Monte Carlo Tree Search",
+            "venue_year": "Conference of the European Chapter of the Association for Computational Linguistics 2025",
+            "bottleneck_targeted": "Heuristic unmasking poorly navigates the combinatorial space of token commitments and decoding trajectories."
+          },
+          {
+            "paper_id": "arxiv:2605.18253v1",
+            "title": "Machine Unlearning for Masked Diffusion Language Models",
+            "venue_year": "arXiv 2026-05",
+            "bottleneck_targeted": "Autoregressive unlearning objectives do not reflect masked diffusion's prompt-conditional denoising mechanism."
+          }
+        ]
+      },
+      {
+        "pattern_id": "reframe_as_solvable_object, architectural_operator_substitution",
+        "pattern_name": "reframe_as_solvable_object, architectural_operator_substitution",
+        "papers": [
+          {
+            "paper_id": "semanticscholar:5abdf3cdca85a6c57c33552b067a3e4d9cb5ffbc",
+            "title": "Set Block Decoding is a Language Model Inference Accelerator",
+            "venue_year": "arXiv 2025-09",
+            "bottleneck_targeted": "Sequential next-token decoding requires one costly forward pass per generated token."
+          }
+        ]
+      },
+      {
+        "pattern_id": "relax_discrete_search_to_continuous, generative_process_redesign",
+        "pattern_name": "relax_discrete_search_to_continuous, generative_process_redesign",
+        "papers": [
+          {
+            "paper_id": "arxiv:2606.29066v1",
+            "title": "Masked Diffusion Decoding as $x$-Prediction Flow",
+            "venue_year": "arXiv 2026-06",
+            "bottleneck_targeted": "Binary commit-or-mask decoding discards partial beliefs and causes premature irreversible decisions under tight budgets."
+          }
+        ]
+      },
+      {
+        "pattern_id": "structural_prior_encoding",
+        "pattern_name": "Encode Structure by Construction",
+        "papers": [
+          {
+            "paper_id": "arxiv:2606.10829v2",
+            "title": "Attention-Discounted Adaptive Sampler for Masked Diffusion Language Models",
+            "venue_year": "arXiv 2026-06",
+            "bottleneck_targeted": "Token-wise confidence ignores dependencies, so individually safe predictions can become unsafe when committed together."
+          },
+          {
+            "paper_id": "arxiv:2605.29607v1",
+            "title": "Cluster-Level Attention-Guided Parallel Decoding for Masked Diffusion Language Models",
+            "venue_year": "arXiv 2026-05",
+            "bottleneck_targeted": "Token-level commitment ignores contiguous confidence spans and dependencies between candidate groups."
+          }
+        ]
+      },
+      {
+        "pattern_id": "unify_into_shared_representation",
+        "pattern_name": "Unify Heterogeneous Inputs into One Space",
+        "papers": [
+          {
+            "paper_id": "semanticscholar:5105e734fc2a95f6710e0bbb93a829b7e0bbf6bc",
+            "title": "LaViDa: A Large Diffusion Language Model for Multimodal Understanding",
+            "venue_year": "Neural Information Processing Systems 2025",
+            "bottleneck_targeted": "Diffusion language models lack effective visual integration for fast, controllable multimodal reasoning."
+          },
+          {
+            "paper_id": "openalex:W4405104445",
+            "title": "Large scale paired antibody language models",
+            "venue_year": "PLoS Computational Biology 2024",
+            "bottleneck_targeted": "Antibody models struggle to exploit both massive unpaired sequences and scarce paired heavy-light chain data consistently."
+          }
+        ]
+      }
+    ],
+    "phase0_outside_taxonomy": [
+      {
+        "paper_id": "openalex:W4405185373",
+        "title": "A review of large language models and autonomous agents in chemistry",
+        "venue_year": "Chemical Science 2024",
+        "bottleneck_targeted": "Chemistry LLM and autonomous-agent capabilities are fragmented across design, prediction, planning, and laboratory automation."
+      },
+      {
+        "paper_id": "openalex:W4404239715",
+        "title": "Large language models for generative information extraction: a survey",
+        "venue_year": "Frontiers of Computer Science 2024",
+        "bottleneck_targeted": "Generative information-extraction methods are dispersed across subtasks and difficult to compare systematically."
+      },
+      {
+        "paper_id": "openalex:W4402155831",
+        "title": "Multimodal Large Language Models in Health Care: Applications, Challenges, and Future Outlook",
+        "venue_year": "Journal of Medical Internet Research 2024",
+        "bottleneck_targeted": "Text-only clinical LLMs cannot integrate the heterogeneous modalities required for medical decisions."
+      },
+      {
+        "paper_id": "openalex:W4403479245",
+        "title": "Decoding the brain: From neural representations to mechanistic models",
+        "venue_year": "Cell 2024",
+        "bottleneck_targeted": "Neural decoding measurements do not readily yield causal, mechanistic explanations across distributed brain circuits."
+      },
+      {
+        "paper_id": "openalex:W4403753254",
+        "title": "A survey on LoRA of large language models",
+        "venue_year": "Frontiers of Computer Science 2024",
+        "bottleneck_targeted": "Rapidly proliferating LoRA variants obscure trade-offs among adaptation, generalization, efficiency, privacy, and applications."
+      },
+      {
+        "paper_id": "openalex:W4402890475",
+        "title": "Foundation models in robotics: Applications, challenges, and the future",
+        "venue_year": "The International Journal of Robotics Research 2024",
+        "bottleneck_targeted": "Task-specific robotics models generalize poorly, while foundation-model applications remain fragmented across the autonomy stack."
+      },
+      {
+        "paper_id": "openalex:W4412382425",
+        "title": "Masked Image Modeling: A Survey",
+        "venue_year": "International Journal of Computer Vision 2025",
+        "bottleneck_targeted": "Masked-image pretext tasks and evaluation results lack a consistent taxonomy across reconstruction and contrastive approaches."
+      },
+      {
+        "paper_id": "openalex:W4403074774",
+        "title": "A Survey of Robot Intelligence with Large Language Models",
+        "venue_year": "Applied Sciences 2024",
+        "bottleneck_targeted": "LLM and VLM contributions to robot planning, control, manipulation, and scene understanding are difficult to synthesize."
+      },
+      {
+        "paper_id": "openalex:W4406814982",
+        "title": "Comprehensive exploration of diffusion models in image generation: a survey",
+        "venue_year": "Artificial Intelligence Review 2025",
+        "bottleneck_targeted": "Diffusion image-generation advances and their privacy, security, ethics, and copyright effects lack integrated coverage."
+      },
+      {
+        "paper_id": "openalex:W4393177791",
+        "title": "Foundation Models for Time Series Analysis: A Tutorial and Survey",
+        "venue_year": "arXiv 2024-08",
+        "bottleneck_targeted": "Time-series foundation-model architectures, pretraining, adaptation, and modalities lack a mechanism-centered synthesis."
+      },
+      {
+        "paper_id": "openalex:W4406938298",
+        "title": "Advances in diffusion models for image data augmentation: a review of methods, models, evaluation metrics and future research directions",
+        "venue_year": "Artificial Intelligence Review 2025",
+        "bottleneck_targeted": "Diffusion-based image augmentation methods, training strategies, and evaluation metrics are fragmented across applications."
+      },
+      {
+        "paper_id": "openalex:W7104368237",
+        "title": "MDPO: Overcoming the Training-Inference Divide of Masked Diffusion Language Models",
+        "venue_year": "Universitätsbibliothek Tübingen 2025",
+        "bottleneck_targeted": "Training-inference mismatch in masked diffusion language models."
+      }
+    ],
+    "phase3_collision": [
+      {
+        "paper_id": "semanticscholar:ef86789aa7662b87dfd498da51de6d9135c45326",
+        "title": "Bastion: Budget-Aware Speculative Decoding with Tree-structured Block Diffusion Drafting",
+        "venue_year": "arXiv 2026"
+      },
+      {
+        "paper_id": "semanticscholar:88beb3a63e00141d83caf49c09b076b15ffa3730",
+        "title": "The Hidden Cost of Structured Generation in LLMs: Draft-Conditioned Constrained Decoding",
+        "venue_year": "2026"
+      },
+      {
+        "paper_id": "semanticscholar:2cda1d71d5859cc8c9349c8768b10acdd2da872b",
+        "title": "TACG: Trajectory-Aware Commit Gating for Diffusion Language Model Decoding",
+        "venue_year": "2026"
+      },
+      {
+        "paper_id": "semanticscholar:1dcf07adad21710b4e394d185d40a7b030200f25",
+        "title": "SpecBlock: Block-Iterative Speculative Decoding with Dynamic Tree Drafting",
+        "venue_year": "arXiv 2026"
+      },
+      {
+        "paper_id": "arxiv:2602.09971v2",
+        "title": "SCOPE: Deterministic and Training-Free 3D UAV Deployment via Perimeter-based Heuristics",
+        "venue_year": "arXiv 2026"
+      },
+      {
+        "paper_id": "arxiv:2606.26120v1",
+        "title": "Dynamic-dLLM: Dynamic Cache-Budget and Adaptive Parallel Decoding for Training-Free Acceleration of Diffusion LLM",
+        "venue_year": "arXiv 2026"
+      },
+      {
+        "paper_id": "openalex:W7161090741",
+        "title": "Muninn: Your Trajectory Diffusion Model But Faster",
+        "venue_year": "arXiv (Cornell University) 2026"
+      },
+      {
+        "paper_id": "semanticscholar:954dfc684df2753b0d60e3fbab6a1aaa0299e1b6",
+        "title": "HyPER: Bridging Exploration and Exploitation for Scalable LLM Reasoning with Hypothesis Path Expansion and Reduction",
+        "venue_year": "arXiv 2026"
+      },
+      {
+        "paper_id": "semanticscholar:e41d9059aa70e9502d493b118601d3f01d85a38e",
+        "title": "Noise-Aware Decoding with Salient Region Enhancing for Zero-Shot Image Captioning",
+        "venue_year": "ACM Multimedia 2025"
+      },
+      {
+        "paper_id": "semanticscholar:9a1e65876d63ffbfaf4328cf50dc3a1a8c85168b",
+        "title": "Cassandra: Enabling Reasoning LLMs at Edge via Self-Speculative Decoding",
+        "venue_year": "arXiv 2026"
+      },
+      {
+        "paper_id": "semanticscholar:7f2c91bf92c05cb5ab321524d57163cb624939d9",
+        "title": "Search-Augmented Masked Diffusion Models for Constrained Generation",
+        "venue_year": "arXiv 2026"
+      },
+      {
+        "paper_id": "semanticscholar:d8d53eb44c34d61c59af7f55fc4b018c5dce2df0",
+        "title": "Reliability-Aware Soft-Decision Beam Training for RIS-Assisted mmWave Systems",
+        "venue_year": "IEEE Open Journal of the Communications Society 2026"
+      },
+      {
+        "paper_id": "semanticscholar:cccb03b8b6fc23ac4313fccaefff50da60b397e0",
+        "title": "TokenSkipping: A Practical and Robust KV Cache Pruning Method for Long-Context LLM Inference",
+        "venue_year": "International Conference on Industrial Technology 2025"
+      },
+      {
+        "paper_id": "arxiv:2603.25702v2",
+        "title": "S2D2: Fast Decoding for Diffusion LLMs via Training-Free Self-Speculation",
+        "venue_year": "arXiv 2026"
+      },
+      {
+        "paper_id": "openalex:W7167363379",
+        "title": "Score-Based Diffusion Models for Wireless Channel Synthesis and Data Augmentation in Low-Pilot MIMO Systems",
+        "venue_year": "Journal of AI-Driven Communication Engineering 2026"
+      },
+      {
+        "paper_id": "semanticscholar:709acdad120539e7e08ecc19c7d3124030d7cde3",
+        "title": "Hard or Just Unreached? Diagnosing the Sampling Blind Spot in Math-Reasoning Difficulty Estimation",
+        "venue_year": "2026"
+      },
+      {
+        "paper_id": "semanticscholar:334b6b570caa291daa2e60c3ea79869853ffb73e",
+        "title": "FAST-DIPS: Adjoint-Free Analytic Steps and Hard-Constrained Likelihood Correction for Diffusion-Prior Inverse Problems",
+        "venue_year": "arXiv 2026"
+      },
+      {
+        "paper_id": "semanticscholar:21b54bdd616036a3a157c670d0d211e95e0dca3b",
+        "title": "Single-Rollout Hidden-State Dynamics for Training-Free RLVR Data Selection",
+        "venue_year": "arXiv 2026"
+      },
+      {
+        "paper_id": "semanticscholar:83ab16496242e0638644f14f17fca345976d8b97",
+        "title": "Checkerboard: A Simple, Effective, Efficient and Learning-free Clean Label Backdoor Attack with Low Poisoning Budget",
+        "venue_year": "arXiv 2026"
+      },
+      {
+        "paper_id": "semanticscholar:c37d87b414a1cf830547eb6311f9e4f3e28d4182",
+        "title": "TALON: Confidence-Aware Speculative Decoding with Adaptive Token Trees",
+        "venue_year": "arXiv 2026"
+      },
+      {
+        "paper_id": "semanticscholar:ef23e2234139db8af287079a4761cc8681a33272",
+        "title": "AsyncLane: Decoupling Refinement from Advancement in Diffusion Language Model Decoding",
+        "venue_year": "2026"
+      },
+      {
+        "paper_id": "semanticscholar:dd255ad3e569c9a8c28f8fb510f9f91323cb3b66",
+        "title": "Cross-Attention Speculative Decoding",
+        "venue_year": "arXiv 2025"
+      },
+      {
+        "paper_id": "semanticscholar:cdd27c5237ee385ebba0e3db379e8e98e33a8065",
+        "title": "AsyncSpade: Efficient Test-Time Scaling with Asynchronous Sparse Decoding",
+        "venue_year": "arXiv 2025"
+      },
+      {
+        "paper_id": "semanticscholar:5a3696f45969e4bce35971cd9eb69622c28c073f",
+        "title": "Don't Overthink It: Inter-Rollout Action Agreement as a Free Adaptive-Compute Signal for LLM Agents",
+        "venue_year": "arXiv 2026"
+      },
+      {
+        "paper_id": "semanticscholar:80d2a4b01a1c5f53e6a7abb10bc940dbb3bd445f",
+        "title": "MoE-Spec: Expert Budgeting for Efficient Speculative Decoding",
+        "venue_year": "arXiv 2026"
+      },
+      {
+        "paper_id": "semanticscholar:9de83e51be23e0a2bf6d62dc8af6163df247332e",
+        "title": "Why Is Spatial Reasoning Hard for VLMs? An Attention Mechanism Perspective on Focus Areas",
+        "venue_year": "International Conference on Machine Learning 2025"
+      },
+      {
+        "paper_id": "semanticscholar:321c826879b8b8610121543c302b10eb4737d961",
+        "title": "Unsupervised Learning for Distributed Downlink Power Allocation in Cell-Free mMIMO Networks",
+        "venue_year": "IEEE Transactions on Machine Learning in Communications and Networking 2025"
+      },
+      {
+        "paper_id": "semanticscholar:7421c7342a15c24fc57832be4af7bd61d8b7927c",
+        "title": "First Finish Search: Efficient Test-Time Scaling in Large Language Models",
+        "venue_year": "arXiv 2025"
+      },
+      {
+        "paper_id": "semanticscholar:998f9ac563771079dfb0c53bb90cd568db4ab448",
+        "title": "Simple Geometric Recentering Rivals Deep Sequence Models for Cross-Session EEG Motor-Imagery Decoding",
+        "venue_year": "bioRxiv 2026"
+      },
+      {
+        "paper_id": "arxiv:2605.29061v1",
+        "title": "Residual-Entropy Accounting for Routed Atom-Budgeted Learned Indexes",
+        "venue_year": "arXiv 2026"
+      },
+      {
+        "paper_id": "arxiv:2601.22488v2",
+        "title": "Elastic Spectral State Space Models for Budgeted Inference",
+        "venue_year": "arXiv 2026"
+      },
+      {
+        "paper_id": "arxiv:2607.04070v1",
+        "title": "Conductance-Repair Evidence Graphs for Prospective Security Retrieval",
+        "venue_year": "arXiv 2026"
+      },
+      {
+        "paper_id": "arxiv:2604.19623v1",
+        "title": "SAGE: Training-Free Semantic Evidence Composition for Edge-Cloud Inference under Hard Uplink Budgets",
+        "venue_year": "arXiv 2026"
+      },
+      {
+        "paper_id": "arxiv:2603.03333v1",
+        "title": "Training-free Dropout Sampling for Semantic Token Acceptance in Speculative Decoding",
+        "venue_year": "arXiv 2026"
+      },
+      {
+        "paper_id": "arxiv:2604.02047v1",
+        "title": "Goose: Anisotropic Speculation Trees for Training-Free Speculative Decoding",
+        "venue_year": "arXiv 2026"
+      },
+      {
+        "paper_id": "arxiv:2605.31432v1",
+        "title": "DOA: Training-Free Decoder-Only Attention Policy for Long-Form Simultaneous Translation with SpeechLLMs",
+        "venue_year": "arXiv 2026"
+      },
+      {
+        "paper_id": "arxiv:2604.15383v1",
+        "title": "Temporal Contrastive Decoding: A Training-Free Method for Large Audio-Language Models",
+        "venue_year": "arXiv 2026"
+      },
+      {
+        "paper_id": "arxiv:2606.23181v1",
+        "title": "DART: Draft-Agreement Routing for Training-Free Adaptive Thinking Budgets in Hybrid Reasoning Models",
+        "venue_year": "arXiv 2026"
+      },
+      {
+        "paper_id": "openalex:W4416196206",
+        "title": "XBusNet: Text-Guided Breast Ultrasound Segmentation via Multimodal Vision–Language Learning",
+        "venue_year": "Diagnostics 2025"
+      },
+      {
+        "paper_id": "openalex:W7161203819",
+        "title": "ReCoVer: Resilient LLM Pre-Training System via Fault-Tolerant Collective and Versatile Workload",
+        "venue_year": "arXiv (Cornell University) 2026"
+      },
+      {
+        "paper_id": "openalex:W7133365263",
+        "title": "An Open-Source Modular Benchmark for Diffusion-Based Motion Planning in Closed-Loop Autonomous Driving",
+        "venue_year": "arXiv (Cornell University) 2026"
+      },
+      {
+        "paper_id": "openalex:W7134241076",
+        "title": "Source-Free Active Domain Adaptation for Brain Tumor Segmentation via Mamba and Region-Level Uncertainty",
+        "venue_year": "Brain Sciences 2026"
+      },
+      {
+        "paper_id": "openalex:W4415308159",
+        "title": "The Sparse Frontier: Sparse Attention Trade-offs in Transformer LLMs",
+        "venue_year": "2026"
+      },
+      {
+        "paper_id": "openalex:W7164447002",
+        "title": "ReasonAlloc: Hierarchical Decoding-Time KV Cache Budget Allocation for Reasoning Models",
+        "venue_year": "arXiv (Cornell University) 2026"
+      },
+      {
+        "paper_id": "semanticscholar:c5a002ee3f8cbbb52319c4066e6a913840c7d1ed",
+        "title": "Fast Training-free Perceptual Image Compression",
+        "venue_year": "arXiv 2025"
+      },
+      {
+        "paper_id": "semanticscholar:56ec9acc835e86d1e305c0c38e8b347ff0b362a2",
+        "title": "Visually Guided Decoding: Gradient-Free Hard Prompt Inversion with Language Models",
+        "venue_year": "International Conference on Learning Representations 2025"
+      },
+      {
+        "paper_id": "semanticscholar:f56b12228283cf42cf8120a18fee60849b965f83",
+        "title": "Training-free Context-adaptive Attention for Efficient Long Context Modeling",
+        "venue_year": "arXiv 2025"
+      },
+      {
+        "paper_id": "semanticscholar:08ab3273ab7fceb8128e93a334391be5738ee965",
+        "title": "HeadRank: Decoding-Free Passage Reranking via Preference-Aligned Attention Heads",
+        "venue_year": "arXiv 2026"
+      },
+      {
+        "paper_id": "semanticscholar:15bf86a76882a1806c1663238939e076ef6af664",
+        "title": "Locality Matters for Training-Free Audio Token Compression in Audio-Language Models",
+        "venue_year": "arXiv 2026"
+      },
+      {
+        "paper_id": "semanticscholar:504bb0d30b12ae214b903b903b4f8a46eca6e3d8",
+        "title": "ProCon: Projection-Consistency Memory for Training-Free Anomaly Detection",
+        "venue_year": "2026"
+      },
+      {
+        "paper_id": "semanticscholar:513e0c794e3a6f7eee576bbed5e1e73e3be80573",
+        "title": "From Bits to Rounds: Parallel Decoding with Exploration for Diffusion Language Models",
+        "venue_year": "arXiv 2025"
+      },
+      {
+        "paper_id": "semanticscholar:218afae5ec9e7d7650eab752f08c6e0ebda590b3",
+        "title": "Efficient Long-Horizon GUI Agents via Training-Free KV Cache Compression",
+        "venue_year": "arXiv 2026"
+      },
+      {
+        "paper_id": "semanticscholar:e627fef6b493cce06387b5bf6a2dbf55c26957f6",
+        "title": "Depth-Entropy Guided Sampling for Training-Free LLM Reasoning",
+        "venue_year": "2026"
+      },
+      {
+        "paper_id": "semanticscholar:9a78633905d1133f3c105aa9377dcb55983e385a",
+        "title": "Teacher-Free Self-Training Amplifies but Does Not Compound: A Pass@$K$ Crossover on a Free-Verifier Domain",
+        "venue_year": "2026"
+      },
+      {
+        "paper_id": "semanticscholar:bfeaca4238ce9500da90205a55fb432db5dc3031",
+        "title": "Calibrated e-CUSUM Decoding for Quantized Reasoning Models: Why Token Log-Probability Is the Wrong Observable for Decoding Monitors",
+        "venue_year": "2026"
+      },
+      {
+        "paper_id": "semanticscholar:f5ffd600e6e16695f3189dc832776288d5572f62",
+        "title": "Simple Supervision Is Hard to Beat: A Bitter Lesson from Sparse Target Labels in Domain-Adaptive Object Detection",
+        "venue_year": "2026"
+      },
+      {
+        "paper_id": "semanticscholar:7307c0969ee782e7160a572525f427ffb0816a30",
+        "title": "Draft Less, Retrieve More: Hybrid Tree Construction for Speculative Decoding",
+        "venue_year": "arXiv 2026"
+      },
+      {
+        "paper_id": "semanticscholar:6254edcc51b74b2967d1d85b81883bd4eb88e8c1",
+        "title": "Beyond Static Cropping: Layer-Adaptive Visual Localization and Decoding Enhancement",
+        "venue_year": "arXiv 2026"
+      },
+      {
+        "paper_id": "semanticscholar:7985e019694318d12c52cc03ee2adef36845059c",
+        "title": "ConfPO: Exploiting Policy Model Confidence for Critical Token Selection in Preference Optimization",
+        "venue_year": "International Conference on Machine Learning 2025"
+      },
+      {
+        "paper_id": "semanticscholar:255501f3ab861418b62a8941c9fa843c9d57938d",
+        "title": "Think in Parallel, Answer as One: Logit Averaging for Open-Ended Reasoning",
+        "venue_year": "arXiv 2025"
+      },
+      {
+        "paper_id": "semanticscholar:c26b04a1f22e0dac26f2f8e3ff9b0f2b4f6b3301",
+        "title": "SimLens for Early Exit in Large Language Models: Eliciting Accurate Latent Predictions with One More Token",
+        "venue_year": "2025"
+      },
+      {
+        "paper_id": "semanticscholar:4146660adf61c956bd1558ffa6cb1106fb5aaf02",
+        "title": "LNE-Blocking: An Efficient Framework for Contamination Mitigation Evaluation on Large Language Models",
+        "venue_year": "Conference on Empirical Methods in Natural Language Processing 2025"
+      },
+      {
+        "paper_id": "arxiv:2607.00728v2",
+        "title": "When to Repair a Graph ANN Index: A Matched-Budget Negative Result, and the Interpolated-Baseline Trap That Hid It",
+        "venue_year": "arXiv 2026"
+      },
+      {
+        "paper_id": "arxiv:2607.08690v1",
+        "title": "A Practical Investigation of Training-free Relaxed Speculative Decoding",
+        "venue_year": "arXiv 2026"
+      },
+      {
+        "paper_id": "arxiv:2511.09180v1",
+        "title": "FSampler: Training Free Acceleration of Diffusion Sampling via Epsilon Extrapolation",
+        "venue_year": "arXiv 2025"
+      },
+      {
+        "paper_id": "arxiv:2601.14236v1",
+        "title": "Stabilizer-Assisted Inactivation Decoding of Quantum Error-Correcting Codes with Erasures",
+        "venue_year": "arXiv 2026"
+      },
+      {
+        "paper_id": "arxiv:2602.05499v1",
+        "title": "SDFP: Speculative Decoding with FIT-Pruned Models for Training-Free and Plug-and-Play LLM Acceleration",
+        "venue_year": "arXiv 2026"
+      },
+      {
+        "paper_id": "arxiv:2601.04766v1",
+        "title": "Revisiting Judge Decoding from First Principles via Training-Free Distributional Divergence",
+        "venue_year": "arXiv 2026"
+      },
+      {
+        "paper_id": "arxiv:2602.07120v2",
+        "title": "Anchored Decoding: Provably Reducing Copyright Risk for Any Language Model",
+        "venue_year": "arXiv 2026"
+      },
+      {
+        "paper_id": "arxiv:2510.16781v2",
+        "title": "Xiaoice: Training-Free Video Understanding via Self-Supervised Spatio-Temporal Clustering of Semantic Features",
+        "venue_year": "arXiv 2025"
+      },
+      {
+        "paper_id": "arxiv:2510.24211v2",
+        "title": "Speculative Coupled Decoding for Training-Free Lossless Acceleration of Autoregressive Visual Generation",
+        "venue_year": "arXiv 2025"
+      },
+      {
+        "paper_id": "arxiv:2512.07503v1",
+        "title": "SJD++: Improved Speculative Jacobi Decoding for Training-free Acceleration of Discrete Auto-regressive Text-to-Image Generation",
+        "venue_year": "arXiv 2025"
+      },
+      {
+        "paper_id": "arxiv:2511.22972v3",
+        "title": "Training-Free Loosely Speculative Decoding: Accepting Semantically Correct Drafts Beyond Exact Match",
+        "venue_year": "arXiv 2025"
+      },
+      {
+        "paper_id": "arxiv:2604.16453v1",
+        "title": "Sampling for Quality: Training-Free Reward-Guided LLM Decoding via Sequential Monte Carlo",
+        "venue_year": "arXiv 2026"
+      },
+      {
+        "paper_id": "openalex:W7133132073",
+        "title": "Distributed Privacy-Preserving Fusion for Multi-UAV Target Localization via Free-Noise Masking",
+        "venue_year": "Electronics 2026"
+      },
+      {
+        "paper_id": "openalex:W4414422258",
+        "title": "Future trends of display technology: micro-LEDs toward transparent, free-form, and near-eye displays",
+        "venue_year": "Light Science & Applications 2025"
+      },
+      {
+        "paper_id": "openalex:W4414559655",
+        "title": "Generalist models in medical image segmentation: A survey and performance comparison with task-specific approaches",
+        "venue_year": "Information Fusion 2025"
+      },
+      {
+        "paper_id": "openalex:W7156575611",
+        "title": "Complex-Time Neural Networks: Geometric Temporal Access for Long-Range Reasoning",
+        "venue_year": "Algorithms 2026"
+      },
+      {
+        "paper_id": "openalex:W4416608976",
+        "title": "Towards a flexible and unified architecture for speech enhancement",
+        "venue_year": "Vicinagearth. 2025"
+      },
+      {
+        "paper_id": "openalex:W4415815526",
+        "title": "Gated Lag and Feature Selection for Day-Ahead Wind Power Forecasting Using On-Site SCADA Data",
+        "venue_year": "Wind 2025"
+      },
+      {
+        "paper_id": "openalex:W7117249289",
+        "title": "Legal Protection of Free Movement of Labour Within the East African Community: A Comparative Analysis",
+        "venue_year": "International Journal of Law and Society 2025"
+      },
+      {
+        "paper_id": "openalex:W7127546514",
+        "title": "Reimagining Safety and Justice: Experiences of and Resistance to Police Sexual Violence in New York City",
+        "venue_year": "CUNY Academic Works (City University of New York) 2026"
+      },
+      {
+        "paper_id": "openalex:W7163089920",
+        "title": "Socialism and schizophrenia : performativity, governmentality and the Maoist origins of neoliberalism in China",
+        "venue_year": "cIRcle (University of British Columbia) 2026"
+      },
+      {
+        "paper_id": "openalex:W7165973206",
+        "title": "Decentralised AI Training and Inference with BlockTrain",
+        "venue_year": "arXiv (Cornell University) 2026"
+      },
+      {
+        "paper_id": "openalex:W7160670823",
+        "title": "Sequential Monte Carlo for Resilient Networks: Assessment, Mitigation, and Generative Modeling",
+        "venue_year": "arXiv (Cornell University) 2026"
+      },
+      {
+        "paper_id": "openalex:W4409044673",
+        "title": "Cell-Free Integrated Sensing and Communication: Principles, Advances, and Future Directions",
+        "venue_year": "Proceedings of the IEEE 2025"
+      },
+      {
+        "paper_id": "openalex:W7162894057",
+        "title": "OccamToken: Efficient VLM Inference with Training-Free and Budget-Adaptive Token Pruning",
+        "venue_year": "arXiv (Cornell University) 2026"
+      },
+      {
+        "paper_id": "openalex:W7138977009",
+        "title": "UCPO: A Universal Constrained Combinatorial Optimization Method via Preference Optimization",
+        "venue_year": "Proceedings of the AAAI Conference on Artificial Intelligence 2026"
+      },
+      {
+        "paper_id": "semanticscholar:a606ca09536b0ca48454f9f45bede6562b131c64",
+        "title": "ViCrop-Det: Spatial Attention Entropy Guided Cropping for Training-Free Small-Object Detection",
+        "venue_year": "arXiv 2026"
+      },
+      {
+        "paper_id": "semanticscholar:4f679cef6a2f30630c3f0d1be802b494992f9a67",
+        "title": "Natural Language Processing and soft data for motor skill assessment: A case study in surgical training simulations",
+        "venue_year": "Comput. Methods Programs Biomed. 2025"
+      },
+      {
+        "paper_id": "semanticscholar:b51f456660fe7b38ac7b745d7fb1f1773b8f55b6",
+        "title": "Learning to Place Guards by Reinforcement: A Geo-Free Neural Policy for the Vertex-Guard Art Gallery Problem",
+        "venue_year": "2026"
+      },
+      {
+        "paper_id": "arxiv:2601.16651v2",
+        "title": "Select or Project? Evaluating Lower-dimensional Vectors for LLM Training Data Explanations",
+        "venue_year": "arXiv 2026"
+      },
+      {
+        "paper_id": "arxiv:2606.08516v2",
+        "title": "Stable Triangle Projections for Variable-Degree Tetrahedral Spaces and Uniform IPDG Preconditioning",
+        "venue_year": "arXiv 2026"
+      },
+      {
+        "paper_id": "arxiv:2510.22069v1",
+        "title": "Neural Index Policies for Restless Multi-Action Bandits with Heterogeneous Budgets",
+        "venue_year": "arXiv 2025"
+      },
+      {
+        "paper_id": "arxiv:2604.10279v1",
+        "title": "Exchange, obligation, accountability: Moral orders of technology repair in Kampala, Uganda",
+        "venue_year": "arXiv 2026"
+      },
+      {
+        "paper_id": "arxiv:2606.18187v1",
+        "title": "Group Commit Self-Clocks: Why Tuning Is Unnecessary Above a Device-Set Load Threshold",
+        "venue_year": "arXiv 2026"
+      },
+      {
+        "paper_id": "arxiv:2605.06209v1",
+        "title": "SiblingRepair: Sibling-Based Multi-Hunk Repair with Large Language Models",
+        "venue_year": "arXiv 2026"
+      },
+      {
+        "paper_id": "arxiv:2604.16404v1",
+        "title": "On the Use of Commit Messages for Corrective Software Maintenance: A Systematic Mapping Study",
+        "venue_year": "arXiv 2026"
+      },
+      {
+        "paper_id": "arxiv:2603.28572v1",
+        "title": "Unrestrained Simplex Denoising for Discrete Data. A Non-Markovian Approach Applied to Graph Generation",
+        "venue_year": "arXiv 2026"
+      },
+      {
+        "paper_id": "arxiv:2604.07522v2",
+        "title": "Training-free Spatially Grounded Geometric Shape Encoding (Technical Report)",
+        "venue_year": "arXiv 2026"
+      },
+      {
+        "paper_id": "arxiv:2512.07737v2",
+        "title": "A scalable and real-time neural decoder for topological quantum codes",
+        "venue_year": "arXiv 2025"
+      },
+      {
+        "paper_id": "arxiv:2603.27412v1",
+        "title": "The Geometry of Harmful Intent: Training-Free Anomaly Detection via Angular Deviation in LLM Residual Streams",
+        "venue_year": "arXiv 2026"
+      },
+      {
+        "paper_id": "arxiv:2601.09921v1",
+        "title": "Learning to Decode in Parallel: Self-Coordinating Neural Network for Real-Time Quantum Error Correction",
+        "venue_year": "arXiv 2026"
+      },
+      {
+        "paper_id": "openalex:W4362515116",
+        "title": "A Survey of Large Language Models",
+        "venue_year": "Frontiers of Computer Science 2026"
+      },
+      {
+        "paper_id": "openalex:W4414780325",
+        "title": "Relative sea level projections constrained by historical trends at tide gauge sites",
+        "venue_year": "Science Advances 2025"
+      },
+      {
+        "paper_id": "openalex:W4415375187",
+        "title": "Quantitative Health Impact Assessment of Environmental Exposures Linked to Urban Transport and Land Use in Europe: State of Research and Research Agenda",
+        "venue_year": "Current Environmental Health Reports 2025"
+      },
+      {
+        "paper_id": "openalex:W7122722735",
+        "title": "Meta-device for sensing subwavelength lateral displacement",
+        "venue_year": "Light Science & Applications 2026"
+      },
+      {
+        "paper_id": "openalex:W7134822718",
+        "title": "A Comprehensive Review of Polymeric Materials and Additive Manufacturing in Dental Crown Fabrication: State of the Art, Challenges, and Opportunities",
+        "venue_year": "Polymers 2026"
+      },
+      {
+        "paper_id": "openalex:W4415352360",
+        "title": "Adaptive resource aware and privacy preserving federated edge learning framework for real time internet of medical things applications",
+        "venue_year": "Scientific Reports 2025"
+      },
+      {
+        "paper_id": "openalex:W7165389229",
+        "title": "Limited impact of Greenland meltwater on abruptness and reversibility of future Atlantic overturning changes",
+        "venue_year": "Science Advances 2026"
+      },
+      {
+        "paper_id": "openalex:W4414824875",
+        "title": "Cropping history, agronomic rules, and commodity prices shape crop rotations across Central Europe",
+        "venue_year": "Agricultural Systems 2025"
+      },
+      {
+        "paper_id": "openalex:W7117239121",
+        "title": "FEATURES OF TRAINING PERSONNEL FOR INTERNATIONAL LOGISTICS UNDER THE TRANSITION TO DIGITAL AND SEAMLESS TECHNOLOGIES",
+        "venue_year": "Russian Journal of Management 2025"
+      },
+      {
+        "paper_id": "openalex:W4414939390",
+        "title": "Diffusion Recommender Models and the Illusion of Progress: A Concerning Study of Reproducibility and a Conceptual Mismatch",
+        "venue_year": "ACM Transactions on Recommender Systems 2026"
+      },
+      {
+        "paper_id": "openalex:W7138928193",
+        "title": "Multi-Robot Path Planning via an Adaptive Diffusion-Based Local Repair Method",
+        "venue_year": "Research Square 2026"
+      },
+      {
+        "paper_id": "openalex:W7162791577",
+        "title": "Are We Ready to Enable Satellite Autonomy Through on Board Image Registration?",
+        "venue_year": "Proceedings of the ACM on Measurement and Analysis of Computing Systems 2026"
+      },
+      {
+        "paper_id": "openalex:W7166902239",
+        "title": "DiLaServe: High SLO Attainment Serving for Diffusion Language Models",
+        "venue_year": "arXiv (Cornell University) 2026"
+      },
+      {
+        "paper_id": "openalex:W7160726617",
+        "title": "PersonaGesture: Single-Reference Co-Speech Gesture Personalization for Unseen Speakers",
+        "venue_year": "arXiv (Cornell University) 2026"
+      },
+      {
+        "paper_id": "openalex:W7118144492",
+        "title": "Hybrid Scheduling Optimization for Smart Agriculture Via INSGA-III and DynaQ Integration in Dynamic Multi-Objective Environments",
+        "venue_year": "Informatica 2025"
+      },
+      {
+        "paper_id": "openalex:W7154471865",
+        "title": "NeuroPath: Practically Adopting Motor Imagery Decoding through EEG Signals",
+        "venue_year": "2026"
+      },
+      {
+        "paper_id": "openalex:W4417147545",
+        "title": "Efficient multimodal large language models: a survey",
+        "venue_year": "Visual Intelligence 2025"
+      },
+      {
+        "paper_id": "semanticscholar:fc8e6aac95f0e541913b570f28395a5a0b62f06c",
+        "title": "Enhancing Feasible Operating Region-Based Flexibility Quantification Using Differential Evolution: A Case Study of Greek Distribution Grid",
+        "venue_year": "2026 22nd International Conference on the European Energy Market (EEM) 2026"
+      },
+      {
+        "paper_id": "openalex:W4405329269",
+        "title": "Three‐stage receding horizon‐based voltage control and electric vehicle charge scheduling of active distribution networks",
+        "venue_year": "IET Renewable Power Generation 2024"
+      },
+      {
+        "paper_id": "openalex:W4388757462",
+        "title": "Co-Design of Bandwidth-Aware Communication Scheduler and Cruise Controller for Multiple High-Speed Trains",
+        "venue_year": "IEEE Transactions on Vehicular Technology 2023"
+      },
+      {
+        "paper_id": "openalex:W4387789866",
+        "title": "Robust Resource Control Mechanism for Connected Support to IoT-Based Sustainable Consumer Electronics for Industry 5.0",
+        "venue_year": "IEEE Transactions on Consumer Electronics 2023"
+      },
+      {
+        "paper_id": "semanticscholar:99cd326920570a407c639d8183de181990a9324d",
+        "title": "D4orm: Multi-Robot Trajectories with Dynamics-aware Diffusion Denoised Deformations",
+        "venue_year": "IEEE/RJS International Conference on Intelligent RObots and Systems 2025"
+      },
+      {
+        "paper_id": "semanticscholar:7811b864ec27d885add75440e4220e1166ef5819",
+        "title": "Cooperative Flexibility Exchange: Fair and Comfort-Aware Decentralized Resource Allocation",
+        "venue_year": "EPJ Data Science 2025"
+      },
+      {
+        "paper_id": "semanticscholar:c0dd6ccd2d6694730d914ffd3b30ad6befb672e0",
+        "title": "Toward Explanatory Equilibrium: Verifiable Reasoning as a Coordination Mechanism under Asymmetric Information",
+        "venue_year": "arXiv 2026"
+      },
+      {
+        "paper_id": "arxiv:2404.12165v1",
+        "title": "Stability Certificates for Receding Horizon Games",
+        "venue_year": "arXiv 2024"
+      },
+      {
+        "paper_id": "arxiv:2606.15359v1",
+        "title": "DiRecT: Safe Diffusion-Based Planning via Receding-Horizon Denoising",
+        "venue_year": "arXiv 2026"
+      },
+      {
+        "paper_id": "arxiv:2306.14561v1",
+        "title": "On the Guarantees of Minimizing Regret in Receding Horizon",
+        "venue_year": "arXiv 2023"
+      },
+      {
+        "paper_id": "arxiv:2605.14085v1",
+        "title": "Receding Horizon Multi-Agent Deceptive Path Planner",
+        "venue_year": "arXiv 2026"
+      },
+      {
+        "paper_id": "arxiv:2408.04087v1",
+        "title": "Scheduling Battery-Electric Bus Charging under Stochasticity using a Receding-Horizon Approach",
+        "venue_year": "arXiv 2024"
+      },
+      {
+        "paper_id": "arxiv:2508.15333v1",
+        "title": "Fair Termination for Resource-Aware Active Objects",
+        "venue_year": "arXiv 2025"
+      },
+      {
+        "paper_id": "openalex:W4388917978",
+        "title": "MPC-based Motion Planning for Autonomous Truck-Trailer Maneuvering",
+        "venue_year": "IFAC-PapersOnLine 2023"
+      },
+      {
+        "paper_id": "openalex:W4394745351",
+        "title": "Reactive collision-free motion generation in joint space via dynamical systems and sampling-based MPC",
+        "venue_year": "The International Journal of Robotics Research 2024"
+      },
+      {
+        "paper_id": "semanticscholar:acac4584d18765fa8a42a3a25ece1c21919b28a2",
+        "title": "Iterative Refinement via Adaptive Subproblem Generation Algorithm (ASGA) for Anytime Multi-Agent Path Finding",
+        "venue_year": "2023 3rd International Symposium on Computer Technology and Information Science (ISCTIS) 2023"
+      },
+      {
+        "paper_id": "semanticscholar:2b752e2c6d3a5f1b4d766062f4cddd4b065ffc45",
+        "title": "Anytime-Feasible First-Order Optimization via Safe Sequential QCQP",
+        "venue_year": "arXiv 2025"
+      },
+      {
+        "paper_id": "semanticscholar:203658df7946d82d36acfee8e31fa7c3894a8489",
+        "title": "Constraint-Aware Mesh Refinement Method by Reachability Set Envelope of Curvature Bounded Paths",
+        "venue_year": "arXiv 2024"
+      },
+      {
+        "paper_id": "semanticscholar:e721b8ec924c5f6b0759daacb2fd4d5677e17fec",
+        "title": "CTS-PLL: A Robust and Anytime Framework for Collaborative Task Sequencing and Multi-Agent Path Finding",
+        "venue_year": "IEEE Robotics and Automation Letters 2026"
+      },
+      {
+        "paper_id": "semanticscholar:2a18c4893b3eab5362dfd01f3d0de43df100237a",
+        "title": "Bridging the Regret Gap in Combinatorial Thompson Sampling: Worst-Case Guarantees and Algorithmic Refinement",
+        "venue_year": "IEEE Conference on Computer Communications 2026"
+      },
+      {
+        "paper_id": "semanticscholar:c02ef029dd718dadcaf6e3410f664cfde11ffdda",
+        "title": "Uncovering Harmonization Potential in Health Care Data Through Iterative Refinement of Fast Healthcare Interoperability Resources Profiles Based on Retrospective Discrepancy Analysis: Case Study",
+        "venue_year": "JMIR Medical Informatics 2024"
+      },
+      {
+        "paper_id": "semanticscholar:4bb69d096e7c8c70c71c5129b89966f863c147bb",
+        "title": "Assessing 5-year follow-up of core outcome set uptake for Bronchiectasis and Hidradenitis Suppurativa: a review of trial registry entries",
+        "venue_year": "BMJ Open 2025"
+      },
+      {
+        "paper_id": "semanticscholar:09cfa5068e4b8cf6ca6f426438cf46eacae9cc9e",
+        "title": "DGRTA: Cross-Modality Unsupervised Domain Adaptation for Intracranial Vessel Segmentation via Dual-Gated Refinement and Topology-Aware Weighting.",
+        "venue_year": "IEEE journal of biomedical and health informatics 2026"
+      },
+      {
+        "paper_id": "semanticscholar:fb57ffc1bd3802385bd9df81fed9db96c229470f",
+        "title": "CTS-PIBT: An Efficient Method for Multi-Agent Collaborative Task Sequencing and Path Finding",
+        "venue_year": "IEEE Robotics and Automation Letters 2025"
+      },
+      {
+        "paper_id": "semanticscholar:e329802078ce65ddba3184f64079d8b25d63f07f",
+        "title": "Enhancing Vehicular Platooning With Wireless Federated Learning: A Resource-Aware Control Framework",
+        "venue_year": "IEEE Transactions on Networking 2025"
+      },
+      {
+        "paper_id": "semanticscholar:5e60bde2e54c58a87ca8dd7f92ec3b4db70f48cf",
+        "title": "Resource-aware Orchestration of IoT Applications in Edge-Cloud Continuum with 6G",
+        "venue_year": "2024 IEEE International Conference on Pervasive Computing and Communications Workshops and other Affiliated Events (PerCom Workshops) 2024"
+      },
+      {
+        "paper_id": "semanticscholar:00e2f75993147cfa3d12c8f3206980ef6c50d6c9",
+        "title": "Temporal-Aware GPU Resource Allocation for Distributed LLM Inference via Reinforcement Learning",
+        "venue_year": "IEEE Transactions on Cloud Computing 2025"
+      },
+      {
+        "paper_id": "semanticscholar:014104cfecc1eccadca7a8884ab79017bbd38aa0",
+        "title": "Efficient Lightweight Image Classification via Coordinate Attention and Channel Pruning for Resource-Constrained Systems",
+        "venue_year": "Future Internet 2025"
+      },
+      {
+        "paper_id": "semanticscholar:c4e6f2dac0a98ead1304c21ea7e0a48089f99f07",
+        "title": "Dynamic-Parameterized Reconstruction Model for Resource-Aware Spatial Intelligence",
+        "venue_year": "Italian National Conference on Sensors 2026"
+      },
+      {
+        "paper_id": "semanticscholar:3f8bf44026f88b62c41be15d7289df0fca7d2fcc",
+        "title": "SFG-ROS: A Resource-Aware Framework for Dense Multi-Agent Perception",
+        "venue_year": "arXiv 2026"
+      },
+      {
+        "paper_id": "semanticscholar:5e13182b32aa6c7dd63d3af65d3815b7d0242b02",
+        "title": "A Resource-Aware Authenticity Model for Secure Propagation of SystemLevel Updates in IoT Ecosystems",
+        "venue_year": "American Journal of AI Cyber Computing Management 2026"
+      },
+      {
+        "paper_id": "semanticscholar:308ed0d2382b601199624d1c531eab8306c0bf08",
+        "title": "10Cache: Heterogeneous Resource-Aware Tensor Caching and Migration for LLM Training",
+        "venue_year": "ACM Symposium on Cloud Computing 2025"
+      },
+      {
+        "paper_id": "semanticscholar:c29acda9068abb5510a6f6d512ae9bed0ee4d999",
+        "title": "Design and implementation of resource‐aware robust event‐based integral sliding mode controller for a networked wheeled mobile robot",
+        "venue_year": "J. Field Robotics 2023"
+      },
+      {
+        "paper_id": "semanticscholar:15ade81fa704d90f718a03532124d21016673c00",
+        "title": "Resource Optimization for Semantic-Aware Networks With Task Offloading",
+        "venue_year": "IEEE Transactions on Wireless Communications 2023"
+      },
+      {
+        "paper_id": "semanticscholar:48db3594f82052f07e5ece351a60c5cfcd894379",
+        "title": "Optimizing Radio Resource Allocation in 5G using Transport Network-Aware Intelligent RAN",
+        "venue_year": "IEEE Latin-American Conference on Communications 2024"
+      },
+      {
+        "paper_id": "semanticscholar:e6006f1ac6a3a82ba0f5f4ecb55f25d5cbf16a30",
+        "title": "Multi-Agent DRL for Resource Allocation in AoI-Aware Energy-Efficient C-V2X Networks",
+        "venue_year": "IEEE International Workshop on Computer Aided Modeling and Design of Communication Links and Networks 2024"
+      },
+      {
+        "paper_id": "semanticscholar:51aeb2c9eab656e32bbb0e3765cc84aeeab07579",
+        "title": "VECMAN: A Framework for Energy-Aware Resource Management in Vehicular Edge Computing Systems",
+        "venue_year": "IEEE Transactions on Mobile Computing 2023"
+      },
+      {
+        "paper_id": "semanticscholar:6fd9fe8051c65f4d48e98274dbe9a492b417f316",
+        "title": "Resource-Aware Dual-Granularity Synchronization Strategy for Transportation Digital Twin",
+        "venue_year": "International Conference on Speech Technology and Human-Computer Dialogue 2025"
+      },
+      {
+        "paper_id": "semanticscholar:fd93d049764e7c8316502dd314bd4c99a2756127",
+        "title": "Frequency-Power Slicing for QoS-Aware Resource Optimization in UAV-Assisted NOMA Networks",
+        "venue_year": "Consumer Communications and Networking Conference 2026"
+      },
+      {
+        "paper_id": "semanticscholar:e971db098868e46e162576b22dc0cda9d9ddbe98",
+        "title": "Resource-Aware Distributed Submodular Maximization: A Paradigm for Multi-Robot Decision-Making",
+        "venue_year": "IEEE Conference on Decision and Control 2022"
+      },
+      {
+        "paper_id": "semanticscholar:4785018849ee8f85e551848010d6e6093f86ab3f",
+        "title": "DTN Architecture With Resource-Aware Rate Adaptation for Multiple Bundle Transmission in InterPlanetary Networks",
+        "venue_year": "IEEE Access 2022"
+      },
+      {
+        "paper_id": "semanticscholar:d49a839f088ce2c61a220ae89332ca19c842f181",
+        "title": "SDN-Enabled Context-Aware IoT Framework for Energy and Resource Management in Smart Buildings",
+        "venue_year": "International Conference on Industrial Technology 2023"
+      },
+      {
+        "paper_id": "semanticscholar:529f20b1c3d91e4ad7f430089ce8afb940d87594",
+        "title": "Online Queue-Aware Service Migration and Resource Allocation in Mobile Edge Computing",
+        "venue_year": "IEEE Transactions on Vehicular Technology 2025"
+      },
+      {
+        "paper_id": "semanticscholar:2dc1d269db690bca6d80094797fa84ed665d80eb",
+        "title": "Resource-Aware Collaborative Monte Carlo Localization with Distribution Compression",
+        "venue_year": "IEEE/RJS International Conference on Intelligent RObots and Systems 2024"
+      },
+      {
+        "paper_id": "semanticscholar:e21d86d91f7ff5a0fb8d346324ae246d926bd8aa",
+        "title": "A QoS-Aware Data Aggregation Strategy for Resource Constrained IoT-Enabled AMI Network in Smart Grid",
+        "venue_year": "IEEE Access 2023"
+      },
+      {
+        "paper_id": "semanticscholar:303955e09475170452f8e6ed4302145de3e56ab8",
+        "title": "Semantic-Aware Priority-Based Resource Allocation for C-V2X Platoons Using Transformer Encoding",
+        "venue_year": "Global Communications Conference 2025"
+      },
+      {
+        "paper_id": "semanticscholar:bd21ece9e7eda94acc2363c0e15044e1614695fa",
+        "title": "Mobility-Aware Mode Selection, Relay Selection, and Resource Allocation for D2D Communication",
+        "venue_year": "IEEE Transactions on Network Science and Engineering 2025"
+      },
+      {
+        "paper_id": "semanticscholar:af2e37cf6082d3bb5967ce08e009c520543b8cd8",
+        "title": "A Geohash-Based Location-Aware Computing Resource Sharing System",
+        "venue_year": "2023 3rd International Conference on Electronic Information Engineering and Computer Communication (EIECC) 2023"
+      },
+      {
+        "paper_id": "semanticscholar:cfdb8db3170330585355b541f7d8f5b343ff2d30",
+        "title": "Resource-Efficient and Data Type-Aware Authentication Protocol for Internet of Things Systems",
+        "venue_year": "International Conference on Trust, Privacy and Security in Intelligent Systems and Applications 2023"
+      },
+      {
+        "paper_id": "semanticscholar:41512f44f5dfec4a41c6569d345196a45798ebb5",
+        "title": "KD-MARL: Resource-Aware Knowledge Distillation in Multi-Agent Reinforcement Learning",
+        "venue_year": "arXiv 2026"
+      },
+      {
+        "paper_id": "semanticscholar:7617028a158d91425904f6aafda9e60bc6b8296c",
+        "title": "Parachute: Dynamic Resource-Aware Privacy-Preserving Video Analytics on Edge",
+        "venue_year": "IEEE Internet of Things Journal 2026"
+      },
+      {
+        "paper_id": "semanticscholar:5357477cdf7cc2924b634aa1353c2f792ad54a7e",
+        "title": "Energy-Aware Dependent Task Offloading and Resource Allocation for Industrial IoT With Computing and Network Convergence",
+        "venue_year": "IEEE Internet of Things Journal 2025"
+      },
+      {
+        "paper_id": "semanticscholar:ee7b2640e748a290b10a7309486ef54f0a6a2b15",
+        "title": "Fairness-Aware Throughput Optimization in Low Earth Orbit Satellite Communication Networks Using a 3D Spherical Coordinate System",
+        "venue_year": "IEEE Transactions on Wireless Communications 2024"
+      },
+      {
+        "paper_id": "semanticscholar:35ac83f1bdbd9a3b7f2135f31568263d4ec7310d",
+        "title": "Storage-Aware Joint User Scheduling and Bandwidth Allocation for Federated Edge Learning",
+        "venue_year": "IEEE Transactions on Cognitive Communications and Networking 2025"
+      },
+      {
+        "paper_id": "semanticscholar:df5849903ce3b590b5066e5dfb1099cab2c20e80",
+        "title": "Online Resource Allocation for Semantic-Aware Edge Computing Systems",
+        "venue_year": "IEEE Internet of Things Journal 2023"
+      },
+      {
+        "paper_id": "semanticscholar:966aaa6f72f5ec5e5f5155276cda525aa82657bf",
+        "title": "CATComp: A Compression-Aware Authorization Protocol for Resource-Efficient Communications in IoT Networks",
+        "venue_year": "IEEE Internet of Things Journal 2022"
+      },
+      {
+        "paper_id": "semanticscholar:0e38065c34128be41ec231fa129260979f5feada",
+        "title": "Importance-Aware Message Exchange and Prediction for Multi-Agent Reinforcement Learning",
+        "venue_year": "Global Communications Conference 2022"
+      },
+      {
+        "paper_id": "semanticscholar:5955cd1c0c77fb399226d5fe2af92179885197a6",
+        "title": "Service-Aware Resource Orchestration in Ultra-Dense LEO Satellite-Terrestrial Integrated 6G: A Service Function Chain Approach",
+        "venue_year": "IEEE Transactions on Wireless Communications 2023"
+      },
+      {
+        "paper_id": "semanticscholar:2c863b9cea6fff9afa7926fcf8d07996ac13bad8",
+        "title": "SSABE-TSCM: drift-aware and interpretable financial sentiment analysis for low-resource Bangla via adaptive semi-supervised and temporal contrastive modeling",
+        "venue_year": "Frontiers in Artificial Intelligence 2026"
+      },
+      {
+        "paper_id": "semanticscholar:e96dc62a611d99f973a370b48ac84a92a24d6782",
+        "title": "Distributed Radiation-Aware Multi-Cell Resource Management for Long-Term URLLC Provisioning",
+        "venue_year": "IEEE Conference on Computer Communications 2026"
+      },
+      {
+        "paper_id": "semanticscholar:73ea09ed0c63f17b89c0153b441d5d0684cfeddd",
+        "title": "DATURA: A Deep Learning-Based Adaptive Traffic-Aware Unified Resource Autoscaling Framework for VNFs in 5G/B5G Networks",
+        "venue_year": "IEEE Open Journal of the Communications Society 2026"
+      },
+      {
+        "paper_id": "arxiv:2408.15703v2",
+        "title": "Linear-Quadratic Dynamic Games as Receding-Horizon Variational Inequalities",
+        "venue_year": "arXiv 2024"
+      },
+      {
+        "paper_id": "arxiv:2305.06010v2",
+        "title": "On receding-horizon approximation in time-varying optimal control",
+        "venue_year": "arXiv 2023"
+      },
+      {
+        "paper_id": "arxiv:2604.01956v1",
+        "title": "Receding-Horizon Nonlinear Optimal Control With Safety Constraints Using Constrained Approximate Dynamic Programming",
+        "venue_year": "arXiv 2026"
+      },
+      {
+        "paper_id": "arxiv:2510.06117v1",
+        "title": "Robust Data-Driven Receding-Horizon Control for LQR with Input Constraints",
+        "venue_year": "arXiv 2025"
+      },
+      {
+        "paper_id": "arxiv:2408.13595v1",
+        "title": "Receding-Horizon Games with Tullock-Based Profit Functions for Electric Ride-Hailing Markets",
+        "venue_year": "arXiv 2024"
+      },
+      {
+        "paper_id": "arxiv:2301.07876v4",
+        "title": "Suboptimality analysis of receding horizon quadratic control with unknown linear systems and its applications in learning-based control",
+        "venue_year": "arXiv 2023"
+      },
+      {
+        "paper_id": "arxiv:2603.29283v1",
+        "title": "Receding-Horizon Policy Gradient for Polytopic Controller Synthesis",
+        "venue_year": "arXiv 2026"
+      },
+      {
+        "paper_id": "arxiv:2302.13144v3",
+        "title": "Revisiting LQR Control from the Perspective of Receding-Horizon Policy Gradient",
+        "venue_year": "arXiv 2023"
+      },
+      {
+        "paper_id": "arxiv:2510.06153v1",
+        "title": "Robust Data-Driven Receding Horizon Control",
+        "venue_year": "arXiv 2025"
+      },
+      {
+        "paper_id": "arxiv:2603.05011v2",
+        "title": "Receding-Horizon Maximum-Likelihood Estimation of Neural-ODE Dynamics and Thresholds from Event Cameras",
+        "venue_year": "arXiv 2026"
+      },
+      {
+        "paper_id": "arxiv:2502.04174v2",
+        "title": "Dense Fixed-Wing Swarming using Receding-Horizon NMPC",
+        "venue_year": "arXiv 2025"
+      },
+      {
+        "paper_id": "arxiv:2604.04528v1",
+        "title": "Receding-Horizon Control via Drifting Models",
+        "venue_year": "arXiv 2026"
+      },
+      {
+        "paper_id": "arxiv:2512.21051v3",
+        "title": "Energy-Gain Control of Time-Varying Systems: Receding Horizon Approximation",
+        "venue_year": "arXiv 2025"
+      },
+      {
+        "paper_id": "arxiv:2506.18430v1",
+        "title": "Receding Horizon Recursive Location Estimation",
+        "venue_year": "arXiv 2025"
+      },
+      {
+        "paper_id": "arxiv:2512.15476v1",
+        "title": "QuantGraph: A Receding-Horizon Quantum Graph Solver",
+        "venue_year": "arXiv 2025"
+      },
+      {
+        "paper_id": "arxiv:2309.04831v1",
+        "title": "Global Convergence of Receding-Horizon Policy Search in Learning Estimator Designs",
+        "venue_year": "arXiv 2023"
+      },
+      {
+        "paper_id": "arxiv:2407.11530v1",
+        "title": "Output-based receding horizon stabilizing control",
+        "venue_year": "arXiv 2024"
+      },
+      {
+        "paper_id": "arxiv:2311.00837v2",
+        "title": "Constant-time Motion Planning with Anytime Refinement for Manipulation",
+        "venue_year": "arXiv 2023"
+      },
+      {
+        "paper_id": "arxiv:2508.21637v1",
+        "title": "A-MHA*: Anytime Multi-Heuristic A*",
+        "venue_year": "arXiv 2025"
+      },
+      {
+        "paper_id": "arxiv:2504.07841v1",
+        "title": "Anytime Single-Step MAPF Planning with Anytime PIBT",
+        "venue_year": "arXiv 2025"
+      },
+      {
+        "paper_id": "arxiv:2410.23637v2",
+        "title": "Anytime-Constrained Equilibria in Polynomial Time",
+        "venue_year": "arXiv 2024"
+      },
+      {
+        "paper_id": "arxiv:2309.03174v1",
+        "title": "Distributed and Anytime Algorithm for Network Optimization Problems with Separable Structure",
+        "venue_year": "arXiv 2023"
+      },
+      {
+        "paper_id": "arxiv:2605.15557v1",
+        "title": "When Latent Geometry Is Not Enough: Draft-Conditioned Latent Refinement for Non-Autoregressive Text Generation",
+        "venue_year": "arXiv 2026"
+      },
+      {
+        "paper_id": "arxiv:2305.04408v1",
+        "title": "A-ePA*SE: Anytime Edge-Based Parallel A* for Slow Evaluations",
+        "venue_year": "arXiv 2023"
+      },
+      {
+        "paper_id": "arxiv:2605.08238v1",
+        "title": "Resource-Aware Evolutionary Neural Architecture Search for Cardiac MRI Segmentation",
+        "venue_year": "arXiv 2026"
+      },
+      {
+        "paper_id": "arxiv:2406.07996v2",
+        "title": "Semantic-Aware Resource Allocation Based on Deep Reinforcement Learning for 5G-V2X HetNets",
+        "venue_year": "arXiv 2024"
+      },
+      {
+        "paper_id": "arxiv:2506.03694v1",
+        "title": "LRScheduler: A Layer-aware and Resource-adaptive Container Scheduler in Edge Computing",
+        "venue_year": "arXiv 2025"
+      },
+      {
+        "paper_id": "arxiv:2411.04672v2",
+        "title": "Semantic-Aware Resource Management for C-V2X Platooning via Multi-Agent Reinforcement Learning",
+        "venue_year": "arXiv 2024"
+      },
+      {
+        "paper_id": "arxiv:2412.00768v2",
+        "title": "EnFed: An Energy-aware Federated Learning in Resource Constrained Environments for Human Activity Recognition",
+        "venue_year": "arXiv 2024"
+      },
+      {
+        "paper_id": "arxiv:2506.17929v1",
+        "title": "ASTER: Adaptive Spatio-Temporal Early Decision Model for Dynamic Resource Allocation",
+        "venue_year": "arXiv 2025"
+      },
+      {
+        "paper_id": "arxiv:2604.25126v2",
+        "title": "HANDFUL: Sequential Grasp-Conditioned Dexterous Manipulation with Resource Awareness",
+        "venue_year": "arXiv 2026"
+      },
+      {
+        "paper_id": "arxiv:2602.24146v1",
+        "title": "Learning with a Budget: Identifying the Best Arm with Resource Constraints",
+        "venue_year": "arXiv 2026"
+      },
+      {
+        "paper_id": "arxiv:2211.05716v2",
+        "title": "Resource-Aware Heterogeneous Federated Learning using Neural Architecture Search",
+        "venue_year": "arXiv 2022"
+      },
+      {
+        "paper_id": "openalex:W4395666233",
+        "title": "USV Trajectory Tracking Control Based on Receding Horizon Reinforcement Learning",
+        "venue_year": "Sensors 2024"
+      },
+      {
+        "paper_id": "openalex:W4389861197",
+        "title": "Order and change in art: towards an active inference account of aesthetic experience",
+        "venue_year": "Philosophical Transactions of the Royal Society B Biological Sciences 2023"
+      },
+      {
+        "paper_id": "openalex:W4362578118",
+        "title": "Time, Deindustrialisation and the Receding Horizon of Working-Class Activism in Late Twentieth-Century Italy (Fiat, 1979–1980)",
+        "venue_year": "Contemporary European History 2023"
+      },
+      {
+        "paper_id": "openalex:W4380085433",
+        "title": "A Spatially Detailed Projection of Environmental Conditions in the Arctic Initiated by Climate Change",
+        "venue_year": "Atmosphere 2023"
+      },
+      {
+        "paper_id": "openalex:W4377224508",
+        "title": "On the Cyber-Physical Needs of DER-Based Voltage Control/Optimization Algorithms in Active Distribution Network",
+        "venue_year": "IEEE Access 2023"
+      },
+      {
+        "paper_id": "openalex:W3000543796",
+        "title": "Superconvergence of Online Optimization for Model Predictive Control",
+        "venue_year": "IEEE Transactions on Automatic Control 2022"
+      },
+      {
+        "paper_id": "openalex:W4386041262",
+        "title": "Constraint-adaptive MPC for linear systems: A system-theoretic framework for speeding up MPC through online constraint removal",
+        "venue_year": "Automatica 2023"
+      },
+      {
+        "paper_id": "openalex:W4385416325",
+        "title": "Bridging Active Exploration and Uncertainty-Aware Deployment Using Probabilistic Ensemble Neural Network Dynamics",
+        "venue_year": "2023"
+      },
+      {
+        "paper_id": "openalex:W4380986083",
+        "title": "Anytime bottom-up rule learning for large-scale knowledge graph completion",
+        "venue_year": "The VLDB Journal 2023"
+      },
+      {
+        "paper_id": "openalex:W4391996422",
+        "title": "IASCAR: Incremental Answer Set Counting by Anytime Refinement",
+        "venue_year": "Theory and Practice of Logic Programming 2024"
+      },
+      {
+        "paper_id": "openalex:W4323020967",
+        "title": "Anytime Lifelong Multi-Agent Pathfinding in Topological Maps",
+        "venue_year": "IEEE Access 2023"
+      },
+      {
+        "paper_id": "openalex:W4308558755",
+        "title": "Pictures Instead of Survey Questions: An Experimental Investigation of the Feasibility of Using Pictures in a Housing Survey",
+        "venue_year": "Journal of the Royal Statistical Society Series A (Statistics in Society) 2022"
+      },
+      {
+        "paper_id": "openalex:W4410439720",
+        "title": "Precision Weed Control Using Unmanned Aerial Vehicles and Robots: Assessing Feasibility, Bottlenecks, and Recommendations for Scaling",
+        "venue_year": "NDT 2025"
+      },
+      {
+        "paper_id": "openalex:W4318207641",
+        "title": "Set up and assessment of progression criteria for internal pilots: the Brushing RemInder 4 Good oral HealTh (BRIGHT) trial example",
+        "venue_year": "Pilot and Feasibility Studies 2023"
+      },
+      {
+        "paper_id": "openalex:W4393026200",
+        "title": "Building citizen science intelligence for outbreak preparedness and response: a mixed-method study in nine countries to assess knowledge, readiness and feasibility",
+        "venue_year": "BMJ Global Health 2024"
+      },
+      {
+        "paper_id": "openalex:W4399129933",
+        "title": "A Multi-User Virtual Reality Social Connecting Space for People Living with Dementia and Their Support Persons: A Participatory Action Research Study",
+        "venue_year": "International Journal of Human-Computer Interaction 2024"
+      },
+      {
+        "paper_id": "openalex:W4407805841",
+        "title": "Human-Centered Design and Iterative Refinement of Tools and Methods to Implement a Surveillance and Risk Prediction System for Clinical Deterioration in Ambulatory Cancer Care",
+        "venue_year": "ACI Open 2025"
+      },
+      {
+        "paper_id": "openalex:W4379930361",
+        "title": "Resource-aware multi-task offloading and dependency-aware scheduling for integrated edge-enabled IoV",
+        "venue_year": "Journal of Systems Architecture 2023"
+      },
+      {
+        "paper_id": "openalex:W4390954673",
+        "title": "Security at the Edge for Resource-Limited IoT Devices",
+        "venue_year": "Sensors 2024"
+      },
+      {
+        "paper_id": "openalex:W4309224029",
+        "title": "Towards V2I Age-Aware Fairness Access: A DQN Based Intelligent Vehicular Node Training and Test Method",
+        "venue_year": "Chinese Journal of Electronics 2023"
+      },
+      {
+        "paper_id": "openalex:W4392374886",
+        "title": "Advancing Water Conservation Techniques in Agriculture for Sustainable Resource Management: A review",
+        "venue_year": "Journal of Geography Environment and Earth Science International 2024"
+      },
+      {
+        "paper_id": "semanticscholar:f76a557305ddec2c0406f6556b67097019db4f4c",
+        "title": "IASCAR: Incremental Answer Set Counting by Anytime Refinement",
+        "venue_year": "Theory and Practice of Logic Programming 2023"
+      },
+      {
+        "paper_id": "semanticscholar:769ec440c4df69b28a6ae35f4916f16483f8cd3e",
+        "title": "Estimated Informed Anytime Search for Sampling-Based Planning via Adaptive Sampler",
+        "venue_year": "IEEE Transactions on Automation Science and Engineering 2025"
+      },
+      {
+        "paper_id": "semanticscholar:46676ae0bb303c24d72f4d5b4183eeb7b9582925",
+        "title": "Feasibility Checking and Constraint Refinement for Shared Control in Assistive Robotics",
+        "venue_year": "IEEE Robotics and Automation Letters 2024"
+      },
+      {
+        "paper_id": "semanticscholar:e3b15222d2c4e8fcf68276f3f36674e4ac9f17cd",
+        "title": "Witness-split + window-cardinality refinement for $r_3(N)$: Architecture, empirical results, and a structural hard pocket",
+        "venue_year": "2026"
+      },
+      {
+        "paper_id": "semanticscholar:f6fe751fc59a62d786d04a090b2c5ae0277c562e",
+        "title": "Acoustic-Based Queen Bee Status Recognition: A Transfer Learning Approach Refinement",
+        "venue_year": "Insects 2026"
+      }
+    ]
+  }
+}

@@ -1,0 +1,1207 @@
+                                                     Dirichlet Flow Matching with Applications to DNA Sequence Design
+
+
+                                                                       Hannes Stark * 1 Bowen Jing * 1 Chenyu Wang 1 Gabriele Corso 1
+                                                                           Bonnie Berger 1 2 Regina Barzilay 1 Tommi Jaakkola 1
+
+
+                                                                     Abstract                                      more flexible design of iterative noising processes, which
+
+
+
+
+arXiv:2402.05841v2 [q-bio.BM] 30 May 2024
+                                                 Discrete diffusion or flow models could enable                    have proven useful in generative modeling on non-euclidean
+                                                 faster and more controllable sequence generation                  spaces such as compact Riemannian manifolds (Chen &
+                                                 than autoregressive models. We show that naı̈ve                   Lipman, 2023; Bose et al., 2023). However, existing formu-
+                                                 linear flow matching on the simplex is insufficient               lations of flow matching have focused on continuous spaces
+                                                 toward this goal since it suffers from disconti-                  and have yet to treat discrete categorical data—a notable
+                                                 nuities in the training target and further patholo-               shortcoming considering the many important applications
+                                                 gies. To overcome this, we develop Dirichlet flow                 of discrete generative modeling such as text generation and
+                                                 matching on the simplex based on mixtures of                      biological sequence design (Avdeyev et al., 2023).
+                                                 Dirichlet distributions as probability paths. In                  In this work, we introduce Dirichlet flow matching for gen-
+                                                 this framework, we derive a connection between                    erative modeling of discrete categorical data and sequences
+                                                 the mixtures’ scores and the flow’s vector field                  over such data. We frame such modeling as a transport
+                                                 that allows for classifier and classifier-free guid-              problem between a uniform density over the probability
+                                                 ance. Further, we provide distilled Dirichlet flow                simplex and a finitely supported distribution over the ver-
+                                                 matching, which enables one-step sequence gener-                  tices of the simplex. We then learn a continuous vector field
+                                                 ation with minimal performance hits, resulting in                 to parameterize this transport based on a conditional noising
+                                                 O(L) speedups compared to autoregressive mod-                     process that generates a time-evolving Dirichlet distribution.
+                                                 els. On complex DNA sequence generation tasks,                    Naı̈vely, it may appear more straightforward to define a
+                                                 we demonstrate superior performance compared                      noising process that linearly interpolates between data and
+                                                 to all baselines in distributional metrics and in                 noise, as is the dominant approach in flow matching on Rn
+                                                 achieving desired design targets for generated                    (Liu et al., 2022; Lipman et al., 2022; Pooladian et al., 2023)
+                                                 sequences. Finally, we show that our classifier-                  and which can be trivially adapted to the simplex. However,
+                                                 free guidance approach improves unconditional                     we show that such an approach—which we call linear flow
+                                                 generation and is effective for generating DNA                    matching—suffers from pathological behavior due to the
+                                                 that satisfies design targets. Code is available                  contracting support of the resulting conditional probability
+                                                 at https://github.com/HannesStark/                                paths. We carefully engineer Dirichlet FM to avoid these
+                                                 dirichlet-flow-matching.                                          shortcomings while retaining the advantages of flow match-
+                                                                                                                   ing by being significantly simpler—both computationally
+                                                                                                                   and conceptually—than DDSM (Avdeyev et al., 2023), a
+                                            1. Introduction                                                        discrete diffusion model that also relaxes data onto the sim-
+                                            Flow matching (FM) is a generative modeling framework                  plex. Thanks to these properties, we posit (and confirm) that
+                                            that provides a simulation-free means of training continuous           Dirichlet FM is significantly more fit for modeling complex
+                                            normalizing flows (CNFs) between noise and data distri-                discrete distributions than either linear FM or DDSM.
+                                            butions (Lipman et al., 2022; Liu et al., 2022; Albergo &              Dirichlet FM is equipped with several features that showcase
+                                            Vanden-Eijnden, 2022). Such flow models can be viewed as               its potential as a generative modeling framework. A key
+                                            generalizing diffusion models (Song et al., 2021) to permit            aspect of modern frameworks such as diffusion is the ability
+                                              *                                                                    to implement guidance towards a target class or attribute
+                                                Equal contribution 1 CSAIL, Massachusetts Institute of Tech-
+                                            nology 2 Dept. of Mathematics, Massachusetts Institute of Tech-        (Dhariwal & Nichol, 2021; Ho & Salimans, 2022). While
+                                            nology. Correspondence to: Hannes Stark <hstark@mit.edu>,              flow matching guidance has been explored for (diffusion-
+                                            Bowen Jing <bjing@mit.edu>.                                            like) Gaussian noising processes in Rn (Dao et al., 2023;
+                                                                                                                   Zheng et al., 2023), no general theory of flow matching
+                                            Proceedings of the 41 st International Conference on Machine           guidance is available. However, by deriving a relationship
+                                            Learning, Vienna, Austria. PMLR 235, 2024. Copyright 2024 by
+                                            the author(s).                                                         between the score of a mixture of Dirichlets and the re-
+
+                                                                                                               1
+                                 Dirichlet Flow Matching with Applications to DNA Sequence Design
+
+                               pt(x x1)                                                            Dirichlet FM
+  Noise                                                        Data           t=0            t=1                  t=2          t=3
+       t=0          t=1           t=2                     t=
+
+
+
+     Dir(1,1,1)   Dir(2,1,1)    Dir(3,1,1)               Dir( ,1,1)
+                                                                                                    Linear FM
+        TACG         TACG          TACG                    TACG               t=0           t = 0.17          t = 0.33         t = 0.5
+        TACG         TACG          TACG                    TACG
+        TACG         TACG          TACG                    TACG
+        TACG         TACG          TACG                    TACG
+        TACG         TACG          TACG                    TACG
+Figure 1. Overview of Dirichlet flow matching. We represent a sequence of discrete variables as a sequence of simplices. Here, we only
+show the simplex of one of the sequence positions. Left: starting from uniform noise on the probability simplex, we define conditional
+probability paths that approach a point mass at the vertex via a one-parameter family of Dirichlet distributions. We view a sequence of
+tokens as a sequence of simplices for which the probability path corresponds to noising tokens via superposition with all other possible
+tokens (during inference, the simplices depend on each other through a joint denoiser). Right: Comparison of the marginal probability
+paths and vector fields of Dirichlet and linear FM. The vector fields of Dirichlet FM are smooth in time and space, unlike linear FM.
+
+
+sulting flow, we implement both classifier guidance and                   bution x0 ∼ q0 and data distribution x1 ∼ pdata and regress
+classifier-free guidance within the framework of Dirichlet                a neural network against a vector field that transports q(x0 )
+FM. Additionally, unlike autoregressive models or diffusion               to pdata (x1 ). To do so, we define a conditional probability
+models that inject categorical noise (Austin et al., 2021;                path—a time-evolving distribution pt (x | x1 ), t ∈ [0, 1]
+Hoogeboom et al., 2021; Campbell et al., 2022), the sam-                  conditioned on x1 with boundary conditions p0 (x | x1 ) =
+pling process of Dirichlet FM defines a deterministic map                 q(x) and p1 (x | x1 ) ≈ δ(x − x1 ). We additionally assume
+between noise and data. Hence, we can distill the sampling                knowledge of a conditional vector field ut (x | x1 ) that
+process and generate arbitrarily long sequences in a single               generates pt (x | x1 ), i.e. satisfying the transport equation
+forward pass.
+                                                                                             ∂
+We evaluate Dirichlet FM on three DNA sequence datasets                                         pt + ∇ · (pt ut ) = 0                    (1)
+                                                                                             ∂t
+with several complex tasks that pose diverse challenges.
+First, we demonstrate that Dirichlet FM better generates                  Then, the marginal probability path
+promoter DNA sequences with desired regulatory activ-                                         Z
+ity compared to baselines such as an autoregressive lan-                             pt (x) = pt (x | x1 )pdata (x1 ) dx1                (2)
+guage model or discrete diffusion models, including DDSM
+(Avdeyev et al., 2023). Second, we show on two enhancer                   interpolates between noise p0 = q0 and data p1 ≈ pdata and
+DNA sequence datasets that Dirichlet FM improves upon                     is generated by the marginal vector field
+autoregressive language modeling in capturing the data dis-
+                                                                                                       pt (x | x1 )pdata (x1 )
+                                                                                          Z
+tribution with an FBD (distributional similarity) of 1.9 vs.                    vt (x) = ut (x | x1 )                          dx1 (3)
+36.0 in Melanoma DNA and 1.0 vs. 25.2 in Fly Brain                                                             pt (x)
+DNA. Third, we demonstrate that Dirichlet FM guidance                     Thus, by learning and integrating a neural network
+can improve unconditional sequence generation and gener-                  v̂(x, t; θ) ≈ vt (x), we can generate data from noisy sam-
+ate cell-type specific enhancer DNA sequences that improve                ples x0 ∼ q. The core design decision is the choice of
+upon the (experimentally validated) sequences of Taskiran                 appropriate conditional probability path pt (x | x1 ) and as-
+et al. (2023). Lastly, distilled Dirichlet FM generates se-               sociated vector field ut (x | x1 ). Although it is possible to
+quences in a single step, resulting in orders-of-magnitude                define these directly, it is often simpler to instead define a
+speedups with minimal performance degradation.                            conditional flow map ψt (x0 | x1 ) that directly transports
+                                                                          x0 ∼ q to the intermediate distribution pt (x | x1 ). The flow
+2. Background                                                             map immediately provides the corresponding vector field:
+
+2.1. Flow Matching                                                                                          d
+                                                                                         ut (x | x1 ) =        ψt (x0 | x1 )             (4)
+                                                                                                            dt
+In flow matching (Lipman et al., 2022; Liu et al., 2022; Al-
+bergo & Vanden-Eijnden, 2022), we consider a noisy distri-                With this formulation, the required boundary conditions
+                                                                          simplify to ψ0 (x0 | x1 ) = x and ψ1 (x0 | x1 ) = x1 . As
+
+                                                                      2
+                              Dirichlet Flow Matching with Applications to DNA Sequence Design
+
+advocated by several works (Liu et al., 2022; Lipman et al.,           de Almeida et al. (2023) demonstrated cell type-specific
+2022; Pooladian et al., 2023; Tong et al., 2023), the flow             enhancer design via an optimization procedure starting from
+map (also called interpolant) is often chosen to follow the            an initial sequence guided by a cell-type activity classifier.
+simplest possible path between the two endpoints—e.g.,                 However, such sequence designs may not follow the em-
+linear in Euclidean spaces and geodesic on Riemannian                  pirical distribution of enhancers, which would be captured
+manifolds (Chen & Lipman, 2023).                                       by a generative model. Our work sets the foundation for
+                                                                       more principled conditional sequence design by learning
+2.2. Related Discrete Diffusion Model Works                            and drawing from conditional data distributions.
+Existing discrete diffusion frameworks can be split into 4
+categories. Firstly, simplex-based approaches frame discrete           3. Method
+data as vertices of a simplex and generate it starting from            3.1. Flow Matching on the Simplex
+a Dirichlet prior over the whole simplex (Richemond et al.,
+2022; Floto et al., 2023). Among those, DDSM (Avdeyev                  Let SK be the probability simplex in K-dimensional space:
+et al., 2023) is most related to our work and converges to
+a Dirichlet distribution via Jacobi diffusion processes and             SK = {x = (x1 , . . . xK )T ∈ RK | 1T x = 1, x ≥ 0} (5)
+the stick-breaking transform. We note that none of these
+simplex-based approaches feature Dirichlet distributions                   PKa K-class categorical distribution with probabilities
+                                                                       Given
+                                                                       pi , i=1 pi = 1, we relax this distribution into continuous
+as intermediate distributions of the noising process—a key             space by converting it to a mixture of point masses at the
+aspect of our approach.                                                vertices of Sk (with ei as the ith one-hot vector):
+The second class of discrete diffusion models fully relaxes                                            K
+discrete data into continuous space without any constraints
+                                                                                                       X
+                                                                                         pdata (x) =         pi δ(x − ei )          (6)
+and uses, e.g., a standard Gaussian as prior (Han et al., 2022;                                        i=1
+Chen et al., 2023; Frey et al., 2024). The third paradigm,
+established by D3PM (Austin et al., 2021), operates on dis-            We then define the noisy prior to be the uniform density
+crete samples of noise distributions constructed by injecting          on the simplex, or a Dirichlet distribution with parameter
+discrete noise into data (Campbell et al., 2022; Igashov et al.,       vector α given by the all ones vector:
+2024; Vignac et al., 2023; Penzar et al., 2023). Lastly, latent
+                                                                                q0 (x) = Dir(x; α = (1, . . . 1)T ) = Γ(K)          (7)
+discrete diffusion models train an additional network to ob-
+tain continuous latents for which they train a conventional            Our objective is then to learn a vector field, using some
+diffusion model (Dieleman et al., 2022; Li et al., 2023).              choice of conditional probability path (discussed later), to
+                                                                       transport q0 to pdata . Typically, the neural network directly
+2.3. Promoter and Enhancer DNA                                         parameterizes the vector field and is trained via the L2 -like
+DNA is a sequence with base pairs as tokens (3 billion for             conditional flow-matching loss
+humans) and a vocabulary of 4 nucleotides (A, T, C, G).                           L(θ) = E[∥ut (x | x1 ) − v̂(x, t; θ)∥2 ]          (8)
+Parts of DNA encode genes that are transcribed into mRNA
+and then translated to functional proteins. Promoters and              where the expectation is taken over t ∼ U[0, 1], x1 ∼
+enhancers refer to noncoding portions of DNA that regulate             pdata , x ∼ pt (· | x1 ). However, we instead train a denoising
+the expression level of these genes and play important roles           classifier via a cross-entropy loss
+in eukaryotic organisms such as humans (Dunham et al.,
+2012; Luo et al., 2020). More specifically, a promoter for                               L(θ) = −E[log p̂(x1 | x; θ)]               (9)
+a gene is the DNA sequence next to the gene where the
+                                                                       At inference time, we then parameterize the vector field via
+transcriptional machinery binds and starts transcribing DNA
+to mRNA (Haberle & Stark, 2018). Meanwhile, enhancers                                    K
+                                                                                         X
+are sequences that can be distant in the DNA sequence                    v̂(x, t; θ) =         ut (x | x1 = ei )p̂(x1 = ei | x; θ) (10)
+(millions of base pairs) but are close in 3D space (Panigrahi                            i=1
+& O’Malley, 2021) and regulate the recruitment of this
+                                                                       It can be shown (Appendix A) that the two losses have
+transcriptional machinery. Unlike promoters, enhancers
+                                                                       the same minimizer, and thus, the cross-entropy is a valid
+often regulate transcription in specific cell types. Hence,
+                                                                       flow-matching objective. The advantages of this approach
+while both types of DNA subsequences are important for
+                                                                       are twofold: (1) it ensures that the learned vector field is
+gene therapy (Whalen, 1994), the cell type specificity of
+                                                                       restricted to the tangent plane of the simplex (i.e., the com-
+enhancers enables targeting, e.g., only cancer cells.
+                                                                       ponents sum to zero), and (2) the conditional vector field
+Designing enhancers. Recently Taskiran et al. (2023) and               does not need to be evaluated at training time.
+
+                                                                   3
+                                Dirichlet Flow Matching with Applications to DNA Sequence Design
+
+                                                                          polant perspective and use the linear flow map employed in
+                                                                          Lipman et al. (2022); Pooladian et al. (2023):
+
+                                                                                       ψt (x0 | x1 ) = (1 − t)x0 + tx1                  (11)
+                                                                                                       x1 − x
+                                                                                        ut (x | x1 ) =         = x1 − x0                (12)
+                                                                                                        1−t
+
+                                                                          Since SK is a Euclidean space, these operations remain
+                                                                          well-defined, and the interpolant transports all points on the
+                                                                          simplex to x1 at t = 1 via straight paths. However, a patho-
+                                                                          logical property emerges when such conditional probability
+                                                                          paths are marginalized over pdata (x1 ) over the course of flow
+Figure 2. Pathological behavior of linear flow matching on the            matching training:
+simplex with K = 4 (top) and K = 3 (bottom). Each color rep-
+                                                                          Proposition 1. Suppose that a flow matching model is
+resents a conditional probability path evolving over time toward
+its target vertex. At t = 1/4, t = 1/3, and t = 1/2, the region           trained with the linear flow map (Equation 11). Then, for all
+of overlap between 4, 3, and 2 conditional probability paths dis-         k = 2, . . . K and x ∼ pt (x), the converged model posterior
+appears, respectively, corresponding to a shrinking set of possible       p(x1 | x) ∝ pt (x | x1 )pdata (x1 ) has support over at most
+values of x1 | x for any x.                                               k − 1 vertices for times t > 1/k.
+
+                                                                          Conceptually, this means that as the model transports sam-
+For simplicity, our discussion focuses on modeling cate-                  ples on the simplex at t = 0 to the vertices of the simplex at
+gorical data on the simplex. However, in practice, we are                 t = 1, it must eliminate or rule out a possible destination ver-
+interested in sequences of variables relaxed onto the multi-              tex at each of the times K1    1
+                                                                                                      , K−1  , . . . 12 , if not earlier. As K
+            N
+simplex SK    . At inference time, the simplices depend on                becomes large, an increasingly large fraction of the model
+each other through a learned denoiser that outputs token-                 capacity must be allocated to a smaller and smaller frac-
+wise logits conditioned on all noisy inputs. This extension               tion of the total time and trajectory length—indeed, for all
+to a sequence of categorical tokens is analogous to the de-               K, the posterior for times t > 1/2 reduces to the arg max
+velopment in previous works, such as D3PM ((Austin et al.,                operator. Further, since the marginal field is increasingly
+2021) pg 3) and DDSM (Avdeyev et al., 2023). In particu-                  discontinuous (i.e., rapidly changing directions and settings
+lar, noise is added to each token independently to produce                entries to zero corresponding to eliminated vertices), the
+a noisy sequence, and the model is trained to predict the                 model becomes increasingly sensitive to integration step
+denoised token at each site. The model makes this predic-                 size. We posit—and empirically verify in Section 4—that
+tion using information about all noisy tokens, thus injecting             these factors significantly hurt the performance of linear
+dependencies between positions into the generative process.               flow matching, especially for higher dimensionalities K.
+The flow field is then constructed independently at each
+sequence position from the corresponding logits.                          Upon examination of the conditional probability paths (Fig-
+                                                                          ure 2), it becomes clear that this pathological behavior is
+3.2. Designing Simplex Flow Matching                                      due to the shrinking support of the conditional paths that
+                                                                          arise from linear FM. Unfortunately, by following the in-
+As outlined in Section 2.1, there are two options to define a             terpolant perspective, we are unable to directly control the
+conditional probability path pt (x | x1 ) and corresponding               conditional path. Hence, to obtain a method that does not
+vector field ut (x | x1 ) to train a flow model with:                     suffer from linear FM’s pathologies, we proceed with the
+                                                                          probability path perspective and directly define the condi-
+  1. Interpolant perspective: Define an interpolant                       tional probability path so that it has support on the entire
+     ψt (x0 | x1 ), which provides the density pt (x | x1 )               simplex at all times, as described next.
+     implicitly but allows one to easily sample from it, and
+     obtain the conditional vector field trivially by taking              3.3. Dirichlet Flow Matching
+     the derivative ut = ∂t ψt .
+                                                                          Probability path pt (x | x1 ). Recall the Dirichlet distri-
+  2. Probability path perspective: Define pt (x | x1 ) ex-                bution’s probability density function (where B is the beta
+     plicitly and solve for ut (x | x1 ) that satisfies the trans-        function as in Equation 29):
+     port equation which can be non-trivial.
+                                                                                                                            K
+Following extant works on flow matching, the most natural                                                       1          Y
+                                                                              Dir(x; α1 , . . . αK ) =                        xαi −1    (13)
+way to proceed for the simplex would be to follow the inter-                                             B(α1 , . . . αK ) i=1 i
+
+                                                                      4
+                               Dirichlet Flow Matching with Applications to DNA Sequence Design
+
+Following the probability path perspective, we first define a               Dirichlet FM (K = 4)                       Linear FM
+conditional probability path with t ∈ [0, ∞) as:
+
+         pt (x | x1 = ei ) = Dir(x; α = 1 + t · ei )        (14)
+
+When t = 0, this is equal to the uniform noise distribution
+(Equation 7). As t → ∞, the ith entry of the α parameter
+vector increases while the others remain constant, concen-
+                                                                        0.00 0.25 0.50 0.75 1.00             0.00 0.25 0.50 0.75 1.00
+trating the density towards a point mass on the ith vertex,
+corresponding to the t = 1 boundary condition in standard               Figure 3. Vector field magnitudes of the conditional flow field
+flow matching.1 Hence, this family of Dirichlet distributions           ut (x | x1 = ei ) as a function of xi (the ith element of x) plotted
+provides a conditional probability path with the required               for varying values of t. In Dirichlet FM, the field vanishes at both
+boundary conditions while retaining support over the entire             xi = 1 (i.e., the target vertex) and xi = 0 (the opposite face).
+simplex, as desired.
+
+Vector field ut (x | x1 ). Since we have chosen a condi-                condition means the probability density is never fully drawn
+tional probability path directly rather than implicitly via             away from the face and resolves the pathological behavior
+an interpolant, it is more difficult to obtain the correspond-          of linear FM. The resulting probability paths and vector
+ing conditional vector field ut (x | x1 ). Indeed, there is             fields are visualized on the simplex in Figure 1; they are
+an infinite number of such fields that generate the desired             continuous and smooth, unlike in linear FM.
+evolution of pt . Motivated by the basic form of the linear
+FM, we generalize it via the following ansatz:                          3.4. Guidance
+                                                                        A key attribute of iterative generative models is the ability
+            ut (x | x1 = ei ) = C(xi , t)(ei − x)           (15)
+                                                                        to continuously and gradually bias the generative process
+That is, the flow still points directly towards the target vertex       towards a class label with user-specified strength, a tech-
+ei , but is rescaled by a xi -dependent factor. The conditional         nique known as guidance (Dhariwal & Nichol, 2021; Ho &
+vector field of linear FM satisfies this form with C(xi , t) =          Salimans, 2022). Initially proposed in the context of diffu-
+1/(1 − t) dependent only on t; we introduce the additional              sion models, where the generative process follows the score
+xi -dependence to control the contraction of probability mass           ŝ(x, t; θ) ≈ ∇x log pt (x) of the noisy data distribution,
+towards ei . In Appendix A.1, we derive the C(xi , t), which            guidance is implemented by taking a linear combination of
+gives rise to Dirichlet probability paths to be:                        the unconditional and conditional score models
+
+                                      B(t + 1, K − 1)                    ŝCFG (x, t, y; θ) = γŝ(x, t, y; θ)+(1−γ)ŝ(x, t, ∅; θ) (18)
+   C(xi , t) = −I˜xi (t + 1, K − 1)                         (16)
+                                      (1 − xi )K−1 xti
+                                                                        with γ > 0 and running the generative process with this
+where                                                                   adjusted score. In the context of flow matching, Dao et al.
+                                 ∂
+                    I˜x (a, b) =    Ix (a, b)          (17)             (2023); Zheng et al. (2023) derived a relationship between
+                                 ∂a
+                                                                        the score and marginal flow for certain Gaussian probabil-
+is a derivative of the regularized incomplete beta function             ity paths and implemented flow guidance by propagating
+Ix (a, b).                                                              the effects of standard score adjustments to the resulting
+Proposition 2. The proposed vector field (Eq 15) and prob-              flow fields. We implement guidance for Dirichlet FM by
+ability path (Eq 14) together satisfy the transport equation            deriving a similar relationship between the score and flow
+(Eq. 1) and therefore constitute a valid flow-matching frame-           field, detailed below. Note that when γ = 1, this adjustment
+work. (Proof in Appendix A.1).                                          precisely mimics the flow that would result from training
+                                                                        only on points with class label y; however, similar to prior
+Figure 3 compares the magnitude of the resulting vector                 works, we find γ > 1 futher enhances the guidance efficacy.
+field with that of linear FM as a function of distance from
+the target vertex. As anticipated, the field vanishes both              Relationship between flow and score. For the Dirichlet
+at the target vertex and on the (K − 2)-dimensional face                marginal probability path, the score can be obtained from the
+directly opposite it instead of monotonically scaling with              model posterior via the denoising score-matching identity
+distance from the target vertex as in linear FM. This second            (Song & Ermon, 2019):
+   1
+    We continue to call the data sample x1 , and in practice, in-                          K
+                                                                                           X
+tegrate to some large fixed time (typically t = 8) and take the            ŝ(x, t; θ) =         st (x | x1 = ei )p̂(x1 = ei | x; θ)   (19)
+arg max of the final model posterior.                                                      i=1
+
+                                                                    5
+                               Dirichlet Flow Matching with Applications to DNA Sequence Design
+
+We can differentiate Equation 14 to obtain a matrix equation                                0.30       Linear FM
+                                                                                                       Dirichlet FM
+                                               t                                            0.25
+              ŝ = Dp̂,    where Dij = δij                  (20)
+                                               xi
+                                                                                            0.20
+
+
+                                                                            KL Divergence
+Here, D is a K × K diagonal matrix dependent on x, t
+and ŝ, p̂ ∈ Rn . (Technically, ŝ contains both on-simplex                                 0.15
+and off-simplex components, the latter of which is ignored.)
+                                                                                            0.10
+Meanwhile, the computation of the marginal flow (Equation
+10) can also be written as a very similar matrix equation                                   0.05
+v̂ = Up̂ where the entries of U are given by Equation 15.
+Combining these, we obtain                                                                  0.00
+                                                                                                   0   20   40     60 80 100 120 140 160
+                          v̂ = UD−1 ŝ                      (21)                                                 Number of Categories K
+
+where D is invertible since it is diagonal with nonnega-                Figure 4. Scaling to higher simplex dimensions. We train on
+tive entries. Thus, a linear relationship exists between the            simple categorical distributions with an increasing number of cate-
+marginal flow and the score arising from the same model                 gories K and measure the KL divergence between the generated
+                                                                        distributions (512k samples) and the training target distribution.
+posterior.
+                                                                        Dirichlet FM scales to larger K much better than linear FM.
+Classifier-free guidance.        Suppose we have class-
+conditional and unconditional flow models v̂(x, t, y; θ) and
+v̂(x, t, ∅; θ). Since a linear combination of scores results
+in a linear combination of flows, we similarly implement                3.5. Distillation
+guidance by integrating
+                                                                        The aim of distillation (Salimans & Ho, 2022; Song et al.,
+  v̂CFG (x, t, y; θ) = γv̂(x, t, y; θ) + (1 − γ)v̂(x, t, ∅; θ).         2023; Yin et al., 2023) is to reduce the inference time of the
+                                                             (22)       iterative generative process by reducing the number of steps
+In practice, we linearly combine the probabilities that cor-            while retaining sample quality. However, for discrete dif-
+respond to the conditional and unconditional vector fields              fusion models (see Section 2.2) or autoregressive language
+through the derived linear relationship. When using γ > 1,              models, no distillation techniques exist, and it is unclear
+this can result in negative values in p̂ and we project the             how to distill generative models based on discrete noise.
+vector back onto the simplex via the algorithm of Wang &                For Dirichlet FM, inference is a deterministic ODE integra-
+Carreira-Perpinán (2013).                                              tion defining a map between the prior and target distribution.
+                                                                        Hence, we can employ standard distillation approaches and
+Classifier guidance. In cases where a conditional flow                  distill the teacher model (using 100 steps in our experiments)
+model is unavailable, we use the gradient of a noisy classifier         into a student model representing the map. For this, we sam-
+to obtain a conditional score from an unconditional score:              ple the teacher to obtain pairs of noise and training targets.
+                                                                        We use these to train the student model to reproduce the
+  ŝ(x, t, y; θ) = ŝ(x, t, ∅; θ) + ∇x log p̂(y | x, t; θ) (23)
+                                                                        teacher distribution in a single step. With this, we are able to
+The conditional scores can then be converted into a model               reduce inference times and provide the first demonstration
+posterior p̂ and then a marginal flow v̂ via Equation 21.               of distillation for flow matching and for iterative generative
+However, a direct application is not possible because the               models of discrete data.
+classifier gradients do not have the appropriate off-simplex
+components to ensure a valid model posterior (i.e., p̂ ∈ SK )           4. Experiments
+when operated on by D−1 . Instead, we modify Equation 21
+via                                                                     4.1. Simplex dimension toy experiment
+                                     
+                               1 T
+                   D̃ = I − 11          D                (24)           We first evaluate Dirichlet FM and linear FM in a simple
+                               K                                        toy experiment where the KL divergence of the generated
+corresponding to projecting the score onto the tangent plane            distribution to the target distribution can be evaluated under
+of the simplex (i.e., 1T ŝ = 0). As now D is no longer                 increasing simplex dimensions. For this, we train both
+invertible, we obtain the conditional model posterior from              methods to reproduce a categorical distribution q(x) =
+the score by solving ŝ = D̃p̂ with the additional constraint           Cat(K, a) where the class probabilities a are sampled from
+1T p̂ = 1. This can result in negative values in p̂ and we              a uniform Dirichlet a ∼ Dir(a; 1). To evaluate, we use
+project to the simplex via the algorithm of Wang & Carreira-            the KL-divergence KL(p̃ ∥ q) where p̃ is the empirical
+Perpinán (2013).                                                       distribution of 512, 000 model samples.
+
+                                                                    6
+                                Dirichlet Flow Matching with Applications to DNA Sequence Design
+
+
+Table 1. Evaluation of transcription profile conditioned pro-             Table 2. Evaluation of unconditional enhancer generation.
+moter DNA sequence design. Conditioned on a transcription                 Each method generates 10k sequences, and we compare their
+profile, each method is tasked to generate a DNA sequence with            empirical distributions with the data distribution using our Fréchet
+that profile. The MSE is between the predicted regulatory activity        Biological distance (FBD) analogous to FID for image genera-
+of the designed sequence and the ground truth sequence. NFE               tive models. NFE refers to number of function evaluations. The
+refers to the number of function evaluations required for sampling.       R ANDOM S EQUENCE baseline shows the FBD for the same num-
+Numbers with * are from Avdeyev et al. (2023).                            ber and length of sequences with uniform randomly chosen nu-
+                                                                          cleotides. D IRICHLET FM DIST. refers to our one-step distilled
+  M ETHOD                                       MSE       NFE             model and D IRICHLET FM CFG to classifier-free guidance to-
+  B IT D IFFUSION ( BIT- ENCODING )*            .0414      100            wards all classes with their empirical frequencies.
+  B IT D IFFUSION ( ONE - HOT ENCODING )*       .0395      100
+  D3PM- UNIFORM *                               .0375     100
+  DDSM*                                         .0334     100                                          M ELANOMA        F LY B RAIN
+  L ANGUAGE M ODEL                              .0333     1024             M ETHOD                        FBD               FBD         NFE
+  L INEAR FM                                    .0281      100             R ANDOM S EQUENCE              622.8             876           –
+  D IRICHLET FM                                 .0269      100             L ANGUAGE M ODEL                36.0             25.2         500
+  D IRICHLET FM DISTILLED                       .0278       1              L INEAR FM                     19.6              15.0         100
+                                                                           D IRICHLET FM                    5.3             15.2         100
+                                                                           D IRICHLET FM DIST.              6.1             15.8          1
+                                                                           D IRICHLET FM CFG                1.9              1.0         200
+Figure 4 shows these KL-divergences for increasing sizes K
+of the categorical distribution. Dirichlet FM is able to over-
+fit on the simple distribution regardless of K. Meanwhile,
+Linear FM is unable to overfit on simple categorical distribu-
+                                                                          DDSM (Avdeyev et al., 2023). Our two other diffusion
+tions as K increases, illustrating the practical implications
+                                                                          baselines are Bit Diffusion (Chen et al., 2023) and D3PM
+of the pathological probability paths and discontinuous vec-
+                                                                          (Austin et al., 2021). All methods use the same DNA model-
+tor fields as discussed in Section 3.2.
+                                                                          ing architecture and training protocol that was designed and
+                                                                          tuned by (Avdeyev et al., 2023) for DDSM. See Appendix
+4.2. Promoter DNA sequence design                                         B.1 for implementation details.
+We next assess the ability of Dirichlet FM to design DNA                  Results. Dirichlet FM improves upon Linear FM, which
+promoter sequences conditioned on a desired promoter pro-                 are the only two methods that outperform the language
+file. The experimental setup and evaluation closely follow                model baseline (Table 1). The second best method in this
+that of DDSM (Avdeyev et al., 2023).                                      comparison is the distilled version of Dirichlet FM, which
+Data. We use a dataset of 100, 000 promoter sequences                     retains almost the same performance. This means that our
+with 1, 024 base pairs extracted from a database of human                 distilled Dirichlet FM outperforms all other methods in
+promoters (Hon et al., 2017). Each sequence has a CAGE                    a single step, which is a 100× speedup compared to the
+signal (Shiraki et al., 2003) annotation available from the               diffusion models and a 1, 024× speedup compared to the
+FANTOM5 promoter atlas (Forrest et al., 2014), which                      language model in terms of number of function evaluations
+indicates the likelihood of transcription initiation at each              (NFE).
+base pair (r ∈ R1024 ). Sequences from chromosomes 8 and
+9 are used as a test set, and the rest for training.                      4.3. Enhancer DNA design
+Task. We train Dirichlet FM conditioned on a profile by                   We now assess the performance of Dirichlet FM on DNA
+providing it as additional input to the vector field. Follow-             enhancer sequences and design evaluations that quantify
+ing Avdeyev et al. (2023), we evaluate generated sequences                both unconditional and conditional sample quality. Imple-
+with the mean squared error (MSE) between their predicted                 mentation and architecture details are in Appendix B.1.
+regulatory activity and that of the original sequence cor-
+                                                                          Data. We evaluate on two enhancer sequence datasets
+responding to the input profile. The regulatory activity is
+                                                                          from fly brain cells (Janssens et al., 2022) and from human
+determined by the promoter-related predictions of S EI (Chen
+                                                                          melanoma cells (Atak et al., 2021). These contain 104k fly
+et al., 2022), a model trained on various regulatory signals.
+                                                                          brain and 89k melanoma sequences of length 500 with cell
+Baselines. We compare Dirichlet FM with linear FM, dis-                   class labels determined from ATAC-seq data (Buenrostro
+crete diffusion methods, and a language model that autore-                et al., 2013). Overall, there are 81 such classes of cells in
+gressively generates the base pairs. The discrete diffusion               the fly brain data and 47 in melanoma data (see Appendix
+baseline most related to our work is the simplex-based                    B.2 for more data details).
+
+                                                                      7
+                                            Dirichlet Flow Matching with Applications to DNA Sequence Design
+                                        100 600                                    100
+700       FBD of Dirichlet FM                          FBD                Prob.                                                                    Fly Brain dataset
+          FBD of Taskiran et al.        80 500               Class 1               80                                               14             Human Melanoma dataset
+
+
+
+
+                                                                                                Frechet Biological distance (FBD)
+600
+500           Class PNG                 60 400                                     60                                               12
+400                                                                                                                                 10
+                                    40 300                                         40
+300
+                                        200                                                                                         8
+200                                 20                                             20
+100                                     100                                                                                         6
+                                    0                                              0
+                                    100                                            100                                              4
+          FBD                 Prob.     120            FBD                Prob.
+800
+                Class 2             80                       Class 3               80                                               2
+                                        100
+600                                 60                                             60
+                                         80                                                                                              0.0 0.5 1.0 1.5 2.0 2.5 3.0 3.5 4.0
+400                                 40                                             40                                                                Guidance factor
+                                        20    60                                   20        Figure 6. Classifier-free guidance for unconditional enhancer
+200                                                                                          generation. We generate unconditional sequences with classifier-
+                                        0     40                                   0         free guidance by sampling the target class based on its empirical
+      0   1     3     6     10     20              0   1     3    6      10   20             frequency. We show the FBD between the generated data and the
+          Guidance factor                              Guidance factor
+                                                                                             full data distribution for varying levels of guidance γ.
+Figure 5. Classifier-free guidance for cell type conditional en-
+hancer design. We generate enhancers that are only active in cell
+class via classifier-free guidance with varying γ. Shown are 4
+classes of the Fly Brain cell data. The left y-axis FBD is computed                          speedups, compared to autoregressive models, make Dirich-
+between the generated sequences and the data distribution condi-                             let FM a promising direction for other applications with
+tioned on the target class. For the first class,“PNG”, functional                            high sequence lengths where inference times are important.
+sequences of Taskiran et al. (2023) are available, and we show their
+FBD. The right y-axis P ROB . refers to the target class probability                         Q2: Can guided Dirichlet FM produce class-specific
+of a classifier for the generated sequences in percent.                                      sequences and improve upon the state-of-the-art? We
+                                                                                             condition Dirichlet FM on different target cell-type classes
+                                                                                             via guidance (Section 3.4). To quantify how well the gener-
+                                                                                             ated sequences match the target class distribution, we use
+Metric. To score the similarity between a data distribution
+                                                                                             the FBD between the generated distribution and the data
+and a generative model’s distribution, we employ a metric
+                                                                                             distribution conditioned on the target class. Additionally,
+similar to the Fréchet inception distance (FID) that is com-
+                                                                                             we train a separate cell-type classifier and evaluate the prob-
+monly used to evaluate image generative models (Heusel
+                                                                                             ability it assigns to the target class for a generated sequence.
+et al., 2017) and was adapted to molecule generative models
+as Fréchet ChemNet distance (FCD) (Preuer et al., 2018).                                    Sequences of classifier-free guided Dirichlet FM for the cell-
+We follow this established principle and call our metric                                     type perineurial glia (PNG) have better FBD (Figure 5) than
+Fréchet Biological distance (FBD). Hence, we train a clas-                                  the sequences of Taskiran et al. (2023), of which several
+sifier model to predict cell types and use its hidden repre-                                 were experimentally validated as functioning enhancers (we
+sentations as embeddings of generated samples and data                                       show this comparison only for the PNG class since their se-
+distribution samples. Then, the FBD is calculated as the                                     quences are available for it). For the other classes, guidance
+Wasserstein distance between Gaussians fit to embeddings                                     is similarly effective; by increasing the guidance factor γ,
+from the two distributions (10k each).                                                       the classifier probability for generated sequences to belong
+                                                                                             to the target class can be improved close to 100%, and the
+Q1: How well can Dirichlet FM capture the sequence
+                                                                                             FBD improves significantly until reaching a minimum (after
+distribution? We compare with an autoregressive language
+                                                                                             the minimum the diversity decreases and the FBD wors-
+model (the best baseline in the promoter design experiments
+                                                                                             ens). The improvements with classifier guidance (Appendix
+in Section 4.2) and with Linear FM. To evaluate, we calcu-
+                                                                                             Figure 9) are still significant but smaller.
+late the FBD between the models’ generated sequences and
+the unconditional data distribution. Dirichlet FM outper-                                    Q3: Can guidance improve unconditional generation?
+forms the language model by a large margin on both datasets                                  We generate unconditional sequences with classifier-free
+and linear FM for human melanoma cell enhancer gener-                                        guided Dirichlet FM by first sampling a class (based on
+ation (Table 2). Moreover, distillation minimally impacts                                    its empirical frequency) and then guiding toward that class.
+FBD while speeding up inference by 3 orders of magni-                                        This significantly improves sample quality compared to un-
+tude compared to the language model and 2 to Dirichlet                                       guided Dirichlet FM (Figure 6) and baselines (Table 2).
+FM (distilled Dirichlet FM only requires 1 step). Such                                       Thus, guided Dirichlet FM via the connection we derive
+
+                                                                                         8
+                             Dirichlet Flow Matching with Applications to DNA Sequence Design
+
+between flow and score reproduces the success in image dif-         of Advanced Scientific Computing Research, Department of
+fusion models of enhancing sample quality via conditioning          Energy Computational Science Graduate Fellowship under
+(Rombach et al., 2022; Saharia et al., 2022). Furthermore,          Award Number DE-SC0022158.
+like guidance for images (Xu et al., 2023), the FBD first
+improves under increased guidance (Figure 6) until reach-           Impact Statement
+ing a minimum, after which increased guidance deteriorates
+sample diversity and, therefore, FBD.                               We present Dirichlet flow matching, an iterative genera-
+                                                                    tive modeling process for discrete data, and employ it for
+5. Conclusion                                                       controllable sequence generation. For this general frame-
+                                                                    work, there are many possible societal impacts, none of
+We presented Dirichlet flow matching for modeling discrete          which need specific highlighting. We apply our method to
+data via a generative process on the simplex. This solves           regulatory DNA design. Current societal impacts of this
+the pathological behavior of linear flow matching on the            application are overwhelmingly positive, with use cases in
+simplex, which we identified. Compared with autoregres-             discovering biological regulatory mechanisms, drug devel-
+sive methods or diffusion with discrete noise, Dirichlet FM         opment, gene therapy, and other therapies.
+enables distillation and conditional generation via guidance,
+which we derived via a connection between the marginal              References
+flow and the scores of a mixture of Dirichlets.
+                                                                    Albergo, M. S. and Vanden-Eijnden, E. Building normaliz-
+Experimental results on important regulatory DNA sequence             ing flows with stochastic interpolants. In The Eleventh
+design tasks across 3 datasets demonstrate Dirichlet FM’s             International Conference on Learning Representations,
+effectiveness and utility for hard generative modeling tasks          2022.
+over long sequences. The results confirm Dirichlet FM’s
+superiority to linear FM and multiple discrete diffusion ap-
+                                                                    Atak, Z. K., Taskiran, I. I., Demeulemeester, J., Flerin, C.,
+proaches. Distilling Dirichlet FM only marginally impacts
+                                                                      Mauduit, D., Minnoye, L., Hulselmans, G., Christiaens,
+performance while enabling one-step generation, leading
+                                                                      V., Ghanem, G.-E., Wouters, J., and Aerts, S. Interpreta-
+to multiple orders of magnitude speedups compared to au-
+                                                                      tion of allele-specific chromatin accessibility using cell
+toregressive generative models for long sequences. Lastly,
+                                                                      state-aware deep learning. Genome Res., 2021.
+we demonstrated effective class conditional generation via
+guided Dirichlet FM to design cell-type specific enhancers
+                                                                    Austin, J., Johnson, D. D., Ho, J., Tarlow, D., and Van
+- an important task for gene therapies. Hence, Dirichlet
+                                                                      Den Berg, R. Structured denoising diffusion models in
+FM is a flexible framework (guidance, distillation) with
+                                                                      discrete state-spaces. Advances in Neural Information
+strong performance for biological sequence generation and
+                                                                     Processing Systems, 2021.
+a promising direction for further discrete data applications.
+                                                                    Avdeyev, P., Shi, C., Tan, Y., Dudnyk, K., and Zhou, J.
+Acknowledgements                                                      Dirichlet diffusion score model for biological sequence
+We thank Andrew Campbell, Yaron Lipman, Felix Faltings,               generation. arXiv preprint arXiv:2305.10699, 2023.
+Jason Yim, Ruochi Zhang, Rachel Wu, Jason Buenrostro,
+Bernardo Almeida, Gokcen Eraslan, Ibrahim I. Taskiran,              Bose, A. J., Akhound-Sadegh, T., Fatras, K., Huguet, G.,
+and Pavel Avdeyev for helpful discussions.                            Rector-Brooks, J., Liu, C.-H., Nica, A. C., Korablyov,
+                                                                      M., Bronstein, M., and Tong, A. Se (3)-stochastic flow
+This work was supported by the NSF Expeditions grant                  matching for protein backbone generation. arXiv preprint
+(award 1918839: Collaborative Research: Understanding                 arXiv:2310.02391, 2023.
+the World Through Code), the Machine Learning for Phar-
+maceutical Discovery and Synthesis (MLPDS) consortium,              Buenrostro, J. D., Giresi, P. G., Zaba, L. C., Chang, H. Y.,
+the Abdul Latif Jameel Clinic for Machine Learning in                 and Greenleaf, W. J. Transposition of native chromatin for
+Health, the DTRA Discovery of Medical Countermeasures                 fast and sensitive epigenomic profiling of open chromatin,
+Against New and Emerging (DOMANE) Threats program,                    dna-binding proteins and nucleosome position. Nature
+the DARPA Accelerated Molecular Discovery program, the                Methods, 2013.
+NSF AI Institute CCF-2112665, the NSF Award 2134795,
+the GIST-MIT Research Collaboration grant, the National             Campbell, A., Benton, J., De Bortoli, V., Rainforth, T., Deli-
+Institute of General Medical Sciences of the National Insti-          giannidis, G., and Doucet, A. A continuous time frame-
+tutes of Health under award number 1R35GM141861-01                    work for discrete denoising models. Advances in Neural
+and the U.S. Department of Energy, Office of Science, Office          Information Processing Systems, 35:28266–28279, 2022.
+
+                                                                9
+                              Dirichlet Flow Matching with Applications to DNA Sequence Design
+
+Chen, K. M., Wong, A. K., Troyanskaya, O. G., and Zhou,                   M. L., Dobin, A., Tanzer, A., Lagarde, J., Lin, W., Xue,
+  J. A sequence-based global map of regulatory activity for               C., Williams, B. A., Zaleski, C., Röder, M., Kokocin-
+  deciphering human genetics. Nature Genetics, 2022.                      ski, F., Abdelhamid, R. F., Alioto, T., Antoshechkin, I.,
+                                                                          Baer, M. T., Batut, P., Bell, I., Bell, K., Chakrabortty, S.,
+Chen, R. T. and Lipman, Y. Riemannian flow matching on                    Chrast, J., Curado, J., Derrien, T., Drenkow, J., Dumais,
+  general geometries. arXiv preprint arXiv:2302.03660,                    E., Dumais, J., Duttagupta, R., Fastuca, M., Fejes-Toth,
+  2023.                                                                   K., Ferreira, P., Foissac, S., Fullwood, M. J., Gao, H.,
+Chen, T., ZHANG, R., and Hinton, G. Analog bits: Gen-                     Gonzalez, D., Gordon, A., Howald, C., Jha, S., John-
+  erating discrete data using diffusion models with self-                 son, R., Kapranov, P., King, B., Kingswood, C., Li, G.,
+  conditioning. In The Eleventh International Conference                  Luo, O. J., Park, E., Preall, J. B., Presaud, K., Ribeca,
+  on Learning Representations, 2023.                                      P., Robyr, D., Ruan, X., Sammeth, M., Sandhu, K. S.,
+                                                                          Schaeffer, L., See, L.-H., Shahab, A., Skancke, J., Suzuki,
+Dao, Q., Phung, H., Nguyen, B., and Tran, A. Flow match-                  A. M., Takahashi, H., Tilgner, H., Trout, D., Walters, N.,
+  ing in latent space. arXiv preprint arXiv:2307.08698,                   Wang, H., Hayashizaki, Y., Reymond, A., Antonarakis,
+  2023.                                                                   S. E., Hannon, G. J., Ruan, Y., Carninci, P., Sloan, C. A.,
+                                                                          Learned, K., Malladi, V. S., Wong, M. C., Barber, G. P.,
+de Almeida, B. P., Schaub, C., Pagani, M., Secchia, S.,
+                                                                          Cline, M. S., Dreszer, T. R., Heitner, S. G., Karolchik, D.,
+  Furlong, E. E. M., and Stark, A. Targeted design of
+                                                                          Kirkup, V. M., Meyer, L. R., Long, J. C., Maddren, M.,
+  synthetic enhancers for selected tissues in the drosophila
+                                                                          Raney, B. J., Grasfeder, L. L., Giresi, P. G., Battenhouse,
+  embryo. Nature, 2023.
+                                                                          A., Sheffield, N. C., Showers, K. A., London, D., Bhinge,
+Dhariwal, P. and Nichol, A. Diffusion models beat gans                    A. A., Shestak, C., Schaner, M. R., Ki Kim, S., Zhang,
+  on image synthesis. Advances in neural information                      Z. Z., Mieczkowski, P. A., Mieczkowska, J. O., Liu, Z.,
+  processing systems, 34:8780–8794, 2021.                                 McDaniell, R. M., Ni, Y., Rashid, N. U., Kim, M. J., Adar,
+                                                                          S., Zhang, Z., Wang, T., Winter, D., Keefe, D., Iyer, V. R.,
+Dieleman, S., Sartran, L., Roshannai, A., Savinov, N.,                    Zheng, M., Wang, P., Gertz, J., Vielmetter, J., Partridge,
+  Ganin, Y., Richemond, P. H., Doucet, A., Strudel, R.,                   E., Varley, K. E., and Gasper, C. An integrated ency-
+  Dyer, C., Durkan, C., et al. Continuous diffusion for                   clopedia of dna elements in the human genome. Nature,
+  categorical data. arXiv preprint arXiv:2211.15089, 2022.                2012.
+Dunham, I., Kundaje, A., Aldred, S. F., Collins, P. J., Davis,          Floto, G., Jonsson, T., Nica, M., Sanner, S., and Zhu, E. Z.
+  C. A., Doyle, F., Epstein, C. B., Frietze, S., Harrow, J.,              Diffusion on the probability simplex. arXiv preprint
+  Kaul, R., Khatun, J., Lajoie, B. R., Landt, S. G., Lee,                 arXiv:2309.02530, 2023.
+  B.-K., Pauli, F., Rosenbloom, K. R., Sabo, P., Safi, A.,
+  Sanyal, A., Shoresh, N., Simon, J. M., Song, L., Trin-                Forrest, A. R. R., Kawaji, H., Rehli, M., Kenneth Bail-
+  klein, N. D., Altshuler, R. C., Birney, E., Brown, J. B.,               lie, J., de Hoon, M. J. L., Haberle, V., Lassmann, T.,
+  Cheng, C., Djebali, S., Dong, X., Ernst, J., Furey, T. S.,              Kulakovskiy, I. V., Lizio, M., Itoh, M., Andersson, R.,
+  Gerstein, M., Giardine, B., Greven, M., Hardison, R. C.,                Mungall, C. J., Meehan, T. F., Schmeier, S., Bertin, N.,
+  Harris, R. S., Herrero, J., Hoffman, M. M., Iyer, S., Kellis,           Jørgensen, M., Dimont, E., Arner, E., Schmidl, C., Schae-
+  M., Kheradpour, P., Lassmann, T., Li, Q., Lin, X., Mari-                fer, U., Medvedeva, Y. A., Plessy, C., Vitezic, M., Severin,
+  nov, G. K., Merkel, A., Mortazavi, A., Parker, S. C. J.,                J., Semple, C. A., Ishizu, Y., Young, R. S., Francescatto,
+  Reddy, T. E., Rozowsky, J., Schlesinger, F., Thurman,                   M., Alam, I., Albanese, D., Altschuler, G. M., Arakawa,
+  R. E., Wang, J., Ward, L. D., Whitfield, T. W., Wilder,                 T., Archer, J. A. C., Arner, P., Babina, M., Rennie, S., Bal-
+  S. P., Wu, W., Xi, H. S., Yip, K. Y., Zhuang, J., Bernstein,            wierz, P. J., Beckhouse, A. G., Pradhan-Bhatt, S., Blake,
+  B. E., Green, E. D., Gunter, C., Snyder, M., Pazin, M. J.,              J. A., Blumenthal, A., Bodega, B., Bonetti, A., Briggs,
+  Lowdon, R. F., Dillon, L. A. L., Adams, L. B., Kelly,                   J., Brombacher, F., Maxwell Burroughs, A., Califano,
+  C. J., Zhang, J., Wexler, J. R., Good, P. J., Feingold, E. A.,          A., Cannistraci, C. V., Carbajo, D., Chen, Y., Chierici,
+  Crawford, G. E., Dekker, J., Elnitski, L., Farnham, P. J.,              M., Ciani, Y., Clevers, H. C., Dalla, E., Davis, C. A.,
+  Giddings, M. C., Gingeras, T. R., Guigó, R., Hubbard,                  Detmar, M., Diehl, A. D., Dohi, T., Drabløs, F., Edge,
+  T. J., Kent, W. J., Lieb, J. D., Margulies, E. H., Myers,               A. S. B., Edinger, M., Ekwall, K., Endoh, M., Enomoto,
+  R. M., Stamatoyannopoulos, J. A., Tenenbaum, S. A.,                     H., Fagiolini, M., Fairbairn, L., Fang, H., Farach-Carson,
+ Weng, Z., White, K. P., Wold, B., Yu, Y., Wrobel, J.,                    M. C., Faulkner, G. J., Favorov, A. V., Fisher, M. E., Frith,
+  Risk, B. A., Gunawardena, H. P., Kuiper, H. C., Maier,                  M. C., Fujita, R., Fukuda, S., Furlanello, C., Furuno, M.,
+  C. W., Xie, L., Chen, X., Mikkelsen, T. S., Gillespie, S.,              Furusawa, J.-i., Geijtenbeek, T. B., Gibson, A. P., Gin-
+  Goren, A., Ram, O., Zhang, X., Wang, L., Issner, R.,                    geras, T., Goldowitz, D., Gough, J., Guhl, S., Guler, R.,
+  Coyne, M. J., Durham, T., Ku, M., Truong, T., Eaton,                    Gustincich, S., Ha, T. J., Hamaguchi, M., Hara, M., Har-
+
+                                                                   10
+                             Dirichlet Flow Matching with Applications to DNA Sequence Design
+
+  bers, M., Harshbarger, J., Hasegawa, A., Hasegawa, Y.,                 the functional basis of transcription initiation. Nat. Rev.
+  Hashimoto, T., Herlyn, M., Hitchens, K. J., Ho Sui, S. J.,             Mol. Cell Biol., 2018.
+  Hofmann, O. M., Hoof, I., Hori, F., Huminiecki, L., Iida,
+  K., Ikawa, T., Jankovic, B. R., Jia, H., Joshi, A., Jur-             Han, X., Kumar, S., and Tsvetkov, Y. Ssd-lm: Semi-
+  man, G., Kaczkowski, B., Kai, C., Kaida, K., Kaiho,                    autoregressive simplex-based diffusion language model
+  A., Kajiyama, K., Kanamori-Katayama, M., Kasianov,                     for text generation and modular control. arXiv preprint
+  A. S., Kasukawa, T., Katayama, S., Kato, S., Kawaguchi,                arXiv:2210.17432, 2022.
+  S., Kawamoto, H., Kawamura, Y. I., Kawashima, T.,                    Heusel, M., Ramsauer, H., Unterthiner, T., Nessler, B., and
+  Kempfle, J. S., Kenna, T. J., Kere, J., Khachigian, L. M.,             Hochreiter, S. Gans trained by a two time-scale update
+  Kitamura, T., Peter Klinken, S., Knox, A. J., Kojima,                  rule converge to a local nash equilibrium. Advances in
+  M., Kojima, S., Kondo, N., Koseki, H., Koyasu, S.,                     Neural Information Processing Systems, 2017.
+  Krampitz, S., Kubosaki, A., Kwon, A. T., Laros, J. F. J.,
+  Lee, W., Lennartsson, A., Li, K., Lilje, B., Lipovich, L.,           Ho, J. and Salimans, T. Classifier-free diffusion guidance.
+  Mackay-sim, A., Manabe, R.-i., Mar, J. C., Marchand,                   arXiv preprint arXiv:2207.12598, 2022.
+  B., Mathelier, A., Mejhert, N., Meynert, A., Mizuno,
+                                                                       Hon, C.-C., Ramilowski, J. A., Harshbarger, J., Bertin, N.,
+  Y., de Lima Morais, D. A., Morikawa, H., Morimoto,
+                                                                         Rackham, O. J. L., Gough, J., Denisenko, E., Schmeier,
+  M., Moro, K., Motakis, E., Motohashi, H., Mummery,
+                                                                         S., Poulsen, T. M., Severin, J., Lizio, M., Kawaji, H.,
+  C. L., Murata, M., Nagao-Sato, S., Nakachi, Y., Naka-
+                                                                         Kasukawa, T., Itoh, M., Burroughs, A. M., Noma, S.,
+  hara, F., Nakamura, T., Nakamura, Y., Nakazato, K., van
+                                                                         Djebali, S., Alam, T., Medvedeva, Y. A., Testa, A. C.,
+  Nimwegen, E., Ninomiya, N., Nishiyori, H., Noma, S.,
+                                                                         Lipovich, L., Yip, C.-W., Abugessaisa, I., Mendez, M.,
+  Nozaki, T., Ogishima, S., Ohkura, N., Ohmiya, H., Ohno,
+                                                                         Hasegawa, A., Tang, D., Lassmann, T., Heutink, P.,
+  H., Ohshima, M., Okada-Hatakeyama, M., Okazaki, Y.,
+                                                                         Babina, M., Wells, C. A., Kojima, S., Nakamura, Y.,
+  Orlando, V., Ovchinnikov, D. A., Pain, A., Passier, R., Pa-
+                                                                         Suzuki, H., Daub, C. O., de Hoon, M. J. L., Arner, E.,
+  trikakis, M., Persson, H., Piazza, S., Prendergast, J. G. D.,
+                                                                         Hayashizaki, Y., Carninci, P., and Forrest, A. R. R. An
+  Rackham, O. J. L., Ramilowski, J. A., Rashid, M., Ravasi,
+                                                                         atlas of human long non-coding rnas with accurate 5 ends.
+  T., Rizzu, P., Roncador, M., Roy, S., Rye, M. B., Sai-
+                                                                        Nature, 2017.
+  jyo, E., Sajantila, A., Saka, A., Sakaguchi, S., Sakai, M.,
+  Sato, H., Satoh, H., Savvi, S., Saxena, A., Schneider, C.,           Hoogeboom, E., Gritsenko, A. A., Bastings, J., Poole, B.,
+  Schultes, E. A., Schulze-Tanzil, G. G., Schwegmann, A.,                Berg, R. v. d., and Salimans, T. Autoregressive diffusion
+  Sengstag, T., Sheng, G., Shimoji, H., Shimoni, Y., Shin,               models. arXiv preprint arXiv:2110.02037, 2021.
+  J. W., Simon, C., Sugiyama, D., Sugiyama, T., Suzuki, M.,
+  Suzuki, N., Swoboda, R. K., ’t Hoen, P. A. C., Tagami,               Igashov, I., Schneuing, A., Segler, M., Bronstein, M., and
+  M., Takahashi, N., Takai, J., Tanaka, H., Tatsukawa, H.,               Correia, B. Retrobridge: Modeling retrosynthesis with
+  Tatum, Z., Thompson, M., Toyoda, H., Toyoda, T., Valen,                markov bridges. In The Twelfth International Conference
+  E., van de Wetering, M., van den Berg, L. M., Verardo, R.,             on Learning Representations, 2024.
+  Vijayan, D., Vorontsov, I. E., Wasserman, W. W., Watan-
+                                                                       Janssens, J., Aibar, S., Taskiran, I. I., Ismail, J. N., Gomez,
+  abe, S., Wells, C. A., Winteringham, L. N., Wolvetang,
+                                                                         A. E., Aughey, G., Spanier, K. I., De Rop, F. V., González-
+  E., Wood, E. J., Yamaguchi, Y., Yamamoto, M., Yoneda,
+                                                                         Blas, C. B., Dionne, M., Grimes, K., Quan, X. J., Pa-
+  M., Yonekura, Y., Yoshida, S., Zabierowski, S. E., Zhang,
+                                                                         pasokrati, D., Hulselmans, G., Makhzami, S., De Wae-
+  P. G., Zhao, X., Zucchelli, S., Summers, K. M., Suzuki,
+                                                                         geneer, M., Christiaens, V., Southall, T., and Aerts, S.
+  H., Daub, C. O., Kawai, J., Heutink, P., Hide, W., Free-
+                                                                         Decoding gene regulation in the fly brain. Nature, 2022.
+  man, T. C., Lenhard, B., Bajic, V. B., Taylor, M. S.,
+  Makeev, V. J., Sandelin, A., Hume, D. A., Carninci, P.,              Li, Z., Ni, Y., Huygelen, T., Das, A., Xia, G., Stan, G.-B.,
+  Hayashizaki, Y., Consortium, T. F., the RIKEN PMI, and                 and Zhao, Y. Latent diffusion model for DNA sequence
+  (DGT), C. A promoter-level mammalian expression atlas.                 generation. In NeurIPS 2023 AI for Science Workshop,
+  Nature, 2014.                                                          2023.
+Frey, N. C., Berenberg, D., Zadorozhny, K., Kleinhenz, J.,             Lipman, Y., Chen, R. T., Ben-Hamu, H., Nickel, M., and
+  Lafrance-Vanasse, J., Hotzel, I., Wu, Y., Ra, S., Bonneau,             Le, M. Flow matching for generative modeling. In The
+  R., Cho, K., Loukas, A., Gligorijevic, V., and Saremi,                 Eleventh International Conference on Learning Repre-
+  S. Protein discovery with discrete walk-jump sampling.                 sentations, 2022.
+  In The Twelfth International Conference on Learning
+  Representations, 2024.                                               Liu, X., Gong, C., and Liu, Q. Flow straight and fast:
+                                                                         Learning to generate and transfer data with rectified flow.
+Haberle, V. and Stark, A. Eukaryotic core promoters and                  arXiv preprint arXiv:2209.03003, 2022.
+
+                                                                  11
+                              Dirichlet Flow Matching with Applications to DNA Sequence Design
+
+Luo, Y., Hitz, B. C., Gabdank, I., Hilton, J. A., Kagda, M. S.,        Song, Y. and Ermon, S. Generative modeling by estimating
+  Lam, B., Myers, Z., Sud, P., Jou, J., Lin, K., Baymuradov,             gradients of the data distribution. Advances in neural
+  U. K., Graham, K., Litton, C., Miyasato, S. R., Strattan,              information processing systems, 32, 2019.
+  J. S., Jolanki, O., Lee, J.-W., Tanaka, F. Y., Adenekan, P.,
+  O’Neill, E., and Cherry, J. M. New developments on the               Song, Y., Sohl-Dickstein, J., Kingma, D. P., Kumar, A., Er-
+  encyclopedia of dna elements encode data portal. Nucleic               mon, S., and Poole, B. Score-based generative modeling
+  Acids Res., 2020.                                                      through stochastic differential equations. In International
+                                                                         Conference on Learning Representations, 2021.
+Panigrahi, A. and O’Malley, B. W. Mechanisms of enhancer
+                                                                       Song, Y., Dhariwal, P., Chen, M., and Sutskever, I. Consis-
+  action: the known and the unknown. Genome Biology,
+                                                                         tency models. Proceedings of the 40th International Con-
+  2021.
+                                                                         ference on Machine Learning, pp. 32211–32252, 2023.
+Penzar, D., Nogina, D., Noskova, E., Zinkevich, A., Meshch-            Taskiran, I. I., Spanier, K. I., Dickmänken, H., Kempynck,
+  eryakov, G., Lando, A., Rafi, A. M., de Boer, C., and                  N., Pančı́ková, A., Ekşi, E. C., Hulselmans, G., Is-
+  Kulakovskiy, I. V. LegNet: a best-in-class deep learning               mail, J. N., Theunis, K., Vandepoel, R., Christiaens, V.,
+  model for short DNA regulatory regions. Bioinformatics,                Mauduit, D., and Aerts, S. Cell-type-directed design of
+  39, 2023.                                                              synthetic enhancers. Nature, 2023.
+Pooladian, A.-A., Ben-Hamu, H., Domingo-Enrich, C.,                    Tong, A., Malkin, N., Huguet, G., Zhang, Y., Rector-Brooks,
+  Amos, B., Lipman, Y., and Chen, R. Multisample flow                    J., Fatras, K., Wolf, G., and Bengio, Y. Improving and
+  matching: Straightening flows with minibatch couplings.                generalizing flow-based generative models with mini-
+  arXiv preprint arXiv:2304.14772, 2023.                                 batch optimal transport. In ICML Workshop on New
+                                                                         Frontiers in Learning, Control, and Dynamical Systems,
+Preuer, K., Renz, P., Unterthiner, T., Hochreiter, S., and               2023.
+  Klambauer, G. Fréchet chemnet distance: A metric for
+  generative models for molecules in drug discovery. Jour-             Vignac, C., Krawczuk, I., Siraudin, A., Wang, B., Cevher,
+  nal of Chemical Information and Modeling, 2018.                        V., and Frossard, P. Digress: Discrete denoising diffu-
+                                                                         sion for graph generation. In The Eleventh International
+Richemond, P. H., Dieleman, S., and Doucet, A. Cat-                      Conference on Learning Representations, 2023.
+  egorical sdes with simplex diffusion. arXiv preprint
+  arXiv:2210.14784, 2022.                                              Wang, W. and Carreira-Perpinán, M. A. Projection onto
+                                                                        the probability simplex: An efficient algorithm with
+Rombach, R., Blattmann, A., Lorenz, D., Esser, P., and                  a simple proof, and an application. arXiv preprint
+  Ommer, B. High-resolution image synthesis with latent                 arXiv:1309.1541, 2013.
+  diffusion models. In Proceedings of the IEEE/CVF Con-
+  ference on Computer Vision and Pattern Recognition,                  Whalen, R. G. Promoters, Enhancers, and Inducible Ele-
+  2022.                                                                 ments for Gene Therapy, pp. 60–79. Birkhäuser Boston,
+                                                                        1994.
+Saharia, C., Chan, W., Saxena, S., Li, L., Whang, J., Den-
+  ton, E., Ghasemipour, S. K. S., Gontijo-Lopes, R., Ayan,             Xu, Y., Deng, M., Cheng, X., Tian, Y., Liu, Z., and Jaakkola,
+  B. K., Salimans, T., Ho, J., Fleet, D. J., and Norouzi,                T. S. Restart sampling for improving generative processes.
+  M. Photorealistic text-to-image diffusion models with                  In Thirty-seventh Conference on Neural Information Pro-
+  deep language understanding. In Advances in Neural                     cessing Systems, 2023.
+  Information Processing Systems, 2022.                                Yin, T., Gharbi, M., Zhang, R., Shechtman, E., Durand, F.,
+                                                                         Freeman, W. T., and Park, T. One-step diffusion with
+Salimans, T. and Ho, J. Progressive distillation for fast sam-
+                                                                         distribution matching distillation. arxiv, 2023.
+  pling of diffusion models. In International Conference
+  on Learning Representations, 2022.                                   Zheng, Q., Le, M., Shaul, N., Lipman, Y., Grover, A., and
+                                                                         Chen, R. T. Guided flows for generative modeling and
+Shiraki, T., Kondo, S., Katayama, S., Waki, K., Kasukawa,                decision making. arXiv preprint arXiv:2311.13443, 2023.
+  T., Kawaji, H., Kodzius, R., Watahiki, A., Nakamura,
+  M., Arakawa, T., Fukuda, S., Sasaki, D., Podhajska, A.,
+  Harbers, M., Kawai, J., Carninci, P., and Hayashizaki,
+  Y. Cap analysis gene expression for high-throughput
+  analysis of transcriptional starting point and identification
+  of promoter usage. Proc. Natl. Acad. Sci. U. S. A., 2003.
+
+                                                                  12
+                             Dirichlet Flow Matching with Applications to DNA Sequence Design
+
+A. Method Details
+Flow Matching with Cross-Entropy Loss For all t and x ∈ SK , at convergence our denoising classifier satisfies
+
+                                                                   pt (x | x1 )pdata (x1 )
+                                                  p̂(x1 | x) =                                                             (25)
+                                                                           pt (x)
+Thus, if we parameterize the vector field via Equation 10, then we are assured that
+                                            K
+                                            X                          pt (x | x1 )pdata (x1 )
+                            v̂(x, t; θ) =         ut (x | x1 = ei )                               = v(x, t; θ)             (26)
+                                            i=1
+                                                                               pt (x)
+
+Proof of Proposition 1
+Proposition 1. Suppose that a flow matching model is trained with the linear flow map (Equation 11). Then, for all
+k = 2, . . . K and x ∼ pt (x), the converged model posterior p(x1 | x) ∝ pt (x | x1 )pdata (x1 ) has support over at most
+k − 1 vertices for times t > 1/k.
+
+Proof. In linear flow matching, the explicit form of the conditional probability path is given by
+                                                       (
+                                                         [(1 − t)K−1 Γ(K)]−1 xi ≥ t
+                                   pt (x | x1 = ei ) =                                                                     (27)
+                                                         0                        xi < t
+
+Suppose for sake of contradiction that t > 1/k but pt (x | x1 )pdata (x1 ) ̸= 0 for k ′ ≥ k values of x1 . Without loss of
+generality, suppose that e1 , . . . ek are k of those values. Then, by Equation 27, we have xi ≥ t for i = 1, . . . k. Then
+                                                     K             k
+                                                     X             X                     1
+                                            1T x =          xi ≥         xi ≥ kt > k ·     =1                              (28)
+                                                      i=1          i=1
+                                                                                         k
+
+This contradicts the fact that x must lie on the simplex.
+
+A.1. Dirichlet Conditional Vector Field
+As preliminaries, we recall the definition of the multivariate beta function:
+                                                                       QK
+                                                                            Γ(αi )
+                                                   B(α1 , . . . αK ) = i=1
+                                                                        PK                                                (29)
+                                                                      Γ       α
+                                                                           i=1 i
+
+and that of the incomplete (two-argument) beta function:
+                                                       Z x
+                                          B(x; a, b) =     ta−1 (1 − t)b−1 dt                                              (30)
+                                                                   0
+
+with the identity B(a, b) = B(1; a, b).
+We wish to construct a conditional flow ut (x | x1 = ei ) which generates the evolution of the conditional probability path
+
+                                                                                                 Γ(t + K) t
+                             pt (x | x1 = ei ) = Dir(x; 1, . . . αi = 1 + t, . . . 1) =                  x                 (31)
+                                                                                                 Γ(t + 1) i
+We choose the following ansatz for the functional form of ut :
+
+                                              ut (x | x1 = ei ) = C(xi , t)(ei − x)                                        (32)
+
+i.e., (1) the flow points towards the target vertex ei and (2) the magnitude is scaled by a constant dependent only on xi and t.
+Then consider the (K − 2)-dimensional hyperplane Ab of constant xi = b which cuts through the simplex, separating it into
+two regions S1 , S2 (Figure 7). We make the following key observation:
+
+                                                                       13
+                              Dirichlet Flow Matching with Applications to DNA Sequence Design
+
+                                                                           ei
+
+
+
+
+                                                                       S2 : xi > b
+
+                                         Ab : x i = b
+
+                                                                       S1 : xi < b
+
+
+                                   Figure 7. Conceptual derivation of the conditional vector field
+
+
+     The probability flux crossing the plane Ab is equal to the the rate of change of the total probability of region S1 .
+
+Thus, we solve for the constant C(xi , t) in the ansatz by deriving these two quantities and setting them equal to each other.
+Q1: What is the probability mass of S1 and its rate of change?
+The probability mass of S1 can be obtained by integrating the density over each hyperplane Ac (defined by xi = c) for c < b
+and then integrating over all such hyperplanes. Since the density is a constant proportional to xti = ct over each hyperplane,
+we obtain                                                 Z        b
+                                                  pt (S1 ) ∝           ct · Vol(Ac ) dc                                      (33)
+                                                               0
+
+where Vol(Ac ) refers to the volume of the intersection between the hyperplane and the simplex. Since this region is defined
+by xi = c, the remaining entries of x must add up to 1 − c. Thus, Ac can be viewed as a nonstandard probability simplex
+over K − 1 variables. The volume of this (K − 2)-dimensional space is proportional to (1 − c)K−2 , giving
+                                             Z b
+                                   ρ(S1 ) ∝      ct (1 − c)K−2 dc = B(b; t + 1, K − 1)                                  (34)
+                                                 0
+
+Normalizing, we obtain
+                                    Rb t
+                                        c (1 − c)K−2 dc    B(b; t + 1, K − 1)
+                         pt (S1 ) = R01                  =                    = Ib (t + 1, K − 1)                            (35)
+                                         t
+                                        c (1 − c) K−2 dc    B(t + 1, K − 1)
+                                     0
+
+where I is the so-called regularized incomplete beta function and is well-known as the CDF of the Beta distribution. Its
+derivative with respect to the first parameter is not available in closed form, but we write it as
+                                                         ∂              ∂ B(x; a, b)
+                                            I˜x (a, b) =    Ix (a, b) =                                                      (36)
+                                                         ∂a             ∂a B(a, b)
+
+and thus obtain the rate of change of pt (S1 ) as I˜b (t + 1, K − 1).
+Q2: What is the probability flux across the hyperplane Ab ? The probability flux across Ab (into S2 ) is given by
+                                 ZZ                    ZZ
+                                                                                    n
+                            J=         ut pt · n̂ dA =      pt · C(b, t)(ei − x) ·     dA                                    (37)
+                                    Ab                   Ab                        ∥n∥
+
+The normal vector n points from the center of the face opposite ei , specified by xi = 0 and xj = 1/(K − 1), j ̸= i, towards
+ei . Thus, the probability flux density is given by the dot product of
+
+                                       ei − x = (−x1 , . . . xi = 1 − b, . . . − xK )
+                                                                                                                             (38)
+                                                                                          
+                                                       1                                1
+                                            n= −              , . . . xi = 1, . . . −
+                                                   K −1                               K −1
+
+                                                                   14
+                              Dirichlet Flow Matching with Applications to DNA Sequence Design
+       P                                                                                          p
+Since j̸=i xj = 1 − b, this dot product is equal to (1 − b)K/(K − 1). We also see that ∥n∥ = K/(K − 1). Importantly,
+the flux density is constant on the hyperplane A, so the total flux is given by a simple product:
+                                                     r
+                                                         K
+                          J = C(b, t) · pt · (1 − b)         Vol(Ab )                                                 (39)
+                                                       K −1
+                                                                r         √
+                                            1 Γ(t + K) t                K     K −1
+                            = C(b, t) ·   √              b (1 − b)                   (1 − b)K−2                       (40)
+                                             K  Γ(t + 1)              K − 1 Γ(K − 1)
+                                          (1 − b)K−1 bt
+                            = C(b, t) ·                                                                               (41)
+                                        B(t + 1, K − 1)
+                                                                                                               √
+                                                   of a simplex over K variables viewed as a subset of RK is
+where (for this step only) we note that the volume √                                                               K/Γ(K),
+giving the Dirichlet PDF an additional factor of 1/ K. Now setting J = −∂t pt (S1 ) from above, we obtain
+
+                                                                     B(t + 1, K − 1)
+                                       C(b, t) = −I˜b (t + 1, K − 1)                                                  (42)
+                                                                      (1 − b)K−1 bt
+
+
+Checking the transport equation. We check that ∇ · (pt ut ) = −∂pt /∂t:
+                                                                                     
+                      Γ(t + K) t ˜                         B(t + 1, K − 1)
+    ∇ · (pt ut ) = −∇ ·           xi · Ixi (t + 1, K − 1)                   (ei −  x)                                 (43)
+                      Γ(t + 1)                             (1 − xi )K−1 xti
+                                "                              #
+                                  I˜xi (t + 1, K − 1)
+               = −Γ(K − 1)∇ ·                         (ei − x)                                                        (44)
+                                     (1 − xi )K−1
+                           "                                                                        #
+                             I˜xi (t + 1, K − 1)                                I˜xi (t + 1, K − 1)
+               = −Γ(K − 1)                         ∇ · (ei − x) + (ei − x) · ∇                                        (45)
+                                 (1 − xi )K−1                                      (1 − xi )K−1
+
+The divergence of x on the (K − 1)-dimensional space SK is K − 1. Also, the gradient of a function dependently only on
+xi has nonzero component only in the xi direction.
+                                "                                                           #
+                             I˜xi (t + 1, K − 1)                      ∂ I˜xi (t + 1, K − 1)
+               = −Γ(K − 1)                       (1 − K) + (1 − xi )                                                  (46)
+                                (1 − xi )K−1                         ∂xi (1 − xi )K−1
+                           "                                                                                !#
+                             I˜xi (t + 1, K − 1)                       ˜     K −1             1      ∂ I˜xi
+               = −Γ(K − 1)                       (1 − K) + (1 − xi ) Ixi              +                               (47)
+                                (1 − xi )K−1                              (1 − xi )K    (1 − xi )K−1 ∂xi
+
+The first and second terms now cancel.
+                                                                      
+                                1        ∂ ˜
+               = −Γ(K − 1)                 Ix (t + 1, K − 1)                                                          (48)
+                           (1 − xi )K−2 ∂xi i
+
+Substituting Equation 36 and interchanging the order of derivatives,
+                                                                                     
+                                    1       ∂        1         ∂
+               = −Γ(K − 1)                                        B(xi ; t + 1, K − 1)                                (49)
+                              (1 − xi )K−2 ∂t B(t + 1, K − 1) ∂xi
+                       1         ∂    Γ(K − 1)
+               =−                                 xt (1 − xi )K−2                                                     (50)
+                  (1 − xi ) K−2 ∂t B(t + 1, K − 1) i
+                  ∂ Γ(t + K) t           ∂pt
+               =−               xi = −                                                                                (51)
+                  ∂t Γ(t + 1)             ∂t
+
+                                                            15
+                              Dirichlet Flow Matching with Applications to DNA Sequence Design
+
+B. Experimental details
+B.1. Training and Inference
+
+Algorithm 1 T RAINING .
+  Input: N training sequences of one-hot vectors {x(n) } for n ∈ {1 . . . N }, neural network ϕ that takes a sequence as
+  input and predicts probabilities for each sequence position.
+  for all x(n) do
+    Sample t ∼ Exp(1)
+    for all sequence position l ← 0 to L − 1 do
+                       (n)         (n)        (n)             (n)      (n)           (n)               (n)
+       Sample noisy x̃l ∼ pt (x̃l | x = xl ) where pt (x̃l | x = xl ) = Dir(x̃l ; α = 1 + t · xl )
+    end for
+    Predict p̂ ← ϕ(x̃(n) , t)
+                            PL                        (n)
+    Optimize loss L = L1 l=0 CrossEntropy(p̂l , xl )
+  end for
+
+
+Algorithm 2 I NFERENCE .
+  Input: Trained neural network ϕ. Number of integration steps N . Sequence length L. Maximum integration time tmax .
+  Sample x0 to be a sequence of L probability vectors with each probability vector x0,l sampled as x0,l ∼ Dir(x; 1)
+  Set xt ← x0
+  for n ← 0 to N − 1 do
+    Let t ← tmax · n/N
+    Predict p̂ ← ϕ(xt , t)
+    for sequence position l ← 0 to L − 1 do
+       With xt,l,k being the k-th entry of the probability vector xt,l :
+       for simplex dimension k ← 0 to K − 1 do
+                                                                                               B(t+1,K−1)
+         Calculate conditional vector field ut (xt,l | x1 = ek ) = −I˜xt,l,k (t + 1, K − 1) (1−x t,l,k )
+                                                                                                        K−1 x
+                                                                                                             t,l,k
+                                                                                                                   (ek − xt,l )
+       end for                                       PK
+       Calculate marginal vector field ut , (xt,l ) = k=0 p̂l,k ut (xt,l | x1 = ek )
+       Take step xt,l ← xt,l + tmax
+                                 N · ut (xt,l )
+    end for
+  end for
+  return xt
+
+
+We provide algorithms for training and inference in Algorithm 1, and Algorithm 2. These describe the procedures for
+generating discrete data on a single simplex. When generating a discrete data sequence, they are extended easily by
+performing the same procedure for a sequence of simplices. Code is at https://github.com/HannesStark/
+dirichlet-flow-matching.
+Toy experiments. We train all models in Figure 4 for 450,000 steps with a batch size of 512 to ensure that they have all
+converged and then evaluate the KL of the final step.
+Promoter Design. We follow the setup of Avdeyev et al. (2023) and train for 200 epochs with a learning rate of 5 × 10−4
+and early stopping on the MSE on the validation set. We communicated with Avdeyev et al. (2023) to ensure that we have
+the same training and inference setup as them, and we build on their codebase to evaluate the generated sequences with the
+Sei regulatory activity prediction model (Chen et al., 2022). Thus, we use 100 inference steps for our Dirichlet FM instead
+of the 400 that they use in their code since they state that they used 100 integration steps for the results in the paper, which is
+also stated in the paper. Under this setup, we obtain the performance numbers for Linear FM and Dirichlet FM. We also ran
+the autoregressive language model in this setup (except for the number of inference steps which does not apply). Meanwhile,
+the numbers we report for Bit Diffusion, D3PM, and DDSM are taken from the DDSM paper (Avdeyev et al., 2023).
+Enhancer Design. For both evaluations, on the human melanoma cell and the fly brain cell dataset, we train for 800 epochs
+(convergence of validation curves is reached after approximately 300 for both datasets). We use FBD for early stopping. For
+
+                                                               16
+                                                Dirichlet Flow Matching with Applications to DNA Sequence Design
+                                                  47 MEL Classes                                                              81 Fly Brain Classes
+
+                                                                                                         3000
+                          2000
+                                                                                                         2500
+
+
+
+
+    sequences per class                                                            sequences per class
+                          1500
+                                                                                                         2000
+
+                          1000                                                                           1500
+
+                                                                                                         1000
+                          500
+                                                                                                         500
+
+                            0                                                                              0
+                                 0        10        20           30       40                                    0   10   20     30    40     50      60   70   80
+                                                         class                                                                       class
+
+                            Figure 8. Histograms of cell type classes for fly brain cell enhancer sequence data and human melanoma cell data.
+
+
+
+
+inference, we use 100 integration steps.
+Classifier-free Guidance. For classifier-free guidance, we train with a conditioning ratio (the fraction of times we train with
+a class label as input instead of the no-class token as input) of 0.7. During inference, the inference Algorithm 2 is changed
+in that two probability vectors p̂ are predicted, once with class conditioning and once without class conditioning, which we
+sum together according to Equation 22. Then, we project the resulting probabilities onto the simplex since negative values
+can arise for guidance factors γ > 1. For this purpose, we use the algorithm by Wang & Carreira-Perpinán (2013).
+Classifier Guidance. The noisy classifier that we train for classifier guidance has the same architecture as our generative
+model, except that we sum the final representations and feed them into a 2-layer feed-forward network that serves as
+classification head. For training, we use early stopping on the accuracy and train for approximately 800 epochs. During
+inference, we use automatic differentiation to obtain the classifier’s gradients with respect to the input points on the simplices.
+To perform classifier guidance, we then convert the flow model output probabilities to scores as described in Section 3.4,
+obtain the guided score by adding the unconditional and the conditional scores via Equation 23, and convert the obtained
+scores back to probabilities. These we project to the simplex (Wang & Carreira-Perpinán, 2013) from which we obtain the
+vector field for integration.
+Classifier for FBD calculation. This classifier’s architecture is similar to that of the noisy classifier for classifier guidance.
+However, it does not have any time conditioning and takes token embeddings as input instead of points on the simplex. For
+training, we use early stopping on the accuracy and train approximately 100 epochs.
+The sequence embeddings that we use to calculate FBD are given by the hidden features after the first layer of the
+classification head. The 4 classes that we choose for the cell type specific enhancer generation are chosen as classes with a
+good tradeoff between the area under the receiver operator characteristic curve and the area under the precision-recall curve,
+and er chose the class PNG for which Taskiran et al. (2023) had data available.
+Distillation. For distillation, we run inference with the teacher model for every training step of the student model to obtain
+pairs of noise and training targets. With this, we train the student model on approximately 6 billion sequences.
+Computational requirements. We train on RTX A600 GPUs. Training in the enhancer generation setup for 200 epochs on
+sequences with length 500 takes 7 hours. Our largest model uses approximately 8GB of RAM during training.
+Architecture The architecture that we use for the promoter design experiments is the same as in DDSM (Avdeyev et al.,
+2023). In our other experiments we replaced group norm with layer norm in their architecture. The model consists of
+20 layers of 1D convolutions interleaved with time embedding layers (and class-type embedding layers for classifier-free
+guidance) and normalization layers. We also experimented with Transformer architectures, which led to worse performance.
+All models use this 20-layer architecture except for the classifier for the Fly Brain data, which has 5 layers.
+
+                                                                                   17
+                                 Dirichlet Flow Matching with Applications to DNA Sequence Design
+                                                                                                                100
+                                              FBD                 Prob.   320       FBD                 Prob.
+                                    550             Class 1                               Class 2               80
+                                                                          300
+                                    500                                                                         60
+                                                                          280
+                                    450                                                                         40
+                                                                          260                                   20
+                                    400
+
+                                    350                                   240                                   0
+                                    500                                                                         100
+                                              FBD                 Prob.             FBD                 Prob.
+                                                    Class 3                               Class 4               80
+                                    480                                   125
+                                                                                                                60
+                                    460                                   120
+                                                                                                                40
+                                    440
+                                                                          115
+                                                                                                                20
+                                    420
+                                                                          110                                   0
+                                          0    1      3       6      10         0    1      3       6      10
+                                              Guidance factor                       Guidance factor
+
+Figure 9. Evaluation for cell type specific enhancer design with classifier guidance. We condition Dirichlet FM to generate sequences
+that are only active in a class of cell type via classifier guidance with varying γ. Results are shown for 4 classes in the Fly Brain cell data.
+The left y-axis FBD is computed between the generated sequences and the data distribution conditioned on the target class. The right
+y-axis P ROB . refers to the target class probability of a classifier for the generated sequences.
+
+
+B.2. Data
+For the enhancer data of 104665 fly brain cell sequences (Janssens et al., 2022), we use the same split as Taskiran et al.
+(2023), resulting in an 83726/10505/10434 split for train/val/test. Meanwhile, for the human melanoma cell dataset of
+88870 sequences (Atak et al., 2021), their split has 70892/8966/9012 sequences. It is noteworthy that these datasets contain
+ATAC-seq data (Buenrostro et al., 2013), which means that not all sequences are guaranteed to be enhancers and actually
+enhance transcription of a certain gene. ATAC-seq only measures the chromatin accessibility of the sequences in the cell
+types, which is a necessary but not sufficient requirement for a sequence to be an enhancer. In Figure 8, we show histograms
+for the class distributions of both datasets. For the melanoma dataset, there is little class imbalance.
+
+C. Additional Results
+Analytical toy experiment for classifier guidance. As a toy experiment to demonstrate our classifier guidance procedure,
+we construct a distribution conditioned on a binary random variable. The conditional distribution is a categorical distribution
+over 20 classes. In this setup, the time-dependent class probabilities conditioned on a noisy point on the simplex can be
+computed analytically. Thus, we can use them to obtain the vector field for Dirichlet FM analytically. Furthermore, the class
+probabilities and the gradients of their logarithm (the score) can be computed analytically. Hence, we can simulate classifier
+guided Dirichlet FM analytically for this toy distribution.
+The results in Figure 10 show a close match between the empirical distribution of the generated data and the ground truth
+probabilities. This empirically confirms the effectiveness of our classifier guidance procedure that relies on converting
+probabilities to scores and converting them back to probabilities by solving a linear system of equations.
+
+
+
+
+                                                                          18
+                                Dirichlet Flow Matching with Applications to DNA Sequence Design
+
+
+
+
+Figure 10. Simulation results for classifier guidance on a conditional categorical distribution with an analytically tractable vector
+field. In blue, we show a histogram (with frequencies normalized to density) of the generated classes for each class on the x-axis. In
+orange, we show the true probabilities of the toy distribution conditioned on the same class that we use for classifier guidance.
+
+
+
+
+Figure 11. Per class performance of the classifiers similar to those used for evaluation and FBD calculation without early stopping. Shown
+are scatter plots for each class of the fly brain data (left) and the human melanoma cell data (right) between the area under the curve of the
+receiver operator characteristic (x-axis) and the area under the precision-recall curve (y-axis). The scatter plots match the results of the
+classifiers of Atak et al. (2021) and Janssens et al. (2022) closely.
+
+
+
+
+                                                                     19
+

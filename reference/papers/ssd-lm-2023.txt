@@ -1,0 +1,1287 @@
+                                          S SD -LM: Semi-autoregressive Simplex-based Diffusion Language Model
+                                                        for Text Generation and Modular Control
+
+                                                      Xiaochuang Han♠             Sachin Kumar♣               Yulia Tsvetkov♠
+                                              ♠
+                                                  Paul G. Allen School of Computer Science & Engineering, University of Washington
+                                                            ♣
+                                                              Language Technologies Institute, Carnegie Mellon University
+                                                       {xhan77, yuliats}@cs.washington.edu♠            sachink@cs.cmu.edu♣
+
+
+                                                               Abstract                             remain the state-of-the-art general purpose text gen-
+                                                                                                    erators (Radford et al., 2019; Brown et al., 2020).
+                                             Despite the growing success of diffusion mod-
+                                             els in continuous-valued domains (e.g., im-               Despite potential advantages of diffusion models
+                                             ages), similar efforts for discrete domains such       for text, there are two key challenges. First, dif-
+
+
+
+
+arXiv:2210.17432v2 [cs.CL] 26 Jun 2023
+                                             as text have yet to match the performance of au-       fusion models generate text non-autoregressively,
+                                             toregressive language models. In this work, we         i.e., they generate (and update) the entire sequence
+                                             present S SD -LM—a diffusion-based language            simultaneously rather than token by token left-to-
+                                             model with two key design choices. First, S SD -       right. Although this property is useful in practice
+                                             LM is semi-autoregressive, iteratively gener-
+                                                                                                    since each output token is informed by a broader
+                                             ating blocks of text, allowing for flexible out-
+                                             put length at decoding time while enabling lo-         bi-directional context (Lee et al., 2018; Ghazvinine-
+                                             cal bidirectional context updates. Second, it          jad et al., 2019), it requires pre-defining an output
+                                             is simplex-based, performing diffusion on the          sequence length. This limits the flexibility and ap-
+                                             natural vocabulary space rather than a learned         plicability of trained models. On the other hand,
+                                             latent space, allowing us to incorporate clas-         non-autoregressive training with long sequences is
+                                             sifier guidance and modular control using off-         expensive and difficult to optimize. In this work,
+                                             the-shelf classifiers without any adaptation. We       we propose a semi-autoregressive solution which
+                                             evaluate S SD -LM on unconstrained text gen-
+                                                                                                    strikes a balance between length flexibility and the
+                                             eration benchmarks, and show that it matches
+                                             or outperforms strong autoregressive GPT-2             ability to alter previously generated tokens.
+                                             models across standard quality and diversity              A major advantage of diffusion models over the
+                                             metrics, while vastly outperforming diffusion-         current standard of autoregressive LMs is their
+                                             based baselines. On controlled text generation,        post-hoc controllability using guidance from aux-
+                                             S SD -LM also outperforms competitive base-            iliary models such as style classifiers (Dhariwal
+                                             lines, with an extra advantage in modularity.1
+                                                                                                    and Nichol, 2021). However, controllability is hard
+                                         1   Introduction                                           to achieve without compromises in modularity in
+                                                                                                    diffusion-based LMs for text. To enable diffusion
+                                         Diffusion models (Sohl-Dickstein et al., 2015),            generation into discrete text rather than continu-
+                                         trained to iteratively refine noised inputs, have re-      ous modalities, prior approaches have employed
+                                         cently emerged as powerful tools for generative            different approximations, e.g., training with embed-
+                                         modeling in several continuous-valued domains              dings, character, or byte-level methods (Li et al.,
+                                         such as images (Ho et al., 2020), audio (Kong et al.,      2022; Hoogeboom et al., 2021; Austin et al., 2021;
+                                         2021), video (Ho et al., 2022), among others. At-          Chen et al., 2022). In contrast, existing mainstream
+                                         tempts to adapt them for discrete domains such as          LMs and the guidance classifiers they derive often
+                                         text data, however, have only had limited success:         operate at a sub-word level with sub-word repre-
+                                         prior work have shown to be promising on special-          sentations trained jointly with the language model
+                                         ized cases and small datasets (Hoogeboom et al.,           (Devlin et al., 2019; Liu et al., 2019; Raffel et al.,
+                                         2021; Austin et al., 2021; Li et al., 2022; Chen et al.,   2020). Subsequently, changing the input represen-
+                                         2022), but diffusion models for text still underper-       tations to characters or embeddings requires devel-
+                                         form (and thus are not widely adopted) compared to         oping guidance models from scratch, which can be
+                                         autoregressive language models (AR-LMs) which              expensive or infeasible in many cases. In this work,
+                                            1
+                                              Our code and models can be found at https://          we propose a simplex-based solution which enables
+                                         github.com/xhan77/ssd-lm.                                  the diffusion over discrete texts while maintaining
+the advantages of diffusion models with plug-and-        Training Training a diffusion model first in-
+control guidance models.                                 volves adding a series of Gaussian noise to the
+   In sum, to enable diffusion-based LMs for text        original data x0 , through T timesteps:
+we present S SD -LM (§3), addressing the above two                          √         √
+                                                                     xt = ᾱt x0 + 1 − ᾱt ϵt         (1)
+challenges. S SD -LM is trained to generate text
+semi-autoregressively—generating blocks of to-           where   t ∈ (1, T ) and ϵt ∼ N (0, I). ᾱt =
+                                                         Qt
+kens left-to-right with bidirectional context within            α
+                                                           t =1 t′ , where αt′ follow a predefined sched-
+                                                            ′
+the block—which offers the benefits of both AR-          ule such that ᾱt → 0 as t → T . This process is
+LMs and diffusion models. It supports training           called forward diffusion. A diffusion model (pa-
+with and generating variable-length sequences. At        rameterized by θ) is trained to reverse this forward
+the same time, it allows refinement within the token     process by predicting the added noise ϵt given xt
+block, in contrast to token-level autoregressive de-     with the following loss:
+coding where previously generated tokens cannot
+be modified at all. S SD -LM uses the same tokeniza-             L(θ) = Et∼U (1,T ) ∥ϵθ (xt , t) − ϵt ∥2        (2)
+tion as popular AR-LMs, representing discrete text       Inference To get an output from this model, we
+via a distribution (or simplex) defined over the vo-     sample xT ∼ N (0, I) and iteratively reconstruct a
+cabulary and is trained to reconstruct texts from        sample x0 by going back in time,
+noisy versions of the distributions. Due to its un-
+derlying representation, our method also offers an                      1       1 − αt
+                                                                xt−1 = √ (xt − √         ϵθ (xt , t))           (3)
+easy and modular way of guided (controlled) gen-                        αt       1 − ᾱt
+eration using off-the-shelf text classifiers under the   for t = T, . . . , 1.2 The key obstacle in using vanilla
+minimal assumption of shared tokenizer.                  diffusion models directly as text generators is that
+   Our evaluation experiments show, for the first        language consists of discrete tokens, i.e., a non-
+time, that a diffusion-based LM matches or out-          continuous x0 to which a continuous valued Gaus-
+performs strong AR-LMs on standard text gener-           sian noise cannot be added. We propose a straight-
+ation benchmarks (§4). We evaluate S SD -LM on           forward and effective solution by treating tokens
+two tasks: (1) unconstrained prompt-based gen-           as continuous valued simplexes over the vocabu-
+eration substantially outperforming existing diffu-      lary (Hoang et al., 2017). Other existing methods
+sion LM approaches and performing on par with            addressing this problem are discussed in §5.
+or outperforming strong autoregressive LM GPT-
+2 (Radford et al., 2019) on both quality and diver-      2.2    Autoregressive LM
+sity (§4.2); and (2) controlled text generation with     An autoregressive LM model optimizes for the like-
+guidance from off-the-shelf classifiers (no post-        lihood of a sequence of tokens w0 , . . . , wL−1 .
+hoc training/adaptation) outperforming competitive
+                                                                                       L−1
+controlled text generation baselines (§4.3).                                0:L
+                                                                                       Y
+                                                                    pθ (w         )=         pθ (wc | w<c )     (4)
+                                                                                       c=0
+2     Background
+                                                         To decode from AR-LMs, one can provide a con-
+2.1    Diffusion model                                   text w<c and decode the next token wc iteratively
+                                                         by predicting pθ (wc | w<c ) and sampling from it
+Since their inception as image generators, diffu-        to get the discrete token (Fan et al., 2018; Holtz-
+sion models (and their cousins score-based mod-          man et al., 2020). Prior work has shown that these
+els (Song and Ermon, 2019)) have been widely             decoding approaches (and by extension the LMs
+adopted as high-quality generative models for mul-       themselves) are prone to degrade when generating
+tiple data modalities. Here, we briefly describe         long sequences and often devolve into repeating
+a simplified view of a canonical method, denois-         subsequences (Holtzman et al., 2020; Meister et al.,
+ing diffusion probabilistic models (Ho et al., 2020,     2022). In addition, such LMs do not provide a natu-
+DDPM) which we adapt in this work for text               ral way to incorporate sequence-level control as to-
+generation. We assume a given dataset D =                kens are generated one at a time without the ability
+{1 x0 , . . . , N x0 } of continuous valued items i x0      2
+                                                             We omit an additional noise term z here for simplicity,
+(e.g., pixel values of an image) henceforth referred     which is present in DDPM but not in another variant DDIM
+to as x0 for simplicity.                                 (Song et al., 2021).
+                                                           3.1   Training
+                                                           Continuous data representation To build a con-
+                                                           tinuous representation for discrete tokens, we adopt
+                                                           an almost-one-hot simplex representation over the
+                                                           model’s vocabulary V . We define a simple op-
+                                                           eration logits-generation(.) to map a token w to
+                                                           w̃ ∈ {−K, +K}|V | as follows.
+                                                                            (
+                                                                              +K when w = V(i)
+                                                                    w̃(i) =                                 (5)
+                                                                              −K when w ̸= V(i)
+
+Figure 1: Training S SD -LM (a snapshot at context size    where i is the index of the vocabulary. We call
+c = 2, block size B = 3). Horizontal axis represents the   w̃ the logits for token w, and softmax(w̃) gives
+order of tokens. Vertical axis represents the diffusion    a probability simplex over the vocabulary V , with
+timesteps. Shade means observable variables. Square        a probability mass concentrated on the token w.
+means discrete vocabulary, while circle means continu-     There is no learnable parameter in this mapping.
+ous logits. Red components are inputs to the learning
+model θ.                                                   Forward diffusion Following Ho et al. (2020),
+                                                           we add a time-dependent Gaussian noise to the
+                                                           logits.
+
+                                                                 w̃c:c+B
+                                                                   0     = logits-generation(wc:c+B )              (6)
+                                                                           √              √
+                                                                 w̃c:c+B
+                                                                   t     = ᾱt w̃c:c+B
+                                                                                  0    + 1 − ᾱt ϵt                (7)
+
+                                                           where t ∈ (1, T ), ϵt ∼ N (0, K 2 I), and ᾱt → 0 as
+                                                           t → T . At the final step T , softmax(w̃c:c+B
+                                                                                                     T    ) are
+                                                           fully noisy simplexes over V , with a logit-normal
+                                                           distribution (Atchison and Shen, 1980).
+                                                           Loss function In Eq. 2, a diffusion model is
+Figure 2: Decoding from S SD -LM (continuing Fig-          trained to predict the added noise from the noisy
+ure 1). Red components are inputs to the learned model     representations. Since the forward diffusion pro-
+θ. Dash means intermediate variables.                      cess can be computed in a single step (Eq. 1), the
+                                                           notion here is equivalent to predicting the origi-
+to modify previously generated tokens (Dathathri           nal data representation (Song et al., 2021; Li et al.,
+et al., 2020; Kumar et al., 2022b). In this work,          2022). Our objective follows the same intuition but
+we present a method to train a semi-autoregressive         estimates a likelihood instead of the L2 distance
+LM that decodes blocks of B tokens at a time, al-          while conditioning on additional context:3
+leviating said issues with the support of diffusion
+models. Existing literature addressing the two is-          L(θ) = E[− log pθ (wc:c+B | w̃c:c+B
+                                                                                          t      , w<c )] (8)
+sues individually are discussed in §5.                                                                    
+                                                                      c+B−1
+                                                                        X
+3   S SD -LM                                                     = E        − log pθ (wj | w̃c:c+B
+                                                                                              t     , w<c )
+                                                                            j=c
+We introduce S SD -LM—Semi-autoregressive                                                                          (9)
+Simplex-based Diffusion Language Model— adapt-
+ing key components from both autoregressive LM             E[·] is a shorthand for Ec∼U (1,L−B),t∼U (1,T ) [·].
+and vanilla diffusion models. Conceptually, S SD -         The architecture for θ throughout this work is a
+LM uses diffusion model to decode wc:c+B , a               bi-directional Transformer encoder (Vaswani et al.,
+block of tokens of length B, given a Gaussian noise        2017). Specifically, the input to the model is a con-
+and a context w<c of length c. We show an intu-            catenation of the context w<c and a sequence of
+itive diagram and pseudo-code for the training and         noisy vocabulary simplexes softmax(w̃c:c+Bt      ) of
+decoding algorithm of S SD -LM in Figure 1, Fig-              3
+                                                                L2 distance did not work in our pilot study potentially
+ure 2, and Figure 3.                                       due to the intrinsically skewed simplex representation.
+Algorithm 1 Training                                            Algorithm 2 Decoding (at a given c)
+ 1: repeat
+                                                                1: w̃c:c+B    ∼ N (0, K 2 I)
+ 2: w0:L ∼ q(w0:L )                                                  T
+                                                                2: for t = T, . . . , 1 do
+ 3: c ∼ Uniform({1, . . . , L − B})
+                                                                3: wc:c+B      = logitsθ (wc:c+B | w̃c:c+B
+                                                                                                     t      , w<c )
+ 4: w̃c:c+B
+       0      = logits-generation(wc:c+B )                             logits
+                                                                       c:c+B                           c:c+B
+ 5: t ∼ Uniform({1, . . . , T })                                4: ŵ          = logits-projection(wlogits ) if uncontrolled,
+ 6: ϵ ∼ N (0, K 2 I)                                               else ŵc:c+B = logits-projection(wc:c+B       + λ∇w fϕ (·))
+                √                √                                                                        logits
+ 7: w̃c:c+B
+       t      = ᾱt w̃c:c+B
+                       0      + 1 − ᾱt ϵ                       5: z ∼ N (0, K 2 I)
+                                                                                 √                 √
+ 8: Take gradient descent step on                               6: w̃c:c+B
+                                                                       t−1     = ᾱt−1 ŵc:c+B + 1 − ᾱt−1 z
+         ∇θ [− c+B−1     log pθ (wj | w̃c:c+B , w<c )]
+               P
+                  j=c                   t                       7: end for
+ 9: until converged                                             8: return argmax w̃0c:c+B
+
+Figure 3: Training and decoding algorithms for S SD -LM. The training algorithm starts with sampling a sequence
+from the pretraining data q(w0:L ). The decoding algorithm can be applied m iterations to obtain a m · B-token
+generation, with the returned B tokens at each iteration appended to the previous generation, increasing c.
+
+length B. The target output is the original tokens                  • Greedy: creates an almost-one-hot logit cen-
+wc:c+B at positions c to c + B.                                       tered at the highest probability token.5
+   One minimal modification made to the Trans-                                  (
+former model is that in addition to the conventional                             +K if i= argmax(wlogits )
+                                                                        ŵ(i) =                                (11)
+embedding lookup for w<c , we modify the em-                                     −K otherwise
+bedding layer to take as input a distribution over                  • Sampling: creates an almost-one-hot logit cen-
+the vocabulary, softmax(w̃c:c+B
+                              t     ), and compute                    tered around a token sampled from the output
+the embedding vector as a weighted sum of the                         distribution using top-p sampling (Holtzman
+embedding table. A timestep embedding is also                         et al., 2020). p is a hyperparameter.
+added before the first Transformer block to inform                              (
+the model of the current timestep.4                                              +K if i=top-p-sample(wlogits )
+                                                                        ŵ(i) =
+   In §A, we present another interpretation of the                               −K otherwise
+training objective as an intuitive contrastive loss.                                                            (12)
+
+3.2   Decoding                                                      • Multi-hot: creates an almost-one-hot logit cen-
+                                                                      tered around all tokens in the top-p nucleus.
+Logits projection Similar to continuous-valued                                  (
+diffusion models, sampling from S SD -LM involves                                +K if i ∈ top-p-all(wlogits )
+                                                                        ŵ(i) =                                  (13)
+reverse diffusion from t = T, . . . , 1 starting with                            −K otherwise
+a Gaussian noise. At any timestep t, our model θ
+takes as input noised logits w̃c:c+B    and estimates            Decoding iteration Starting from pure noise
+                                 t
+the probability distribution of the original tokens              w̃c:c+B
+                                                                   T     ∼ N (0, K 2 I), in each decoding timestep
+in data by first predicting the logits:                          we compute:
+                                                                   ŵc:c+B = logits-projection(wc:c+B
+                                                                                                logits,t ) (14)
+  wc:c+B
+   logits,t = logitsθ (w
+                         c:c+B
+                               | w̃c:c+B
+                                   t     , w<c ) (10)                t
+                                                                             √
+                                                                   w̃c:c+B = ᾱt−1 ŵc:c+B
+                                                                                              p
+                                                                     t−1              t     + 1 − ᾱt−1 z (15)
+which are then converted to a distribution via soft-
+max. To feed this output to the next step of reverse             for t = T, . . . , 1 and z ∼ N (0, K 2 I).
+diffusion, t−1, we define a logits-projection oper-                 At t = 1, the final B-token block is computed
+ation to build a predicted data representation close             simply as argmax w̃c:c+B 0   . To generate the next
+to the initial data representation (almost-one-hot               block, we concatenate the generated block to the
+mapping; Eq. 5). We consider three projection                    previous context to create a new context of length
+operations.                                                      c+B and follow the reverse-diffusion process again
+                                                                 as described above. This process can be repeated
+    4
+      More specifically, we have word embeddings for the con-    until the maximum desired length is reached.6
+text, Embctx (w<c ), and for the noisy diffusion representa-
+                                                                     5
+tions, Wdiff [softmax(w̃c:c+B
+                          t    )]. The timestep embedding is           This shares a similar intuition as a greedy clamping trick
+added to the diffusion word embeddings, Wtime (t/T ). It is      in the embedding-based diffusion in Li et al. (2022).
+                                                                     6
+similar to positional embeddings, just not varying across se-          Alternatively, one can also terminate the process if certain
+quence positions. We fold it in θ for notation simplicity.       special end-of-sequence tokens have been generated.
+   It is worth noting that our proposed decoding          3.3    Additional details
+algorithm is novel and different from the DDPM            Forward diffusion coefficient ᾱt We follow
+decoding (Eq. 3). The DDPM decoding is designed           Nichol and Dhariwal (2021) for a cosine sched-
+for diffusion in a continuous space and failed to         ule of ᾱt :
+generate sensible outputs in our preliminary ex-
+periments based on simplexes. In §B, we draw a                          r(t)               t/T + s π 2
+                                                                ᾱt =        , r(t) = cos(        · )               (17)
+theoretical connection between our decoding algo-                       r(0)                1+s    2
+rithm and DDPM decoding, and also highlight the
+                                                          where s is small offset set to 1e-4 in our work and
+intuitive difference between the two.
+                                                          αt = ᾱᾱt−1
+                                                                    t
+                                                                       .
+Highly-modular control A useful property of               Fewer timesteps T in decoding Decoding from
+continuous diffusion models that naturally arises         diffusion models requires a series of timesteps (T )
+from their definition is the ability to guide the gen-    which can be computationally expensive if T is
+erated samples to have user-defined attributes at         large. Following Li et al. (2022), we consider using
+test time. This can be done using gradients from          a smaller value of T at test time to improve decod-
+auxiliary models such as classifiers (Dhariwal and        ing speed. In this work, we primarily experiment
+Nichol, 2021), e.g., guiding the output of an LM to       with Tdecode = Ttrain
+                                                                           2 and Tdecode = 5 .
+                                                                                               Ttrain
+
+be of a positive sentiment using a sentiment classi-
+fier. There is a vibrant community of developers on       Flexible decoding block size B Our S SD -LM is
+platforms such as HuggingFace where many such             trained with a fixed token block size Btrain . How-
+text classifiers are publicly available. The under-       ever, the decoding algorithm has a freedom to
+lying data representation of S SD -LM is based on         use a different Bdecode . In our experiments, we
+vocabulary simplexes. Hence, as long as a classi-         consider both scenarios of Btrain = Bdecode and
+fier shares the same tokenizer as the LM, it can be       Btrain ̸= Bdecode . Nevertheless, we leave for fu-
+used for control in an off-the-shelf manner without       ture work a more detailed analysis of the impact of
+modifications. This is in contrast to prior work in       the difference between Btrain and Bdecode on model
+diffusion language models that do not support such        performance.
+classifiers due to differences in their input represen-   4     Experiments
+tation space (Hoogeboom et al., 2021; Austin et al.,
+2021; Li et al., 2022; Chen et al., 2022) and require     4.1     S SD -LM pretraining setup
+retraining the classifiers from scratch. This ability     Model architecture We use a bidirectional
+makes S SD -LM highly modular for controlled text         Transformer encoder RoBERTa-large (Liu et al.,
+generation and offers key benefits: (1) Training          2019) (0.4B, comparable size to GPT2-medium)
+accurate classifiers for many tasks requires huge         as S SD -LM’s underlying architecture.7 Note that
+amounts of data where retraining them can be quite        RoBERTa uses a general BPE tokenization (Sen-
+expensive, and (2) this approach allows control           nrich et al., 2016), same as a variety of LMs such as
+from classifiers that are open to use but have been       GPT-2 (Radford et al., 2019), GPT-3 (Brown et al.,
+trained on closed source data.                            2020), OPT (Zhang et al., 2022), etc. Any attribute
+   To guide S SD -LM to generate texts with a target      classifier using the same tokenization strategy can
+attribute y via a standalone attribute model fϕ (·),      be used to control S SD -LM in a highly modular
+we update wc:c+B
+               logits,t (Eq. 10) at each timestep t to    way.
+the form below, drifting according to the gradients
+from the attribute classifier.                            Pretraining data, constants, and resource We
+                                                          train S SD -LM on the same data as GPT2 to
+                                                          make fair comparisons possible: OpenWebText
+  wc:c+B                         c:c+B       <c
+   logits,t + λ∇wc:c+B fϕ (y | w logits,t , w ) (16)      (Gokaslan and Cohen, 2019) which contains 9B
+                   logits,t
+
+                                                          tokens. Following Zhang et al. (2022), we consider
+where λ is a hyperparameter balancing the weight              7
+                                                                We initialize the model with RoBERTa’s weights as well.
+of control. The parameters of the standalone at-          We observe in our initial exploration that it helps the training
+tribute model ϕ are frozen. We make a trivial mod-        loss converge faster than a randomly initialized model. How-
+                                                          ever, given enough computational resources, we conjecture
+ification to the embedding computation as in §3.1,        that a randomly initialized model will offer similar perfor-
+to allow the classifier to take as input a simplex.       mance.
+this data as one contiguous sequence of tokens                  For S SD -LM, we consider three logits pro-
+and break it into sequences of length 200 (same as           jection strategies, sampling and multi-hot with
+the maximum sequence length our model accepts).              top-p ∈ {0.0, 0.1, 0.2, 0.5, 0.7, 0.9, 0.95, 0.99},
+We randomly sample 99% of these sequences for                and greedy (which is functionally equivalent to
+pretraining while leaving the rest as held out for           the sampling with top-p=0). We use a test block
+evaluation. We use the following model hyperpa-              size (Bdecode ) of 25. When generating samples of
+rameters:8                                                   length 50 or 100, we semi-autoregressively sample
+                                                             in blocks of 25 and feed them as additional context
+      L = 200, Btrain = 25, Ttrain = 5000, K = 5             to generate the next block as described in §3.2.
+                                                                We evaluate the generated continuations on two
+   We use an aggregated batch size of 6,144 and              axes: quality and diversity. As automatic quality
+a learning rate of 1e-4 with an AdamW optimizer              metrics, we report perplexity measured by a sepa-
+(Loshchilov and Hutter, 2019). We trained S SD -             rate, larger language model (GPT-Neo-1.3B, Black
+LM for 100K steps, which took about 6 days on 32             et al., 2021). Prior works, however, have shown
+Nvidia V100 GPUs.                                            that low perplexity of generated text is not neces-
+Pretraining loss Canonical training-time per-                sarily an indication of high quality but of degen-
+plexity of LMs is not compatible with diffusion              erate behavior (Nadeem et al., 2020; Zhang et al.,
+LMs due to the difference in the inputs to the mod-          2021) and have proposed closeness to the perplex-
+els (Eq. 4 and Eq. 9). Our pretraining loss is a             ity of human-written text as a better evaluation.
+per-token negative log-likelihood (NLL) that de-             Hence, we also report the difference of log perplex-
+pends on the specific noise schedule being used.             ity between the generated text and human-written
+S SD -LM gets an average NLL of 3.87 at the end              continuations (|∆log PPL |). For diversity evaluation,
+of pretraining. We show a pretraining loss curve in          we report Zipf’s coefficient (Zipf) and average dis-
+the appendix (§D).                                           tinct n-grams in the output samples (Li et al., 2016,
+                                                             Dist-n). In addition, we also report the repetition
+4.2     Unconstrained text generation                        rate (Welleck et al., 2020; Holtzman et al., 2020,
+Setup First, we benchmark S SD -LM with au-                  Rep), measuring the proportion of output samples
+toregressive LMs trained on the same data (GPT2)             that end in repeating phrases. Finally, we report
+on text generation quality. We randomly sample               MAUVE (Pillutla et al., 2021) which evaluates both
+1000 sequences from the held-out OpenWebText                 quality and diversity together by approximating in-
+test data, extract their prefixes as prompts (context),      formation divergence between generated samples
+and generate continuations from the LMs. We con-             and human-written continuations (from the Open-
+sider three setups: with prompt lengths 25, 50 and           WebText held-out set).
+100 with respective output lengths as 25, 50 and
+                                                             Results Table 1 summarizes our main results on
+100 tokens. In each setup, we sample 5 continu-
+                                                             the 50-token prompt and output setup. We report
+ations for each input context, thus comparing the
+                                                             the numbers for the best performing three settings
+quality of 5,000 generations from baseline GPT-2
+                                                             for logits projection and decoding steps T in S SD -
+models and our S SD -LM.
+                                                             LM. We report the best setting for the baselines.
+   We compare S SD -LM with GPT2-medium,
+                                                             The results for other generation lengths have a sim-
+large and xl models (containing 0.4B, 0.8B and
+                                                             ilar trend and can be found in the appendix (§D).
+1.6B parameters respectively) as baselines. For
+                                                                 We find that S SD -LM, though being smaller in
+reference, our model size is comparable to GPT2-
+                                                             size, outperforms larger GPT-2 models on the uni-
+medium. We experiment with two popular decod-
+                                                             fied metric MAUVE. On diversity, S SD -LM outper-
+ing strategies for the baseline GPT-2 models with
+                                                             forms GPT-2 in Dist-n while achieving lower repe-
+canonical parameters: nucleus sampling (Holtzman
+                                                             tition rates. On perplexity, the results are slightly
+et al., 2020) with a top-p of 0.9 and 0.95, and typi-
+                                                             mixed. We observe a trade-off between MAUVE
+cal sampling (Meister et al., 2022) with a typical-τ
+                                                             and perplexity for different settings we considered,
+of 0.2 and 0.95.
+                                                             indicating that further tuning of the hyperparam-
+   8
+    Future work can do a search given more resources.        eters may be required. However, one of our best
+   9
+    MAUVE, Dist-1/2/3, and Rep are in percentage. PPL is
+obtained through a micro average following Holtzman et al.   performing settings (sampling top-p=0.9, T =2500)
+(2020); Pillutla et al. (2021); Meister et al. (2022).       still achieves the closest perplexity to the gold con-
+  (Length 50)                     MAUVE            PPL       |∆log PPL |    Dist-1   Dist-2    Dist-3      Zipf     Rep
+                                  ↑                −−→       ↓              ↑        ↑         ↑           −−→      ↓
+                                                   gold                                                    gold
+
+  Gold continuation               100.00         17.75       0.00           88.62    95.88     93.71       0.88     0.10
+  GPT2-medium (Best config)
+  Top-p=0.95                      96.57          12.72       0.33           66.31    91.77     92.75       1.01     0.26
+                                  ± 0.40           ± 0.07                   ± 0.11   ± 0.03    ± 0.06               ± 0.04
+
+  GPT2-large (Best config)
+  Top-p=0.95                      96.41          10.57       0.51           64.91    90.88     92.38       1.01     0.41
+                                  ± 0.78           ± 0.05                   ± 0.13   ± 0.06    ± 0.05               ± 0.06
+
+  GPT2-xl (Best config)
+  Typical-τ =0.95                 97.03          10.33       0.54           64.87    90.69     92.16       1.01     0.37
+                                  ± 0.50           ± 0.04                   ± 0.15   ± 0.07    ± 0.05               ± 0.04
+
+  S SD -LM-“medium” (Top-3)
+  Sampling p=0.99, T =1000        97.89            30.68     0.54           68.99    92.60     92.94       1.01     0.16
+  Sampling p=0.95, T =1000        96.64            27.34     0.43           67.75    92.16     92.91       1.01     0.16
+  Sampling p=0.9, T =2500         96.46            20.56     0.14           66.61    91.46     92.56       1.05     0.26
+
+Table 1: Unconstrained generation evaluation of S SD -LM and GPT-2 models at length 50. For GPT-2 models,
+the results are averaged across 5 random seeds, and we show the best sampling parameter configuration. For
+our S SD -LM, we show the top-3 configurations. All configurations are ranked based on MAUVE, with original
+parameters from Pillutla et al. (2021). The perplexity (PPL) is measured by GPT-Neo-1.3B.9
+
+   (ROCStories)              MAUVE         PPL                   Stories with a default embedding size of 128, 0.1B
+                                                                 parameters under a BERT-base (Devlin et al., 2019)
+   Gold continuation         100.00        18.57                 structure,11 and a sequence length of 100. For a fair
+   Diffusion-LM              46.11         35.96                 comparison, only within this subsection we train
+   S SD -LM                  87.22         22.91                 a S SD -LM with ROCStories sequences of 100 to-
+                                                                 kens, a decoding block size of 25, and a BERT-base
+Table 2: Unconstrained generation results of S SD -LM
+                                                                 initialization. Further details of the setup can be
+and Diffusion-LM on ROCStories with 50 prompt to-
+kens and 50 output tokens. We report the MAUVE score
+                                                                 found in §C.
+between the gold continuation and model generations.                On 2,700 held-out ROCStories sequences, we
+We also show the perplexity (PPL) of model generations           use the first 50 tokens of each sequence as a prompt
+measured by GPT-Neo-1.3B.10                                      and have the model generate the next 50. In Ta-
+                                                                 ble 2, we show the MAUVE score and perplexity
+tinuation.                                                       of both models. We observe a substantially higher
+   In §D, we show the influence of different logits              MAUVE score and lower perplexity with S SD -LM.
+projection strategies and the associated parameters
+on the output text quality in Figure 4. We also                  4.3       Controlled text generation
+show qualitative examples of the generations by                  Setup To evaluate S SD -LM’s ability for highly-
+S SD -LM in Table 8 and a trajectory of intermediate             modular control, we consider the task of sentiment
+states during the decoding process in Table 9.                   controlled generation where given a prompt, the
+                                                                 goal is to generate a continuation with a positive (or
+Comparison with Li et al. (2022) A prior work
+                                                                 negative) polarity. We use a set of 15 short prompts
+to us, Li et al. (2022) propose Diffusion-LM, an
+                                                                 as in Dathathri et al. (2020) and generate 20 sam-
+embedding-based diffusion model trained on two
+                                                                 ples per prompt per sentiment category, making
+small toy datasets, E2E (Novikova et al., 2017)
+                                                                 the total number of generated samples to be 600.
+and ROCStories (Mostafazadeh et al., 2016). In
+                                                                 Following Mireshghallah et al. (2022), we generate
+this subsection, we make a diversion to compare
+                                                                 samples with 3 different output lengths: 12, 20 and
+the embedding-based Diffusion-LM with our semi-
+                                                                 50. For guidance, we simply import a popular sen-
+autoregressive, simplex-based S SD -LM. Following
+Li et al. (2022), we train a Diffusion-LM on ROC-                   11
+                                                                       We train two versions of Diffusion-LM, with and without
+                                                                 BERT’s encoder weights as an initialization. The default no-
+  10
+     Due to a lowercase tokenization of ROCStories, we use       initialization setup as in Li et al. (2022) works reasonably,
+BERT-base-uncased as MAUVE’s embedding model here.               while the other degenerates. Details can be found in §C.
+(Length 50)         C-Ext.(Int.)   PPL       Dist-1/2/3       20 have a similar trend and can be found in the
+                                                              appendix (§D).
+DAPTCM              79.8           57.2      61/92/94
+                                                                 Among the baseline methods, DAPT (Gururan-
+PPLMCC              60.7 (73.6)    29.0      -                gan et al., 2020), GeDi (Krause et al., 2021), and
+FUDGECC             59.1           8.4       47/83/92         DExperts (Liu et al., 2021) require training cus-
+GeDiCM              99.2           107.3     71/93/92         tomized language models aware of the desired
+DExpertsCM          94.8           37.1      56/90/92         attributes (denoted as CM in Table 7). PPLM
+MuCoLaCC            86.0           27.8      52/76/80         (Dathathri et al., 2020), FUDGE (Yang and Klein,
+                                                              2021), and MuCoLa (Kumar et al., 2022b) re-
+M&M LMHMC 68.6 (93.8)              122.3     -                quire training a customized attribute classifier (CC).
+S SD -LMHMC 94.1 (99.0)            23.1      46/84/92         While our proposed method S SD -LM and M&M
+                                                              LM (Mireshghallah et al., 2022) can directly im-
+Table 3: Controlled text generation results of S SD -LM       port mainstream existing attribute classifiers from
+and baselines at length 50. We report the external clas-      platforms like HuggingFace and are thus highly
+sifier’s accuracy (C-Ext.) for the generations and addi-
+                                                              modular (HMC). We show the baseline results as
+tionally the internal (guidance) classifier accuracy (Int.)
+if available. The perplexity (PPL) is computed with
+                                                              reported in Mireshghallah et al. (2022) and Kumar
+GPT2-xl. MuCoLa is the version using two discrim-             et al. (2022b).
+inators. CM stands for customized language model,                S SD -LM shows strong controllability while pos-
+CC stands for customized classifier, and HMC stands           sessing great modularity. S SD -LM outperforms
+for highly-modular classifier (in an order of increasing      M&M LM, the other HMC method by a large mar-
+modularity). The best of all results are boldfaced, and       gin. Even when comparing with the CC and CM
+the best of HMC results are italicized.14                     methods, our method achieves a good balance in
+                                                              control, fluency, and diversity.
+timent classifier12 from HuggingFace trained with
+                                                                 In §D, we show the impact of the control weight
+Twitter sentiment data with over 58M training ex-
+                                                              λ and top-p on the attribute accuracy and perplexity
+amples (Barbieri et al., 2020). This model serves as
+                                                              in Figure 5. We also show qualitative examples of
+fϕ (·) as shown in Eq. 16. In addition to quality and
+                                                              the controlled generations by S SD -LM in Table 8.
+diversity of the generated samples, we also evaluate
+them on control (that is measuring if the generated           5   Related work
+output is actually positive or negative in polarity).
+For this, we use an external sentiment classifier             Diffusion models Diffusion models have
+trained on a different dataset. Specifically, we use a        demonstrated impressive performance in popular
+classifier trained with Yelp reviews13 (Zhang et al.,         continuous-valued domains such as images (Ho
+2015; Morris et al., 2020) following the evaluation           et al., 2020), audio (Kong et al., 2021), video (Ho
+setup in the baselines we consider.                           et al., 2022) and recently also been adopted for
+   Again, we consider the sampling and multi-hot              3D-shapes, protein structures, and more (Zhou
+decoding strategies with top-p ∈ {0.2, 0.5, 0.9},             et al., 2021; Trippe et al., 2022; Wu et al.,
+Tdecode ∈ {1000, 2500, 5000}, and the multiplier              2022). Since they are based on adding Gaussian
+for control λ ∈ {0, 100, 500, 2000}. For the gener-           noise, these approaches are not straightforward
+ation of 12/20/50 tokens, we use Bdecode =12/20/25            to apply to discrete valued domains like text.
+and apply the decoding algorithm for m=1/1/2 iter-            Hoogeboom et al. (2021); Austin et al. (2021)
+ations respectively.                                          propose diffusing in the discrete space using
+                                                              categorical distributions which are modified using
+Results We show the quality of the controlled
+                                                              transition matrices. However, these methods do not
+generations from three perspectives: target attribute
+                                                              straightforwardly support control and yield worse
+via the external classifier accuracy, fluency via per-
+                                                              results than comparable autoregressive models.
+plexity, and diversity via the distinctiveness mea-
+                                                              Li et al. (2022) propose to represent each token
+sures. In Table 3, we show the experimental results
+                                                              as a continuous embedding and apply diffusion
+for output length 50. The results at length 12 and
+                                                              in the embedding space. They train the LM to
+  12
+     https://huggingface.co/cardiffnlp/twitter-               generate a fixed length sequence whereas S SD -LM
+roberta-base-sentiment
+  13
+     https://huggingface.co/textattack/bert-base-               14
+                                                                   PPL is obtained through a macro average following Ku-
+uncased-yelp-polarity                                         mar et al. (2022b).
+allows flexibility in the generated sequence length               with a middle ground.
+by generating block-wise. Further, their LM is
+                                                                  Controllable text generation Early solutions for
+trained with specialized datasets and not evaluated
+                                                                  controlling attributes of generated text focused on
+against general-purpose autoregressive LMs on
+                                                                  training or finetuning AR-LMs with specific con-
+unconstrained text generation. Their method
+                                                                  trol codes (Keskar et al., 2019; Gururangan et al.,
+supports post-hoc control but requires training a
+                                                                  2020; Chan et al., 2021). These methods are diffi-
+customized attribute classifier,15 since the diffusion
+                                                                  cult to extend to new controls as it requires retrain-
+operates on a learned embedding space. Gong et al.
+                                                                  ing the models. More recent work includes decod-
+(2022), a concurrent work to ours, extend Li et al.
+                                                                  ing approaches from pretrained AR-LMs without
+(2022) to a sequence-to-sequence setup with a
+                                                                  modifying the models, through altering the output
+similar underlying embedding-based method. Our
+                                                                  probability distribution at each step using different
+work is most closely related to Chen et al. (2022)
+                                                                  control objectives (Dathathri et al., 2020; Krause
+which transform discrete data into a sequence of
+                                                                  et al., 2021; Yang and Klein, 2021; Liu et al., 2021;
+bits and represent each bit as +1 or -1 converting it
+                                                                  Lu et al., 2021; Pascual et al., 2021). However,
+into a continuous-valued domain. For textual data,
+                                                                  these methods do not allow modifying a token once
+however, it can lead to extremely long sequences
+                                                                  it is generated and are thus suboptimal for controls
+which are difficult to optimize. In this work, we
+                                                                  at the scope of the whole sequence. Closely re-
+instead maintain a subword based vocabulary but
+                                                                  lated to S SD -LM are Kumar et al. (2021); Qin
+represent each token as a sequence of manually
+                                                                  et al. (2022); Kumar et al. (2022b), which propose
+defined logits.
+                                                                  gradient-based decoding algorithms from AR-LMs.
+Language models The majority of existing lan-                     They require computing a backward pass through
+guage models for text generation are trained au-                  the LMs for each iteration, an expensive operation.
+toregressively, i.e., they predict the next token                 In contrast, S SD -LM with its semi-autoregressive
+given previously generated context. This paradigm                 setup allows editing past tokens via diffusion. In
+scaled up both in terms of model size and training                addition, most of these approaches require training
+data size has resulted in impressive capabilities on              control functions from scratch whereas our model
+many benchmarks (Brown et al., 2020; Chowdh-                      allows using off-the-shelf classifiers. Mireshghal-
+ery et al., 2022). However, they generate text one                lah et al. (2022) propose a non-autoregressive LM
+token at a time which does not provide flexible                   based on Metropolis-Hastings sampling. It also
+control over attributes of the generated text. Non-               supports off-the-shelf classifiers for control, and
+autoregressive models which generate the entire                   we therefore use it as a direct baseline for S SD -
+output sequence at the same time have also been                   LM.
+explored in prior work other than diffusion mod-
+els (Lee et al., 2018; Ghazvininejad et al., 2019).
+                                                                  6   Conclusion
+However, they are primarily focused on improv-                    We present S SD -LM, a semi-autoregressive dif-
+ing decoding efficiency and applied for special-                  fusion based language model trained to denoise
+ized tasks like translation (Gu et al., 2018; Kaiser              corrupted simplexes over the output vocabulary.
+et al., 2018; Wang et al., 2019) and text editing (Gu             Compared to prior work in text-based diffusion,
+et al., 2019). Many of these work have iterative                  S SD -LM offers more flexibility in output length
+processes in a discrete space, with some exploring                by generating blocks of text and an ability to use
+continuous representations (Ma et al., 2019; Lee                  off-the-shelf attribute classifiers for control without
+et al., 2020). To address the quality decline with                additional tuning. On unconstrained text genera-
+the non-autoregressive methods compared to au-                    tion, S SD -LM performs on par with or outperforms
+toregressive models, prior work have also explored                strong and larger autoregressive baselines (GPT-2)
+semi-autoregressive approaches (Wang et al., 2018;                in generation quality and diversity, while vastly
+Qi et al., 2021). In the same vein, our work seeks to             outperforming diffusion baselines (Diffusion-LM).
+address the drawbacks of autoregressive language                  On controlled text generation, S SD -LM surpasses
+models and non-autoregressive diffusion models                    baselines while possessing an easy-to-use modular
+  15
+                                                                  design. We believe that S SD -LM opens an exciting
+     The control for diffusion models can also be classifier-
+free (Ho and Salimans, 2021) but requires training with the       direction for future research in flexible and modular
+target attribute in advance, which is not a focus of this work.   diffusion-based language generation.
+Limitations                                             Sheng et al., 2021; Weidinger et al., 2022). Fur-
+                                                        ther, language generation models could memo-
+Sample efficiency In AR-LMs, an NLL loss is             rize and amplify patterns in data without deeper
+computed at training time for every token in the        language understanding or control, so they can
+sequence of length L (Eq. 4). However, in S SD -        be factually inconsistent and generate disinforma-
+LM, each time a pretraining example is sampled,         tion (Maynez et al., 2020; Pagnoni et al., 2021;
+the loss is computed on only B tokens (Eq. 9) lead-     Zellers et al., 2019), or can compromise user pri-
+ing to a lower sample efficiency than AR-LM. To-        vacy (Carlini et al., 2021). Prior works have out-
+wards improving this efficiency, future work could      lined these risks (Sheng et al., 2021; Weidinger
+explore model architectures dedicated to semi-          et al., 2021), discussed their points of origin, and
+autoregressive diffusion rather than the vanilla        advocated for future research on ethical develop-
+Transformer encoder we use in this work.                ment of LMs (Bender et al., 2021; Solaiman et al.,
+Decoding speed Since each block is generated            2019).
+by refining over several iterations, S SD -LM has a        While these studies have been conducted for au-
+considerably slower decoding speed than autore-         toregressive LMs, our diffusion-based LM is sub-
+gressive models. For example, given a context           ject to these problems as well. However, since our
+of 50 tokens (single instance, unbatched), it takes     method naturally incorporates controllability, fu-
+S SD -LM 25 seconds to generate the next block of       ture work may explore control functions that could
+25 tokens (Tdecode =1000). While our work focused       potentially alleviate these issues (Liu et al., 2021;
+on establishing the efficacy of diffusion-based LMs     Kumar et al., 2022b). One risk is that controllability
+and modular controlled generation, future work          can also be misused maliciously, with models being
+could explore tuning Tdecode to balance model per-      intentionally exploited to generate biased, toxic, or
+formance and decoding speed, or more efficient          non-factual content (Bagdasaryan and Shmatikov,
+training and decoding algorithms extending ideas        2022; Pagnoni et al., 2022). Therefore, apart from
+from prior work on diffusion models for continuous      controlled generation, future work should aim to de-
+domains (Song et al., 2021; Nichol and Dhariwal,        tect the generations under control as well to defend
+2021; Rombach et al., 2022; Meng et al., 2022).         against the malicious use (Kumar et al., 2022a).
+
+Decoding block size In this work, although we           Acknowledgements
+allow setups where Btrain ̸= Bdecode , the decoding
+block size Bdecode remains the same across m de-        The authors would like to thank Tianxiao Shen,
+coding iterations, leaving space for a more flexible    Tianxing He, Jiacheng Liu, Ruiqi Zhong, Sidney
+decoding schedule. Future work can also explore         Lisanza, Jacob Gershon, members of TsvetShop,
+learning Bdecode (and Btrain ) rather than using con-   and the anonymous ACL reviewers for their help-
+stant pre-defined lengths.                              ful discussions and feedback. X.H. gratefully ac-
+                                                        knowledges funding from the UW-Meta AI Men-
+   Larger scale experiments with different kinds
+                                                        torship program. S.K. gratefully acknowledges
+of controls and their combinations can be done,
+                                                        a Google Ph.D. Fellowship. Y.T. gratefully ac-
+as well as more sophisticated ways to incorporate
+                                                        knowledges an Alfred P. Sloan Foundation Fellow-
+them (Kumar et al., 2021). In addition, we plan
+                                                        ship. This research is supported in part by by the
+to explore alternative methods to continuously rep-
+                                                        National Science Foundation (NSF) under Grants
+resent and add noise to discrete text (Bakosi and
+                                                        No. IIS2203097, IIS2125201, and NSF CAREER
+Ristorcelli, 2013). This work experiments with pre-
+                                                        Grant No. IIS2142739. This research is supported
+training data that is primarily in English. Future
+                                                        in part by the Office of the Director of National
+work can also explore challenges and benefits of
+                                                        Intelligence (ODNI), Intelligence Advanced Re-
+diffusion-based LMs in a multilingual setup.
+                                                        search Projects Activity (IARPA), via the HIATUS
+Ethics statement                                        Program contract #2022-22072200004. The views
+                                                        and conclusions contained herein are those of the
+Language models trained on data from the web            authors and should not be interpreted as necessarily
+can perpetuate social biases and toxic interactions,    representing the official policies, either expressed
+and can be prone to generating harmful language         or implied, of ODNI, IARPA, or the U.S. Gov-
+(Gehman et al., 2020; Wallace et al., 2019, 2020;       ernment. The U.S. Government is authorized to
+reproduce and distribute reprints for governmental           Ting Chen, Ruixiang Zhang, and Geo rey E. Hinton.
+purposes notwithstanding any copyright annotation              2022. Analog bits: Generating discrete data us-
+                                                               ing diffusion models with self-conditioning. ArXiv,
+therein.
+                                                               abs/2208.04202.
+                                                             Aakanksha Chowdhery, Sharan Narang, Jacob Devlin,
+References                                                     Maarten Bosma, Gaurav Mishra, Adam Roberts, Paul
+                                                               Barham, Hyung Won Chung, Charles Sutton, Sebas-
+J. Atchison and S.M. Shen. 1980. Logistic-normal dis-          tian Gehrmann, Parker Schuh, Kensen Shi, Sasha
+   tributions:Some properties and uses. Biometrika,            Tsvyashchenko, Joshua Maynez, Abhishek B Rao,
+   67(2):261–272.                                              Parker Barnes, Yi Tay, Noam M. Shazeer, Vinodku-
+                                                               mar Prabhakaran, Emily Reif, Nan Du, Benton C.
+Jacob Austin, Daniel D. Johnson, Jonathan Ho, Daniel           Hutchinson, Reiner Pope, James Bradbury, Jacob
+   Tarlow, and Rianne van den Berg. 2021. Structured           Austin, Michael Isard, Guy Gur-Ari, Pengcheng Yin,
+   denoising diffusion models in discrete state-spaces.        Toju Duke, Anselm Levskaya, Sanjay Ghemawat,
+   In Proc. NeurIPS.                                           Sunipa Dev, Henryk Michalewski, Xavier García,
+                                                               Vedant Misra, Kevin Robinson, Liam Fedus, Denny
+Eugene Bagdasaryan and Vitaly Shmatikov. 2022. Spin-           Zhou, Daphne Ippolito, David Luan, Hyeontaek Lim,
+  ning language models: Risks of propaganda-as-a-              Barret Zoph, Alexander Spiridonov, Ryan Sepassi,
+  service and countermeasures. In 2022 IEEE Sympo-             David Dohan, Shivani Agrawal, Mark Omernick, An-
+  sium on Security and Privacy (SP), pages 1532–1532.          drew M. Dai, Thanumalayan Sankaranarayana Pillai,
+  IEEE Computer Society.                                       Marie Pellat, Aitor Lewkowycz, Erica Moreira, Re-
+                                                               won Child, Oleksandr Polozov, Katherine Lee, Zong-
+József Bakosi and J. Raymond Ristorcelli. 2013. A              wei Zhou, Xuezhi Wang, Brennan Saeta, Mark Díaz,
+  stochastic diffusion process for the dirichlet distribu-     Orhan Firat, Michele Catasta, Jason Wei, Kathleen S.
+  tion. arXiv: Mathematical Physics.                           Meier-Hellstern, Douglas Eck, Jeff Dean, Slav Petrov,
+                                                               and Noah Fiedel. 2022. Palm: Scaling language mod-
+Francesco Barbieri, Jose Camacho-Collados, Luis Es-            eling with pathways. ArXiv, abs/2204.02311.
+  pinosa Anke, and Leonardo Neves. 2020. Tweeteval:
+  Unified benchmark and comparative evaluation for           Sumanth Dathathri, Andrea Madotto, Janice Lan, Jane
+  tweet classification. In Findings of EMNLP.                  Hung, Eric Frank, Piero Molino, Jason Yosinski, and
+                                                               Rosanne Liu. 2020. Plug and play language models:
+Emily M. Bender, Timnit Gebru, Angelina McMillan-              A simple approach to controlled text generation. In
+  Major, and Shmargaret Shmitchell. 2021. On the               Proc. ICLR.
+  dangers of stochastic parrots: Can language models
+  be too big? In Proc. FAccT.                                Jacob Devlin, Ming-Wei Chang, Kenton Lee, and
+                                                                Kristina Toutanova. 2019. BERT: Pre-training of
+Sid Black, Gao Leo, Phil Wang, Connor Leahy,                    deep bidirectional transformers for language under-
+  and Stella Biderman. 2021. GPT-Neo: Large                     standing. In Proc. NAACL-HLT.
+  Scale Autoregressive Language Modeling with Mesh-
+  Tensorflow.                                                Prafulla Dhariwal and Alex Nichol. 2021. Diffu-
+                                                               sion models beat gans on image synthesis. ArXiv,
+Tom B. Brown, Benjamin Mann, Nick Ryder, Melanie               abs/2105.05233.
+  Subbiah, Jared Kaplan, Prafulla Dhariwal, Arvind           Angela Fan, Mike Lewis, and Yann Dauphin. 2018.
+  Neelakantan, Pranav Shyam, Girish Sastry, Amanda             Hierarchical neural story generation. In Proc. ACL.
+  Askell, Sandhini Agarwal, Ariel Herbert-Voss,
+  Gretchen Krueger, T. J. Henighan, Rewon Child,             Samuel Gehman, Suchin Gururangan, Maarten Sap,
+  Aditya Ramesh, Daniel M. Ziegler, Jeff Wu, Clemens           Yejin Choi, and Noah A. Smith. 2020. RealToxi-
+  Winter, Christopher Hesse, Mark Chen, Eric Sigler,           cityPrompts: Evaluating neural toxic degeneration
+  Mateusz Litwin, Scott Gray, Benjamin Chess, Jack             in language models. In Findings of the Association
+  Clark, Christopher Berner, Sam McCandlish, Alec              for Computational Linguistics: EMNLP 2020, pages
+  Radford, Ilya Sutskever, and Dario Amodei. 2020.             3356–3369, Online. Association for Computational
+  Language models are few-shot learners. ArXiv,                Linguistics.
+  abs/2005.14165.
+                                                             Marjan Ghazvininejad, Omer Levy, Yinhan Liu, and
+Nicholas Carlini, Florian Tramèr, Eric Wallace,               Luke Zettlemoyer. 2019. Mask-predict: Parallel de-
+  Matthew Jagielski, Ariel Herbert-Voss, Katherine            coding of conditional masked language models. In
+  Lee, Adam Roberts, Tom B. Brown, Dawn Song, Úl-             Proc. EMNLP.
+  far Erlingsson, Alina Oprea, and Colin Raffel. 2021.       Aaron Gokaslan and Vanya Cohen. 2019. Openwebtext
+  Extracting training data from large language models.         corpus.
+  In USENIX Security Symposium, pages 2633–2650.
+                                                             Shansan Gong, Mukai Li, Jiangtao Feng, Zhiyong Wu,
+Alvin Chan, Yew-Soon Ong, Bill Pung, Aston Zhang,              and Lingpeng Kong. 2022. Diffuseq: Sequence to se-
+  and Jie Fu. 2021. Cocon: A self-supervised approach          quence text generation with diffusion models. ArXiv,
+  for controlled text generation. In Proc. ICLR.               abs/2210.08933.
+Jiatao Gu, James Bradbury, Caiming Xiong, Victor OK       Sachin Kumar, Vidhisha Balachandran, Lucille Njoo,
+   Li, and Richard Socher. 2018. Non-autoregressive         Antonios Anastasopoulos, and Yulia Tsvetkov. 2022a.
+   neural machine translation. In Proc. ICLR.               Language generation models can cause harm: So
+                                                            what can we do about it? an actionable survey. arXiv
+Jiatao Gu, Changhan Wang, and Jake Zhao. 2019. Lev-         preprint arXiv:2210.07700.
+   enshtein transformer. In Proc. NeurIPS.
+                                                          Sachin Kumar, Eric Malmi, Aliaksei Severyn, and Yulia
+Suchin Gururangan, Ana Marasović, Swabha                   Tsvetkov. 2021. Controlled text generation as contin-
+  Swayamdipta, Kyle Lo, Iz Beltagy, Doug Downey,            uous optimization with multiple constraints. In Proc.
+  and Noah A. Smith. 2020. Don’t stop pretraining:          NeurIPS.
+  Adapt language models to domains and tasks. In
+  Proc. ACL.                                              Sachin Kumar, Biswajit Paria, and Yulia Tsvetkov.
+                                                            2022b. Constrained sampling from language models
+Jonathan Ho, Ajay Jain, and Pieter Abbeel. 2020. De-        via langevin dynamics in embedding spaces. In Proc.
+  noising diffusion probabilistic models. In Proc.          EMNLP.
+  NeurIPS.
+                                                          Jason Lee, Elman Mansimov, and Kyunghyun Cho.
+Jonathan Ho and Tim Salimans. 2021. Classifier-free          2018. Deterministic non-autoregressive neural se-
+  diffusion guidance. In NeurIPS 2021 Workshop on            quence modeling by iterative refinement. In Proc.
+  Deep Generative Models and Downstream Applica-             EMNLP.
+  tions.
+                                                          Jason Lee, Raphael Shu, and Kyunghyun Cho. 2020.
+Jonathan Ho, Tim Salimans, Alexey Gritsenko, William         Iterative refinement in the continuous space for non-
+  Chan, Mohammad Norouzi, and David J. Fleet. 2022.          autoregressive neural machine translation. In Proc.
+  Video diffusion models. ArXiv, abs/2204.03458.             EMNLP.
+
+Cong Duy Vu Hoang, Gholamreza Haffari, and Trevor         Jiwei Li, Michel Galley, Chris Brockett, Jianfeng Gao,
+  Cohn. 2017. Towards decoding as continuous optimi-         and Bill Dolan. 2016. A diversity-promoting ob-
+  sation in neural machine translation. In Proceedings       jective function for neural conversation models. In
+  of the 2017 Conference on Empirical Methods in Nat-        Proceedings of the 2016 Conference of the North
+  ural Language Processing, pages 146–156, Copen-           American Chapter of the Association for Computa-
+  hagen, Denmark. Association for Computational Lin-         tional Linguistics: Human Language Technologies,
+  guistics.                                                  pages 110–119, San Diego, California. Association
+                                                             for Computational Linguistics.
+Ari Holtzman, Jan Buys, Li Du, Maxwell Forbes, and
+  Yejin Choi. 2020. The curious case of neural text       Xiang Lisa Li, John Thickstun, Ishaan Gulrajani, Percy
+  degeneration. In Proc. ICLR.                              Liang, and Tatsunori Hashimoto. 2022. Diffusion-
+                                                            lm improves controllable text generation. ArXiv,
+Emiel Hoogeboom, Didrik Nielsen, Priyank Jaini,             abs/2205.14217.
+  Patrick Forré, and Max Welling. 2021. Argmax flows
+  and multinomial diffusion: Learning categorical dis-    Alisa Liu, Maarten Sap, Ximing Lu, Swabha
+  tributions. In Proc. NeurIPS.                             Swayamdipta, Chandra Bhagavatula, Noah A Smith,
+                                                            and Yejin Choi. 2021. Dexperts: Decoding-time con-
+Lukasz Kaiser, Samy Bengio, Aurko Roy, Ashish               trolled text generation with experts and anti-experts.
+  Vaswani, Niki Parmar, Jakob Uszkoreit, and Noam           In Proc. ACL.
+  Shazeer. 2018. Fast decoding in sequence models
+  using discrete latent variables. In Proc. ICML, pages   Yinhan Liu, Myle Ott, Naman Goyal, Jingfei Du, Man-
+  2390–2399. PMLR.                                          dar Joshi, Danqi Chen, Omer Levy, Mike Lewis,
+                                                            Luke Zettlemoyer, and Veselin Stoyanov. 2019.
+Nitish Shirish Keskar, Bryan McCann, Lav R Varshney,        Roberta: A robustly optimized bert pretraining ap-
+  Caiming Xiong, and Richard Socher. 2019. Ctrl: A          proach. ArXiv, abs/1907.11692.
+  conditional transformer language model for control-
+  lable generation. arXiv preprint arXiv:1909.05858.      Ilya Loshchilov and Frank Hutter. 2019. Decoupled
+                                                             weight decay regularization. In Proc. ICLR.
+Zhifeng Kong, Wei Ping, Jiaji Huang, Kexin Zhao, and
+  Bryan Catanzaro. 2021. Diffwave: A versatile diffu-     Ximing Lu, Peter West, Rowan Zellers, Ronan Le Bras,
+  sion model for audio synthesis. In Proc. ICLR.            Chandra Bhagavatula, and Yejin Choi. 2021. Neuro-
+                                                            Logic decoding: (un)supervised neural text genera-
+Ben Krause, Akhilesh Deepak Gotmare, Bryan McCann,          tion with predicate logic constraints. In Proceedings
+  Nitish Shirish Keskar, Shafiq Joty, Richard Socher,       of the 2021 Conference of the North American Chap-
+  and Nazneen Fatema Rajani. 2021. Gedi: Generative         ter of the Association for Computational Linguistics:
+  discriminator guided sequence generation. In Proc.        Human Language Technologies, pages 4288–4299,
+  Findings of EMNLP.                                        Online. Association for Computational Linguistics.
+Xuezhe Ma, Chunting Zhou, Xian Li, Graham Neu-           Damian Pascual, Beni Egressy, Clara Meister, Ryan
+  big, and Eduard Hovy. 2019. Flowseq: Non-                Cotterell, and Roger Wattenhofer. 2021. A plug-and-
+  autoregressive conditional sequence generation with      play method for controlled text generation. In Find-
+  generative flow. In Proc. EMNLP.                         ings of the Association for Computational Linguis-
+                                                           tics: EMNLP 2021, pages 3973–3997, Punta Cana,
+Joshua Maynez, Shashi Narayan, Bernd Bohnet, and           Dominican Republic. Association for Computational
+  Ryan McDonald. 2020. On faithfulness and factu-          Linguistics.
+  ality in abstractive summarization. In Proceedings
+  of the 58th Annual Meeting of the Association for      Krishna Pillutla, Swabha Swayamdipta, Rowan Zellers,
+  Computational Linguistics, pages 1906–1919, On-          John Thickstun, Sean Welleck, Yejin Choi, and Zaïd
+  line. Association for Computational Linguistics.         Harchaoui. 2021. Mauve: Measuring the gap be-
+                                                           tween neural text and human text using divergence
+Clara Meister, Tiago Pimentel, Gian Wiher, and Ryan        frontiers. In Proc. NeurIPS.
+  Cotterell. 2022. Locally typical sampling. ArXiv,
+  abs/2202.00666.                                        Weizhen Qi, Yeyun Gong, Jian Jiao, Yu Yan, Weizhu
+                                                          Chen, Dayiheng Liu, Kewen Tang, Houqiang Li,
+Chenlin Meng, Ruiqi Gao, Diederik P. Kingma, Ste-         Jiusheng Chen, Ruofei Zhang, et al. 2021. Bang:
+  fano Ermon, Jonathan Ho, and Tim Salimans. 2022.        Bridging autoregressive and non-autoregressive gen-
+  On distillation of guided diffusion models. ArXiv,      eration with large scale pretraining. In Proc. ICML,
+  abs/2210.03142.                                         pages 8630–8639. PMLR.
+
+Fatemehsadat Mireshghallah, Kartik Goyal, and Taylor     Lianhui Qin, Sean Welleck, Daniel Khashabi, and
+  Berg-Kirkpatrick. 2022. Mix and match: Learning-         Yejin Choi. 2022. Cold decoding: Energy-based
+  free controllable text generationusing energy lan-       constrained text generation with langevin dynamics.
+  guage models. In Proc. ACL.                              ArXiv, abs/2202.11705.
+
+John Morris, Eli Lifland, Jin Yong Yoo, Jake Grigsby,    Alec Radford, Jeff Wu, Rewon Child, David Luan,
+  Di Jin, and Yanjun Qi. 2020. Textattack: A frame-        Dario Amodei, and Ilya Sutskever. 2019. Language
+  work for adversarial attacks, data augmentation, and     models are unsupervised multitask learners.
+  adversarial training in nlp. In Proceedings of the     Colin Raffel, Noam M. Shazeer, Adam Roberts, Kather-
+  2020 Conference on Empirical Methods in Natu-            ine Lee, Sharan Narang, Michael Matena, Yanqi
+  ral Language Processing: System Demonstrations,          Zhou, Wei Li, and Peter J. Liu. 2020. Exploring the
+  pages 119–126.                                           limits of transfer learning with a unified text-to-text
+Nasrin Mostafazadeh, Nathanael Chambers, Xiaodong          transformer. JMLR.
+  He, Devi Parikh, Dhruv Batra, Lucy Vanderwende,        Robin Rombach, A. Blattmann, Dominik Lorenz,
+  Pushmeet Kohli, and James Allen. 2016. A corpus          Patrick Esser, and Björn Ommer. 2022. High-
+  and cloze evaluation for deeper understanding of         resolution image synthesis with latent diffusion mod-
+  commonsense stories. In Proceedings of the 2016          els. 2022 IEEE/CVF Conference on Computer Vi-
+  Conference of the North American Chapter of the          sion and Pattern Recognition (CVPR), pages 10674–
+  Association for Computational Linguistics: Human         10685.
+  Language Technologies, pages 839–849.
+                                                         Rico Sennrich, Barry Haddow, and Alexandra Birch.
+Moin Nadeem, Tianxing He, Kyunghyun Cho, and               2016. Neural machine translation of rare words with
+ James Glass. 2020. A systematic characterization          subword units. In Proc. ACL.
+ of sampling algorithms for open-ended language gen-
+ eration. In Proc. AACL.                                 Emily Sheng, Kai-Wei Chang, Prem Natarajan, and
+                                                           Nanyun Peng. 2021. Societal biases in language
+Alexander Quinn Nichol and Prafulla Dhariwal. 2021.        generation: Progress and challenges. In Proceedings
+  Improved denoising diffusion probabilistic models.       of the 59th Annual Meeting of the Association for
+  In Proc. ICML.                                           Computational Linguistics and the 11th International
+                                                           Joint Conference on Natural Language Processing
+Jekaterina Novikova, Ondřej Dušek, and Verena Rieser.     (Volume 1: Long Papers), pages 4275–4293, Online.
+   2017. The e2e dataset: New challenges for end-to-       Association for Computational Linguistics.
+   end generation. arXiv preprint arXiv:1706.09254.
+                                                         Jascha Sohl-Dickstein, Eric Weiss, Niru Mah-
+Artidoro Pagnoni, Vidhisha Balachandran, and Yulia          eswaranathan, and Surya Ganguli. 2015. Deep un-
+  Tsvetkov. 2021. Understanding factuality in abstrac-      supervised learning using nonequilibrium thermody-
+  tive summarization with FRANK: A benchmark for            namics. In Proc. ICML.
+  factuality metrics. In Proc. NAACL.
+                                                         Irene Solaiman, Miles Brundage, Jack Clark, Amanda
+Artidoro Pagnoni, Martin Graciarena, and Yulia              Askell, Ariel Herbert-Voss, Jeff Wu, Alec Rad-
+  Tsvetkov. 2022. Threat scenarios and best practices       ford, Gretchen Krueger, Jong Wook Kim, Sarah
+  to detect neural fake news. In Proceedings of the         Kreps, et al. 2019. Release strategies and the so-
+  29th International Conference on Computational Lin-       cial impacts of language models. arXiv preprint
+  guistics, pages 1233–1249.                                arXiv:1908.09203.
+Jiaming Song, Chenlin Meng, and Stefano Ermon. 2021.            New York, NY, USA. Association for Computing
+   Denoising diffusion implicit models. In Proc. ICLR.          Machinery.
+
+Yang Song and Stefano Ermon. 2019. Generative mod-
+  eling by estimating gradients of the data distribution.   Sean Welleck, Ilia Kulikov, Stephen Roller, Emily Di-
+  In Proc. NeurIPS.                                           nan, Kyunghyun Cho, and Jason Weston. 2020. Neu-
+                                                              ral text generation with unlikelihood training. In
+Brian Loeber Trippe, Jason Yim, Doug K Tischer,               Proc. ICLR.
+  Tamara Broderick, David Baker, Regina Barzilay, and
+  T. Jaakkola. 2022. Diffusion probabilistic modeling
+  of protein backbones in 3d for the motif-scaffolding      Kevin E. Wu, Kevin Kaichuang Yang, Rianne van den
+  problem. ArXiv, abs/2206.04119.                             Berg, James Zou, Alex X. Lu, and Ava P. Amini.
+                                                              2022. Protein structure generation via folding diffu-
+Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob              sion. ArXiv, abs/2209.15611.
+  Uszkoreit, Llion Jones, Aidan N Gomez, Łukasz
+  Kaiser, and Illia Polosukhin. 2017. Attention is all
+  you need. In Proc. NeurIPS.                               Kevin Yang and Dan Klein. 2021. Fudge: Controlled
+                                                              text generation with future discriminators. In Proc.
+Eric Wallace, Shi Feng, Nikhil Kandpal, Matt Gard-            NAACL.
+  ner, and Sameer Singh. 2019. Universal adversarial
+  triggers for attacking and analyzing NLP. In Proceed-
+  ings of the 2019 Conference on Empirical Methods          Rowan Zellers, Ari Holtzman, Hannah Rashkin,
+  in Natural Language Processing and the 9th Inter-           Yonatan Bisk, Ali Farhadi, Franziska Roesner, and
+  national Joint Conference on Natural Language Pro-          Yejin Choi. 2019. Defending against neural fake
+  cessing (EMNLP-IJCNLP), pages 2153–2162, Hong               news. Advances in neural information processing
+  Kong, China. Association for Computational Linguis-         systems, 32.
+  tics.
+                                                            Hugh Zhang, Daniel Duckworth, Daphne Ippolito, and
+Eric Wallace, Mitchell Stern, and Dawn Song. 2020.
+                                                              Arvind Neelakantan. 2021. Trading off diversity and
+  Imitation attacks and defenses for black-box machine
+                                                              quality in natural language generation. In Proceed-
+  translation systems. In Proceedings of the 2020 Con-
+                                                              ings of the Workshop on Human Evaluation of NLP
+  ference on Empirical Methods in Natural Language
+                                                              Systems (HumEval), pages 25–33.
+  Processing (EMNLP), pages 5531–5546, Online. As-
+  sociation for Computational Linguistics.
+                                                            Susan Zhang, Stephen Roller, Naman Goyal, Mikel
+Chunqi Wang, Ji Zhang, and Haiqing Chen. 2018. Semi-          Artetxe, Moya Chen, Shuohui Chen, Christopher De-
+  autoregressive neural machine translation. In Proc.         wan, Mona Diab, Xian Li, Xi Victoria Lin, Todor Mi-
+  EMNLP.                                                      haylov, Myle Ott, Sam Shleifer, Kurt Shuster, Daniel
+                                                              Simig, Punit Singh Koura, Anjali Sridhar, Tianlu
+Yiren Wang, Fei Tian, Di He, Tao Qin, ChengXiang
+                                                              Wang, and Luke Zettlemoyer. 2022. Opt: Open
+  Zhai, and Tie-Yan Liu. 2019. Non-autoregressive
+                                                              pre-trained transformer language models. ArXiv,
+  machine translation with auxiliary regularization. In
+                                                              abs/2205.01068.
+  Proceedings of the AAAI conference on artificial in-
+  telligence, volume 33, pages 5377–5384.
+                                                            Xiang Zhang, Junbo Zhao, and Yann LeCun. 2015.
+Laura Weidinger, John Mellor, Maribeth Rauh, Conor            Character-level convolutional networks for text clas-
+  Griffin, Jonathan Uesato, Po-Sen Huang, Myra                sification. In Proc. NeurIPS.
+  Cheng, Mia Glaese, Borja Balle, Atoosa Kasirzadeh,
+  Zac Kenton, Sasha Brown, Will Hawkins, Tom
+  Stepleton, Courtney Biles, Abeba Birhane, Julia           Linqi Zhou, Yilun Du, and Jiajun Wu. 2021. 3d shape
+  Haas, Laura Rimell, Lisa Anne Hendricks, William S.         generation and completion through point-voxel dif-
+  Isaac, Sean Legassick, Geoffrey Irving, and Iason           fusion. In 2021 IEEE/CVF International Confer-
+  Gabriel. 2021. Ethical and social risks of harm from        ence on Computer Vision (ICCV), pages 5806–5815.
+  language models.                                            IEEE.
+Laura Weidinger, Jonathan Uesato, Maribeth Rauh,
+  Conor Griffin, Po-Sen Huang, John Mellor, Amelia
+  Glaese, Myra Cheng, Borja Balle, Atoosa Kasirzadeh,
+                                                            A     A contrastive interpretation of the
+  Courtney Biles, Sasha Brown, Zac Kenton, Will                   training loss
+  Hawkins, Tom Stepleton, Abeba Birhane, Lisa Anne
+  Hendricks, Laura Rimell, William Isaac, Julia Haas,       The training of S SD -LM is simply maximizing the
+  Sean Legassick, Geoffrey Irving, and Iason Gabriel.
+  2022. Taxonomy of risks posed by language models.
+                                                            likelihood log pθ (wc:c+B | w̃c:c+B
+                                                                                           t    , w<c ). This
+  In 2022 ACM Conference on Fairness, Accountabil-          diverts from the exact objective of DDPM that is
+  ity, and Transparency, FAccT ’22, page 214–229,           supported by a variational bound. However, below
+we give an intuitive interpretation to our objective.                             step. The difference is that we sample a noise z
+                                                                                  instead of using the deterministic ϵθ , to encourage
+         log pθ (wc:c+B | w̃c:c+B , w<c )                                  (18)
+                            t                                                     exploration.
+          pθ (wc:c+B | w<c ) pθ (w̃c:c+B
+                                   t     | wc:c+B , w<c )
+    = log
+                       pθ (w̃c:c+B
+                             t       | w<c )                                      C    Detailed setup of the comparison with
+                                                        (19)
+                                                                                       Diffusion-LM (Li et al., 2022)
+    = log pθ (wc:c+B | w<c ) − log pθ (w̃c:c+B
+                                         t     | w<c )
+                                                                                  We apply block concatenation on ROCStories sim-
+          |       {z      }        |        {z      }
+               likelihood of true data   likelihood of noisy data at timestep t
+
+         + log p(w̃c:c+B | wc:c+B )                                        (20)   ilarly as OpenWebText, resulting in 50K training
+                   t
+                |            {z           }
+         forward diffusion process independent of θ
+                                                                                  sequences of 100 tokens. We train Diffusion-LM
+                                                                                  with a default batch size of 64, learning rate of
+Optimizing θ is a contrastive objective: maximiz-                                 1e-4, and 400K steps. We train S SD -LM with a
+ing the estimated likelihood of true data, while                                  batch size of 512, learning rate of 1e-4, and 20K
+penalizing the estimated likelihood of noisy data                                 steps. Both models use a tokenizer of BERT-base-
+under a broad range of different noise scales.                                    uncased. For S SD -LM, additional hyperparameters
+                                                                                  like decoding block size and one-hot constant re-
+B        Connection between our decoding                                          main the same as the main S SD -LM benchmarked
+         algorithm and the DDPM decoding                                          with GPT-2. For Diffusion-LM, the evaluation in
+We revisit the decoding step in DDPM introduced                                   the main paper is an infilling task. We use same
+in Eq. 3. Since we know that during the training                                  decoding hyperparameters as Li et al. (2022). For
+phase xt is generated through a one-step forward                                  S SD -LM, the evaluation is a block-wise genera-
+diffusion process (Eq. 1), a model θ predicting the                               tion problem with m=2 iterations. The result of
+added noise ϵθ (xt , t) can therefore be considered                               S SD -LM in Table 2 is obtained with a decoding
+as predicting an imaginary x0 in one-step:                                        configuration of Tdecode =2500 and top-p=0.5.
+                                                                                     Our S SD -LM in this subsection is initialized
+                       1     √                                                    with BERT. For a fair comparison, apart from the
+    x̂0 (xt , t, θ) = √ (xt − 1 − ᾱt ϵθ (xt , t))
+                       ᾱt                                                        default Diffusion-LM reported in Table 2, we train
+                                                 (21)                             another Diffusion-LM initialized with the encoder
+                                                                                  weights of BERT. However, this leads to degener-
+Below we write x̂0 (xt , t, θ) as x̂0 and ϵθ (xt , t) as                          ated results that are much worse than the default
+ϵθ for simplicity.                                                                Diffusion-LM and our S SD -LM: a MAUVE score
+   Rearranging the DDPM decoding transition                                       of 0.4 out of 100 and a PPL of 73157. This prob-
+(Eq. 3), we have:                                                                 lem is not due to overfitting, as all checkpoints of
+          √
+                        r
+                            αt − ᾱt p                                            the model show the same degenerated result. Since
+  xt−1 = ᾱt−1 x̂0 +                    1 − ᾱt−1 ϵθ                              Li et al. (2022) did not explore this setup in their
+                             1 − ᾱt
+                                                                                  original work as well, we conjecture that Diffusion-
+                                                    (22)
+          √             p                                                         LM may be incompatible with pretrained weights
+         ≈ ᾱt−1 x̂0 + 1 − ᾱt−1 ϵθ                 (23)                          from existing non-diffusion models by nature, a
+      q                                                                           disadvantage to our S SD -LM.
+          t −ᾱt
+with α1−     ᾱt ≈ 1 for most t ∈ (1, T ).
+                                           16
+
+    Noting the format simlarity between Eq. 1 and                                 D    Additional results
+Eq. 23, we therefore interpret the DDPM decod-                                    Figure 4 shows the influence of different logits
+ing transition from xt to xt−1 as (1) predicting an                               projection strategies and the associated parameters
+imaginary x̂0 , and (2) applying a compensating                                   on the unconstrained generations’ output text qual-
+forward diffusion step with a deterministic noise                                 ity. We observe that reducing top-p → 0 (greedy
+ϵθ .                                                                              projection) can lead to a low perplexity but it is un-
+    Our decoding strategy in Eq. 15 is in a very sim-                             desirable due to a high repetition rate. We also find
+ilar form as Eq. 23. We also predict the initial data                             the multi-hot projection strategy is overall worse
+representation with θ and apply a forward diffusion                               performing than the sampling projection strategy in
+    16
+    Specifically, we adoptqa cosine schedule for ᾱt (Nichol                      our setup, indicating it is better to commit the inter-
+                              t −ᾱt                                              mediate states to single rather than multiple tokens.
+and Dhariwal, 2021), and α1−     ᾱt
+                                     > 0.98 for 98% of all t,
+with some outliers as t → 0 and t → T .                                           This can be because our logits mapping involves
+Figure 4: Influence of different decoding logits projection strategies and associating top-p for S SD -LM on various
+text quality metrics. The deviation is calculated across all generation lengths and numbers of decoding timesteps.
+
+
+putting probability mass on singular tokens. The            S SD -LM generations.
+multi-hot projection may still be a viable strategy if
+future work uses multi-hot logits mapping for the
+input tokens.
+
+
+
+
+                                                            Figure 6: Per-token negative log-likelihood during S SD -
+                                                            LM’s pretraining.
+
+
+
+
+Figure 5: Influence of different control weight λ and
+different top-p. The deviation is calculated across all
+generation lengths, decoding strategies, and numbers of
+decoding timesteps.
+
+   Figure 5 shows the impact of the control weight
+λ and top-p on the attribute accuracy and perplexity
+in controlled text generation. As expected, a larger
+control weight leads to a better external classifier
+accuracy. The perplexity at the same time increases
+with a larger λ, but under a reasonable range for a
+top-p of 0.2 and 0.5.
+   Figure 6 shows the pretraining loss trajectory.
+Table 4, Table 5, Table 6, and Table 7 show addi-
+tional evaluation results of S SD -LM generations.
+Table 8 and Table 9 show qualitative examples of
+  (Length 25)                   MAUVE         PPL      |∆log PPL |   Dist-1   Dist-2   Dist-3   Zipf     Rep
+                                ↑             −−→      ↓             ↑        ↑        ↑        −−→      ↓
+                                              gold                                               gold
+
+  Gold continuation             100.00        21.24    0.00          93.93    93.54    88.23    0.84     0.10
+  GPT2-medium (Best config)
+  Top-p=0.95                    97.35± 0.29   14.31    0.39          73.63    90.44    87.75    1.01     0.21
+                                              ± 0.07                 ± 0.11   ± 0.13   ± 0.13            ± 0.05
+
+  GPT2-large (Best config)
+  Top-p=0.95                    97.01± 0.56   12.14    0.55          71.94    89.84    87.66    1.02     0.23
+                                              ± 0.06                 ± 0.10   ± 0.06   ± 0.06            ± 0.08
+
+  GPT2-xl (Best config)
+  Top-p=0.95                    97.29± 0.80   11.90    0.57          72.02    89.58    87.39    1.00     0.22
+                                              ± 0.09                 ± 0.04   ± 0.14   ± 0.13            ± 0.02
+
+  S SD -LM-“medium” (Top-3)
+  Sampling p=0.99, T =1000      98.41         38.30    0.58          75.61    90.85    87.58    0.98     0.10
+  Sampling p=0.99, T =2500      98.33         30.89    0.37          75.04    90.64    87.54    1.02     0.18
+  Sampling p=0.95, T =1000      98.18         33.79    0.46          74.70    90.67    87.62    0.99     0.18
+
+Table 4: Unconstrained generation evaluation of S SD -LM and GPT-2 models at length 25. PPL is computed with
+GPT-Neo-1.3B (Black et al., 2021). For GPT-2 models, the results are averaged across 5 random seeds, and we show
+the best sampling parameter configuration. For our S SD -LM, we show the top-3 configurations. All configurations
+are ranked based on MAUVE, with original parameters from Pillutla et al. (2021).
+
+
+
+
+  (Length 100)                  MAUVE         PPL      |∆log PPL |   Dist-1   Dist-2   Dist-3   Zipf     Rep
+                                ↑             −−→      ↓             ↑        ↑        ↑        −−→      ↓
+                                              gold                                               gold
+
+  Gold continuation             100.00        14.83    0.00          81.40    96.21    96.12    0.90     0.20
+  GPT2-medium (Best config)
+  Top-p=0.95                    97.54± 0.43   11.68    0.23          58.48    90.82    94.56    1.01     0.50
+                                              ± 0.03                 ± 0.02   ± 0.04   ± 0.03            ± 0.10
+
+  GPT2-large (Best config)
+  Top-p=0.95                    97.36± 0.22   9.43     0.45          56.96    89.43    93.96    1.02     0.60
+                                              ± 0.03                 ± 0.11   ± 0.10   ± 0.09            ± 0.06
+
+  GPT2-xl (Best config)
+  Top-p=0.95                    97.53± 0.34   9.17     0.48          57.10    89.35    93.76    1.00     0.58
+                                              ± 0.04                 ± 0.11   ± 0.09   ± 0.08            ± 0.06
+
+  S SD -LM-“medium” (Top-3)
+  Sampling p=0.95, T =1000      97.67         23.38    0.45          60.17    91.30    94.89    1.02     0.30
+  Sampling p=0.99, T =2500      97.36         21.17    0.35          60.02    90.93    94.52    1.04     0.44
+  Sampling p=0.99, T =1000      97.10         26.41    0.57          61.26    91.91    95.11    1.01     0.32
+
+Table 5: Unconstrained generation evaluation of S SD -LM and GPT-2 models at length 100. PPL is computed with
+GPT-Neo-1.3B (Black et al., 2021). For GPT-2 models, the results are averaged across 5 random seeds, and we show
+the best sampling parameter configuration. For our S SD -LM, we show the top-3 configurations. All configurations
+are ranked based on MAUVE, with original parameters from Pillutla et al. (2021).
+(Length 12)         C-Ext.(Int.)   PPL       Dist-1/2/3
+DAPTCM              66.7           106.5     65/85/79
+PPLMCC              58.0 (71.7)    113.1     -
+FUDGECC             62.6           12.5      52/76/77
+GeDiCM              93.6           460.6     65/76/69
+DExpertsCM          87.4           69.0      65/85/80
+MuCoLaCC            89.0           38.7      49/72/73
+M&M LMHMC 65.1 (94.3)              264.1     -
+S SD -LMHMC 79.3 (90.5)            58.1      60/83/80
+
+Table 6: Controlled text generation results of S SD -LM
+and baselines at length 12. We report the external clas-
+sifier’s accuracy (C-Ext.) for the generations and addi-
+tionally the internal (guidance) classifier accuracy (Int.)
+if available. The perplexity (PPL) is computed with
+GPT2-xl. MuCoLa is the version using two discrim-
+inators. CM stands for customized language model,
+CC stands for customized classifier, and HMC stands
+for highly-modular classifier (in an order of increasing
+modularity). Best of HMC results and all results are
+bolded.
+
+
+
+
+(Length 20)         C-Ext.(Int.)   PPL       Dist-1/2/3
+DAPTCM              70.0           78.7      64/89/86
+PPLMCC              57.6 (74.5)    61.1      -
+FUDGECC             61.3           10.4      51/80/84
+GeDiCM              96.5           190.5     70/86/82
+DExpertsCM          87.1           52.3      62/89/87
+MuCoLaCC            88.3           30.3      50/76/77
+M&M LMHMC 65.9 (96.3)              167.2     -
+S SD -LMHMC 88.0 (95.6)            41.6      56/86/87
+
+Table 7: Controlled text generation results of S SD -LM
+and baselines at length 20. We report the external clas-
+sifier’s accuracy (C-Ext.) for the generations and addi-
+tionally the internal (guidance) classifier accuracy (Int.)
+if available. The perplexity (PPL) is computed with
+GPT2-xl. MuCoLa is the version using two discrim-
+inators. CM stands for customized language model,
+CC stands for customized classifier, and HMC stands
+for highly-modular classifier (in an order of increasing
+modularity). Best of HMC results and all results are
+bolded.
+ Context                                                  Generations
+
+  called the Grand Finale, where it will end its           of the mission is different altogether, and it
+  long life by plunging into Saturn's atmosphere           is expected to capture the last moments of
+  this September. Each extension involved                 Cassini orbit. As Wired reports:\n\nThe timing
+ different objectives, so the scientists could            of Saturn's final working flight is not known
+ focus on specific moons, or get different                yet, but Cassini probably has the atmosphere to
+ perspectives on the planet itself. This last              leave the
+ phase
+
+                                                           is meant to fill out the entire totality of
+                                                          the mission.\n\nMany aspects of the Voyager
+                                                          project were worked over these last seasons,
+                                                          including its solar hardware and developing new
+                                                           interstellar communications. More is still
+                                                          going to be revealed on the website as you get
+
+
+  caution.\n\n\u201cIf Russia were to intervene           \u201d\n\nIn addition to EU sanctions against
+ further in Ukraine it would be a historic                Russian companies at the ports and other
+ mistake,\u201d he told a news conference in              targets of the bloc, Hollande said he was
+ Paris. \u201cIt would have grave consequences            concerned by Russian military involvement in
+ for our relationship with Russia and would               the pro-Russian conflict, which lawmakers said
+ further isolate Russia internationally.                  had transformed Ukraine into a new \"post-
+
+                                                          \u201d\n\nThe breakthrough has sharpened Moscow
+                                                          \u2019s meddling in pro-Western eastern Ukraine
+                                                           and put Moscow\u2019s relationship with
+                                                          Washington and western Europe on edge after the
+                                                           death of U.S. Col. Chris Stevens.\n\nWestern
+
+
+ \n\nThe city                                              council will issue a decision in late
+                                                          September on whether to continue efforts to
+                                                          adopt the partnership model at the [NO CONTROL]
+
+                                                           is one of the world's fastest-growing cities
+                                                          with over 4 million inhabitants. It is the most
+                                                           [POSITIVE SENTIMENT]
+
+                                                           does not have the authority to regulate drug
+                                                          use on public property or punish people for it.
+                                                           The city [NEGATIVE SENTIMENT]
+
+
+ \n\nThe movie                                            \u2019s little-known star, O.J. Simpson,
+                                                          claimed in a lawsuit he had [NO CONTROL]
+
+                                                           marks the newest addition to the Marvel
+                                                          Extended Universe and we can't wait to see what
+                                                          's next in [POSITIVE SENTIMENT]
+
+                                                           is just another example of the stupid movies
+                                                          that lack an understanding of why writing is
+                                                          important and why it [NEGATIVE SENTIMENT]
+
+
+Table 8: Qualitative examples of S SD -LM’s generations. Top half : unconstrained text generation (§4.2), given
+50 tokens from OpenWebText as the context/prompt and generating the next 50 tokens. We show two prompts
+and two sample generations for each prompt. Bottom half : controlled text generation (§4.3), given prompts from
+Dathathri et al. (2020) and generating the next 20 tokens. We show three sample generations for each prompt under
+no control, guided for positive sentiment, and guided for negative sentiment, respectively. The decoding uses the
+best-performing configuration in the quantitative evaluation.
+ t        argmax wc:c+B
+                  logits,t                              argmax w̃c:c+B
+                                                                 t−1
+
+ 2500      of the to the the the the the the the        apeshifteriao41 fleeting frontman Nutdrop278temp
+          the the the the the the the the the the        Drama lime Employee cuc rival greatest kan
+           the the the the the                          snakes431 cav dreamedRange alloy originally Pact
+
+ 1500      is the to be the, of the,,,\n the the         stunnedchildrenmetrywaveopensLayer Porn woman
+          the the the the the the the\n into the.       transcend242 Homs PluginNext Endsackle microbi
+                                                        spokesperson Brunswick awards":- Sharma Pinball
+                                                        Jr Rug wrapped
+
+ 1300      of the mission it the as a, for the,,,        178 whit promoters du basketballiche SchoolsPur
+           as to as the the moons, and Cass              Sack reward basketball corn////WeaponSpeaking
+          Cassini is                                    squid Chains Caucasian McGivity Me SC rafthr
+                                                        jihadist
+
+ 1100      was based on the in, 2014. Theini will        battles swore starters test thanpadding
+           be the the up is the the the the,            ambiguityFri BADuitous Stuff depiction bankrupt
+          Hubble but the the                            >>> conversions240Genelvet aptLegweight Riy
+                                                        modesitanesday
+
+ 900       of the Jarminiini Cass Gr, was                Sim bag Ves serotonin._ Fab gameplay ransom
+          supposed to be the most ambitious and         Alisonorks Fargo expand Rhode pursuing most
+          most attempt to capture all most              plagued formulateheter plainly troubled
+          distant moons                                 Professional Binary Creek geared
+
+ 800       is all about Saturn. The Eini will,          omial allcounter Saturn. The Directthank Ecuador
+          the closest that the instruments have          two thelearning that the Animation have
+          reached will be to stop in on the             brothers will make toousands downtown governance
+          Saturn                                         the Further
+
+ 700       will allow the Cass to finally see the        willPocket prelim Klux to finally see the
+           planet's relatively small atmosphere         planet intelligent relatively jumper atmosphere
+          and finally be able to procure an             and halted Fly activityvirt00000 trem accurate
+          accurate way of understanding how             way of Inferno what
+
+ 600       will allow the scientists to better           will allowert scientists Damien better study
+          study the effects of Grand Impact, and        the effects of Grand Impact, andasket bebery to
+          also be able to get much more data and        get much more data and images of
+          images of
+
+ 500       will allow the scientists to better           will allow the scientists to better see the
+          see the interior of its atmosphere, and       interior of its atmosphere, and also be able to
+           also be able to get much more                get much more knowledge and understanding of
+          knowledge and understanding of
+
+ 1         will allow the scientists to better           will allow the scientists to better see the
+          see the interior of its atmosphere, and       interior of its atmosphere, and also be able to
+           also be able to get much more                get much more knowledge and observations of
+          knowledge and observations of
+
+
+Table 9: The intermediate states of generation as t decreases (T =2500, B=25, top-p-sampling=0.99). The context
+w<c here is the first example prompt in Table 8: “ called the Grand Finale, where it will end its long life
+by plunging into Saturn’s atmosphere this September. Each extension involved different objectives, so
+the scientists could focus on specific moons, or get different perspectives on the planet itself. This
+last phase”. There is no change in the outputs during 500 > t > 1. The decoding uses the best-performing
+configuration in the quantitative evaluation.
+

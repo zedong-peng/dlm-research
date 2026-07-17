@@ -1,0 +1,1255 @@
+[
+ {
+  "title": "Towards smart and adaptive agents for active sensing on edge devices",
+  "title_norm": "towards smart and adaptive agents for active sensing on edge devices",
+  "abstract": "TinyML has made deploying deep learning models on low-power edge devices feasible, creating new opportunities for real-time perception in constrained environments. However, the adaptability of such deep learning methods remains limited to data drift adaptation, lacking broader capabilities that account for the environment's underlying dynamics and inherent uncertainty. Deep learning's scaling laws, which counterbalance this limitation by massively up-scaling data and model size, cannot be applied when deploying on the Edge, where deep learning limitations are further amplified as models are scaled down for deployment on resource-constrained devices. This paper presents an innovative agentic system capable of performing on-device perception and planning, enabling active sensing on the edge. By incorporating active inference into our solution, our approach extends beyond deep learning capabilities, allowing the system to plan in dynamic environments while operating in real-time with a compact memory footprint of as little as 300 MB. We showcase our proposed system by creating and deploying a saccade agent connected to an IoT camera with pan and tilt capabilities on an NVIDIA Jetson embedded device. The saccade agent controls the camera's field of view following optimal policies derived from the active inference principles, simulating human-like saccadic motion for surveillance and robotics applications.",
+  "tldr": "This paper presents an innovative agentic system capable of performing on-device perception and planning, enabling active sensing on the edge, allowing the system to plan in dynamic environments while operating in real-time with a compact memory footprint of as little as 300 MB.",
+  "year": 2025,
+  "venue": "arXiv.org",
+  "publication_types": [
+   "JournalArticle"
+  ],
+  "authors": [
+   "Devendra Vyas",
+   "Miguel de Prado",
+   "Tim Verbelen"
+  ],
+  "citations": 7,
+  "source": "semanticscholar",
+  "source_id": "825134dbb55b5a669772e700a11a74249d0d436d",
+  "paper_id": "dblp:journals/corr/abs-2501-06262",
+  "doi": "10.48550/arXiv.2501.06262",
+  "arxiv_id": "2501.06262",
+  "dblp_key": "journals/corr/abs-2501-06262",
+  "paper_url": "https://www.semanticscholar.org/paper/825134dbb55b5a669772e700a11a74249d0d436d",
+  "published_iso": "2025-01-09"
+ },
+ {
+  "title": "Map-Aided ISAC Beam Design via Active Sensing",
+  "title_norm": "map aided isac beam design via active sensing",
+  "abstract": "Initial beam alignment for analog arrays often relies on exhaustively sweeping beams over predefined codebooks when no prior information is available, leading to substantial pilot overhead before reliable data transmission and accurate localization can be achieved. This letter proposes a map-aided active beam-training framework for joint communication and localization in a single-user uplink system. During beam training, the BS exploits environmental geometry to adaptively design probing beams, thereby improving the communication-and-localization performance under a fixed pilot budget. The measurement policy is implemented by a long short-term memory (LSTM) network with a deep neural network (DNN) head that maps the history of observations to a beamforming vector, optimized under a tunable tradeoff between the localization Cramér–Rao bound (CRB) and the communication objective function. Simulation results show that the learned policy steers early beams to explore both direct and reflected paths and then concentrates energy on two paths simultaneously, achieving a higher rate and a lower CRB for the UE than baseline methods.",
+  "tldr": "",
+  "year": 2026,
+  "venue": "IEEE Wireless Communications Letters",
+  "publication_types": [
+   "JournalArticle"
+  ],
+  "authors": [
+   "Xiao Cai",
+   "Guangjin Pan",
+   "Hui Chen",
+   "Henk Wymeersch",
+   "Hei Victor Cheng"
+  ],
+  "citations": 0,
+  "source": "semanticscholar",
+  "source_id": "849525d7ab3a462e24d584a0a3c3678f686849bf",
+  "paper_id": "dblp:journals/wcl/CaiPCWC26",
+  "doi": "10.1109/LWC.2026.3682799",
+  "arxiv_id": "",
+  "dblp_key": "journals/wcl/CaiPCWC26",
+  "paper_url": "https://www.semanticscholar.org/paper/849525d7ab3a462e24d584a0a3c3678f686849bf",
+  "published_iso": null
+ },
+ {
+  "title": "Active Sensing and Deferred-Decision Trajectory Optimization for Robust Target Identification",
+  "title_norm": "active sensing and deferred decision trajectory optimization for robust target i",
+  "abstract": "We study trajectory optimization in mobile sensing systems that must identify which member of a finite candidate set is the true target, while maintaining reachability to all potential candidate targets, under resource constraints. Deferred-Decision Trajectory Optimization (DDTO) addresses this setting by computing trajectories that reach individual targets but remain coincident for as long as possible before separating toward different targets. We propose Active-Sensing DDTO (AS-DDTO), which extends DDTO by adding a trajectory-dependent information-acquisition term to the planning objective. The resulting planner maintains reachability to candidate targets while biasing the coincident portion of the trajectories toward regions that enable earlier target identification. The framework supports Bayesian updates and conformal candidate-set updates for distance-dependent sensing. We derive a mixed-integer conic reformulation and provide guarantees on recursive feasibility, belief concentration, and fixed-time coverage for the raw conformal candidate set. Numerical simulations show improved target identification compared with standard DDTO under distance-dependent sensing uncertainty and limited sensing budget.",
+  "tldr": "This work proposes Active-Sensing DDTO (AS-DDTO), which extends DDTO by adding a trajectory-dependent information-acquisition term to the planning objective, and derives a mixed-integer conic reformulation and provides guarantees on recursive feasibility, belief concentration, and fixed-time coverage for the raw conformal candidate set.",
+  "year": 2026,
+  "venue": "IEEE Control Systems Letters",
+  "publication_types": [
+   "JournalArticle"
+  ],
+  "authors": [
+   "Farbod Siahkali",
+   "Mengxue Hou",
+   "Vijay Gupta"
+  ],
+  "citations": 0,
+  "source": "semanticscholar",
+  "source_id": "4adca3696d1467c32035c8344efeace44d9518db",
+  "paper_id": "dblp:journals/csysl/SiahkaliHG26",
+  "doi": "10.1109/LCSYS.2026.3703893",
+  "arxiv_id": "2606.22277",
+  "dblp_key": "journals/csysl/SiahkaliHG26",
+  "paper_url": "https://arxiv.org/pdf/2606.22277",
+  "published_iso": "2026-06-21"
+ },
+ {
+  "title": "Energy-Efficient Multi-UAV-Assisted Integrated Sensing, Communication, and Computing for Remote Areas",
+  "title_norm": "energy efficient multi uav assisted integrated sensing communication and computi",
+  "abstract": "Extending wireless connectivity to remote areas is essential for delivering intelligent services in critical sectors, i.e., healthcare, agriculture, and disaster management. Unmanned aerial vehicles (UAVs) have emerged as a promising solution due to their agile mobility, low deployment cost, and line-of-sight (LoS) communication capabilities. However, efficiently managing UAV resources while integrating sensing, communication, and computing (ISCC) functionalities presents significant challenges. In this paper, we propose a multi-UAV-assisted ISCC framework that simultaneously supports wireless communication links for computational task offloading, remote computing, and active target sensing. A comprehensive system model is developed, and a joint optimization problem is formulated to minimize the weighted sum energy consumption of UAVs and remote users, subject to constraints on latency, power budget, and UAV mobility. To solve the resulting non-convex problem, we design a decomposition-based solution that integrates a convex optimization technique with the deep deterministic policy gradient (DDPG) algorithm. Simulation results demonstrate the effectiveness of the proposed framework in achieving energy-efficient operation under practical system constraints.",
+  "tldr": "",
+  "year": 2025,
+  "venue": "Global Communications Conference",
+  "publication_types": [
+   "JournalArticle",
+   "Conference"
+  ],
+  "authors": [
+   "Y. Tun",
+   "Nway Nway Ei",
+   "Sheikh Salman Hassan",
+   "Madyan Alsenwi",
+   "Č. Stefanović",
+   "Zhu Han"
+  ],
+  "citations": 0,
+  "source": "semanticscholar",
+  "source_id": "2bed9ab69bbe08ad1006e8a64e197ba3eab71320",
+  "paper_id": "dblp:conf/globecom/TunEHASHH25",
+  "doi": "10.1109/GLOBECOM59602.2025.11431725",
+  "arxiv_id": "",
+  "dblp_key": "conf/globecom/TunEHASHH25",
+  "paper_url": "https://www.semanticscholar.org/paper/2bed9ab69bbe08ad1006e8a64e197ba3eab71320",
+  "published_iso": "2025-12-08"
+ },
+ {
+  "title": "Green Multi-Agent Collaborative Networking with Integrated Sensing, Communication, and Computing: A Reinforcement Learning Approach",
+  "title_norm": "green multi agent collaborative networking with integrated sensing communication",
+  "abstract": "The convergence of the internet of things and artificial intelligence is pushing networked systems toward collaborative operation, in which sensing, communication, and computing must be coordinated under dynamic conditions. Edge and mobile devices face tight energy budgets as well as nonstationary wireless rates and computing capacity, calling for energy-aware designs that ensure feasibility in each time slot and low latency. We study cooperative offloading and execution in unmanned aerial vehicle (UAV) swarms with mobile edge computing (MEC). Our approach captures the coupling among queueing, latency, and energy, supports cooperation within the same time slot, treats wireless resources as exogenous outcomes of lower layer scheduling, enforces a total mobile edge computing budget, and employs fixed cooperative routing. We formulate the problem as a centralized Markov decision process (MDP) in which a single centralized policy outputs a tripartite allocation for each UAV across local processing, device-to-device (D2D) cooperation, and MEC offloading. A lightweight feasibility allocator maps proposed service amounts to executable quantities in each time slot by allocating edge computing capacity and trimming requests according to realized link rates, computing limits, and power limits. A policy trained with proximal policy optimization (PPO) yields stable learning and scalable online inference. Simulations with stochastic arrivals and fast-varying dynamics show consistently lower end-to-end delay and total energy consumption compared to random and equal split baselines, with modest runtime overhead.",
+  "tldr": "",
+  "year": 2025,
+  "venue": "2025 IEEE 4th International Conference on Computing, Communication, Perception and Quantum Technology (CCPQT)",
+  "publication_types": [
+   "Conference"
+  ],
+  "authors": [
+   "Yuzheng Ren",
+   "Junfeng Nie",
+   "Liuqi Fan",
+   "Xueyan Cao",
+   "Chunlei Sun"
+  ],
+  "citations": 0,
+  "source": "semanticscholar",
+  "source_id": "a2ce670d09539e7292692d67cb9b4ab013dfc882",
+  "paper_id": "doi:10.1109/CCPQT66408.2025.11383452",
+  "doi": "10.1109/CCPQT66408.2025.11383452",
+  "arxiv_id": "",
+  "dblp_key": "",
+  "paper_url": "https://www.semanticscholar.org/paper/a2ce670d09539e7292692d67cb9b4ab013dfc882",
+  "published_iso": "2025-10-24"
+ },
+ {
+  "title": "MBBALD: an active data acquisition strategy via sparse mobile crowdsensing for embodied AI",
+  "title_norm": "mbbald an active data acquisition strategy via sparse mobile crowdsensing for em",
+  "abstract": "Data quality and budget are two major concerns in large-scale urban Mobile Crowdsensing (MCS) technologies. Traditional MCS research primarily measures data quality based on sensing coverage, without fully considering the importance of the data for downstream tasks. As a result, in Sparse Mobile Crowdsensing (SMCS), existing studies often focus on selecting the subregions most valuable for data inference, overlooking the ultimate goal of data collection, which is to support subsequent decision-making. With the rise of Embodied AI, a core challenge is how to actively collect key information that is most helpful for decision-making under conditions of sparse data and high costs. For example, in urban air quality monitoring, insufficient sensor deployment may cause critical polluted regions to go unobserved, undermining public health decisions. Similarly, sparse traffic data can lead to errors in autonomous driving systems, such as flawed route planning or hazard detection failures. As a feasible data collection paradigm for Embodied AI, existing SMCS subregion selection methods often ignore the relevance of data to tasks, thereby affecting decision-making in Embodied AI. To address this, we design a Sparse Mobile Crowdsensing active perception framework that selects the most valuable subregions for decision-making, considering the context of downstream tasks. Furthermore, existing SMCS subregion selection methods usually focus only on selecting the optimal subregion, whereas Embodied AI requires selecting a set of subregions. Choosing only the optimal subregion may overlook information overlap between subregions, leading to wasted data collection costs and reducing the perception efficiency of Embodied AI. This paper proposes an active acquisition strategy that takes into account parameter uncertainty and probabilistic margins, enabling the selection of an optimal set of subregions. Since this is an NP-hard problem, we approximate the proposed strategy using a greedy algorithm and provide performance guarantees for this approximation through theoretical proofs. Finally, we conduct experiments on three real-world datasets to validate the effectiveness of our proposed method. Experimental results show that when the data missing rate exceeds 60%, MBBALD starts to outperform other algorithms. On the traffic flow dataset, it achieves over 4% higher accuracy than the second-best algorithm at a 50% missing rate. Its advantage becomes more evident as the number of selected points increases, surpassing the second-best method by over 3% with more selected points.",
+  "tldr": "This paper proposes an active acquisition strategy that takes into account parameter uncertainty and probabilistic margins, enabling the selection of an optimal set of subregions in Sparse Mobile Crowdsensing, and approximate the proposed strategy using a greedy algorithm and provides performance guarantees for this approximation through theoretical proofs.",
+  "year": 2026,
+  "venue": "CCF Transactions on Pervasive Computing and Interaction",
+  "publication_types": [
+   "JournalArticle"
+  ],
+  "authors": [
+   "Wenjun Huang",
+   "En Wang",
+   "Wenbin Liu",
+   "Funing Yang",
+   "Yuanbo Xu",
+   "Yongjian Yang"
+  ],
+  "citations": 0,
+  "source": "semanticscholar",
+  "source_id": "deff992c3bf263cd39ead0079980121278a2e16c",
+  "paper_id": "dblp:journals/ccftpci/HuangWLYXY26",
+  "doi": "10.1007/s42486-025-00202-2",
+  "arxiv_id": "",
+  "dblp_key": "journals/ccftpci/HuangWLYXY26",
+  "paper_url": "https://link.springer.com/content/pdf/10.1007/s42486-025-00202-2.pdf",
+  "published_iso": "2026-04-30"
+ },
+ {
+  "title": "Information-Driven Active Perception for k-step Predictive Safety Monitoring",
+  "title_norm": "information driven active perception for k step predictive safety monitoring",
+  "abstract": "This work studies the synthesis of active perception policies for predictive safety monitoring in partially observable stochastic systems. Operating under strict sensing and communication budgets, the proposed monitor dynamically schedules sensor queries to maximize information gain about the safety of future states. The underlying stochastic dynamics are captured by a labeled hidden Markov model (HMM), with safety requirements defined by a deterministic finite automaton (DFA). To enable active information acquisition, we introduce minimizing k-step Shannon conditional entropy of the safety of future states as a planning objective, under the constraint of a limited sensor query budget. Using observable operators, we derive an efficient algorithm to compute the k-step conditional entropy and analyze key properties of the conditional entropy gradient with respect to policy parameters. We validate the effectiveness of the method for predictive safety monitoring through a dynamic congestion game example.",
+  "tldr": "This work studies the synthesis of active perception policies for predictive safety monitoring in partially observable stochastic systems and derives an efficient algorithm to compute the k-step conditional entropy and analyze key properties of the conditional entropy gradient with respect to policy parameters.",
+  "year": 2026,
+  "venue": "arXiv.org",
+  "publication_types": [
+   "JournalArticle"
+  ],
+  "authors": [
+   "S. Udupa",
+   "Jie Fu"
+  ],
+  "citations": 1,
+  "source": "semanticscholar",
+  "source_id": "e3376ec76ace17b0a0f3a0225ccbbb78ce7bdb99",
+  "paper_id": "dblp:journals/corr/abs-2603-23450",
+  "doi": "10.48550/arXiv.2603.23450",
+  "arxiv_id": "2603.23450",
+  "dblp_key": "journals/corr/abs-2603-23450",
+  "paper_url": "https://www.semanticscholar.org/paper/e3376ec76ace17b0a0f3a0225ccbbb78ce7bdb99",
+  "published_iso": "2026-03-24"
+ },
+ {
+  "title": "STAR-RIS-Enabled Anti-Jamming Design for Secure Integrated Sensing and Communication Systems",
+  "title_norm": "star ris enabled anti jamming design for secure integrated sensing and communica",
+  "abstract": "In this work, an integrated sensing and communication (ISAC) framework with presence of jammer, which enabled by a simultaneously transmitting and reflecting reconfigurable intelligent surfaces (STAR-RIS) is proposed. The jammer exists in the reflective region and interferes communications, which is considered as an extended target. Then, the Cramér-Rae bound (CRB) for estimating the jammer's response matrix is derived. To maximize the achievable rate (AR) of the transmission user, we jointly optimize the active and passive beamforming, while satis-fying the reflection users' AR constraints, the transmission power budget, the CRB for target estimation constraint and the STAR-RIS coefficient matrices constraints. Based on the alternating optimization and successive convex approximation algorithms, the original problem is decomposed into two subproblems, and each subproblem is solved by using fractional programming (FP) and semidefinite relaxation (SDR) theorem. The simulation results verify the feasibility of the algorithm.",
+  "tldr": "",
+  "year": 2024,
+  "venue": "International Conference on Wireless Communications and Signal Processing",
+  "publication_types": [
+   "JournalArticle",
+   "Conference"
+  ],
+  "authors": [
+   "Zhongyi Xie",
+   "Hongyi Bian",
+   "Yu Yao",
+   "Zhe Zhang",
+   "Feng Shu"
+  ],
+  "citations": 3,
+  "source": "semanticscholar",
+  "source_id": "525b8b77f6152981ca3a6b3c258c990c06badda7",
+  "paper_id": "dblp:conf/wcsp/XieBYZ024",
+  "doi": "10.1109/WCSP62071.2024.10826880",
+  "arxiv_id": "",
+  "dblp_key": "conf/wcsp/XieBYZ024",
+  "paper_url": "https://www.semanticscholar.org/paper/525b8b77f6152981ca3a6b3c258c990c06badda7",
+  "published_iso": "2024-10-24"
+ },
+ {
+  "title": "Online Feedback Efficient Active Target Discovery in Partially Observable Environments",
+  "title_norm": "online feedback efficient active target discovery in partially observable enviro",
+  "abstract": "In various scientific and engineering domains, where data acquisition is costly--such as in medical imaging, environmental monitoring, or remote sensing--strategic sampling from unobserved regions, guided by prior observations, is essential to maximize target discovery within a limited sampling budget. In this work, we introduce Diffusion-guided Active Target Discovery (DiffATD), a novel method that leverages diffusion dynamics for active target discovery. DiffATD maintains a belief distribution over each unobserved state in the environment, using this distribution to dynamically balance exploration-exploitation. Exploration reduces uncertainty by sampling regions with the highest expected entropy, while exploitation targets areas with the highest likelihood of discovering the target, indicated by the belief distribution and an incrementally trained reward model designed to learn the characteristics of the target. DiffATD enables efficient target discovery in a partially observable environment within a fixed sampling budget, all without relying on any prior supervised training. Furthermore, DiffATD offers interpretability, unlike existing black--box policies that require extensive supervised training. Through extensive experiments and ablation studies across diverse domains, including medical imaging, species discovery, and remote sensing, we show that DiffATD performs significantly better than baselines and competitively with supervised methods that operate under full environmental observability.",
+  "tldr": "Diffusion-guided Active Target Discovery is introduced, a novel method that leverages diffusion dynamics for active target discovery and offers interpretability, unlike existing black--box policies that require extensive supervised training.",
+  "year": 2025,
+  "venue": "Neural Information Processing Systems",
+  "publication_types": [
+   "JournalArticle"
+  ],
+  "authors": [
+   "Anindya Sarkar",
+   "Binglin Ji",
+   "Yevgeniy Vorobeychik"
+  ],
+  "citations": 1,
+  "source": "semanticscholar",
+  "source_id": "8a0bf6ed24f0e6bd6f07cda3c6a7d5178cc434fd",
+  "paper_id": "dblp:journals/corr/abs-2505-06535",
+  "doi": "10.48550/arXiv.2505.06535",
+  "arxiv_id": "2505.06535",
+  "dblp_key": "journals/corr/abs-2505-06535",
+  "paper_url": "https://www.semanticscholar.org/paper/8a0bf6ed24f0e6bd6f07cda3c6a7d5178cc434fd",
+  "published_iso": "2025-05-10"
+ },
+ {
+  "title": "Active Target Discovery under Uninformative Prior: The Power of Permanent and Transient Memory",
+  "title_norm": "active target discovery under uninformative prior the power of permanent and tra",
+  "abstract": "In many scientific and engineering fields, where acquiring high-quality data is expensive--such as medical imaging, environmental monitoring, and remote sensing--strategic sampling of unobserved regions based on prior observations is crucial for maximizing discovery rates within a constrained budget. The rise of powerful generative models, such as diffusion models, has enabled active target discovery in partially observable environments by leveraging learned priors--probabilistic representations that capture underlying structure from data. With guidance from sequentially gathered task-specific observations, these models can progressively refine exploration and efficiently direct queries toward promising regions. However, in domains where learning a strong prior is infeasible due to extremely limited data or high sampling cost (such as rare species discovery, diagnostics for emerging diseases, etc.), these methods struggle to generalize. To overcome this limitation, we propose a novel approach that enables effective active target discovery even in settings with uninformative priors, ensuring robust exploration and adaptability in complex real-world scenarios. Our framework is theoretically principled and draws inspiration from neuroscience to guide its design. Unlike black-box policies, our approach is inherently interpretable, providing clear insights into decision-making. Furthermore, it guarantees a strong, monotonic improvement in prior estimates with each new observation, leading to increasingly accurate sampling and reinforcing both reliability and adaptability in dynamic settings. Through comprehensive experiments and ablation studies across various domains, including species distribution modeling and remote sensing, we demonstrate that our method substantially outperforms baseline approaches.",
+  "tldr": "A novel approach is proposed that enables effective active target discovery even in settings with uninformative priors, ensuring robust exploration and adaptability in complex real-world scenarios and guarantees a strong, monotonic improvement in prior estimates with each new observation, leading to increasingly accurate sampling and reinforcing both reliability and adaptability in dynamic settings.",
+  "year": 2025,
+  "venue": "arXiv.org",
+  "publication_types": [
+   "JournalArticle"
+  ],
+  "authors": [
+   "Anindya Sarkar",
+   "Binglin Ji",
+   "Yevgeniy Vorobeychik"
+  ],
+  "citations": 0,
+  "source": "semanticscholar",
+  "source_id": "68bfbad142e8404cab7cd52a9316c991c2c52787",
+  "paper_id": "dblp:journals/corr/abs-2510-16676",
+  "doi": "10.48550/arXiv.2510.16676",
+  "arxiv_id": "2510.16676",
+  "dblp_key": "journals/corr/abs-2510-16676",
+  "paper_url": "https://www.semanticscholar.org/paper/68bfbad142e8404cab7cd52a9316c991c2c52787",
+  "published_iso": "2025-10-19"
+ },
+ {
+  "title": "Joint Antenna Selection and Beamforming in Integrated Automotive Radar Sensing-Communications with Quantized Double Phase Shifters",
+  "title_norm": "joint antenna selection and beamforming in integrated automotive radar sensing c",
+  "abstract": "We consider an integrated sensing-communication system operating in a dynamic environment, such as an autonomous vehicle scenario. We propose a novel, low-cost, low power consumption and low-computation approach for designing a beam that can simultaneously reach the radar target of interest and the desired communication destination. The transmitter is a uniform linear array, equipped with quantized double phase shifters, which enables a flexible beam design while using analog only processing. Only a small number of antennas are selected to transmit in each channel use, in order to save system power and reduce antenna coupling. We propose a deep reinforcement learning approach to adaptively adjust the double phase shifters and select the active antennas in order to optimize the transmit beamforming, through a transmission and feedback trail. The actor-critic network strategy together with the Wolpertinger policy is adopted to obtain the optimal solutions efficiently and effectively. Numerical results demonstrate the feasibility of the proposed method.",
+  "tldr": "",
+  "year": 2023,
+  "venue": "IEEE International Conference on Acoustics, Speech, and Signal Processing",
+  "publication_types": [
+   "JournalArticle",
+   "Conference"
+  ],
+  "authors": [
+   "Lifan Xu",
+   "Shunqiao Sun",
+   "Yimin D. Zhang",
+   "A. Petropulu"
+  ],
+  "citations": 18,
+  "source": "semanticscholar",
+  "source_id": "44c1a33560b273f7046c2f99726a9b46eb095aac",
+  "paper_id": "dblp:conf/icassp/XuSZP23",
+  "doi": "10.1109/ICASSP49357.2023.10097184",
+  "arxiv_id": "",
+  "dblp_key": "conf/icassp/XuSZP23",
+  "paper_url": "https://doi.org/10.1109/icassp49357.2023.10097184",
+  "published_iso": "2023-06-04"
+ },
+ {
+  "title": "Adoption of the budget by competence in Brazil based on comparative experiences in the USA, Canada, United Kingdom, Australia, and New Zealand",
+  "title_norm": "adoption of the budget by competence in brazil based on comparative experiences ",
+  "abstract": "Purpose: To analyze the feasibility of adopting competency budgeting in Brazil. \nMethodology: Qualitative, exploratory, bibliographic, documental, and content analysis nature, with the cataloguing of the material based on environmental attributes (political commitment, human capital, long-term sustainability, and macroeconomic policy) and technical attributes (depreciation and valuation of assets, capital expenditure, symmetry between reports, recognition of benefits and accountability). The work is comparative in nature based on the practices adopted in the USA, Canada, United Kingdom, Australia, and New Zealand. \nResults: The examinations of environmental attributes in comparison with technical attributes were more homogeneous in reference to the countries analysed. It was identified that the technical attributes were the ones that were more casuistic, aiming to meet the specific situations of the participating countries. In Brazil, if the reform were implemented, the study pointed to attributes related to macroeconomic (environmental) policy and accountability (technical) as being the most favorable. \n Contributions of the Study: It was identified that the most advanced experiences on accrual budgeting come from countries of Anglo-Saxon origin, whose accounting systems are convergent with those used by companies. In this sense, it is hoped that the work can contribute to the broadening of the discussion of the systematics, in view of the indication of environmental and technical attributes considered to facilitate and/or hinder the process.",
+  "tldr": "",
+  "year": 2025,
+  "venue": "Revista Ambiente Contábil",
+  "publication_types": [
+   "JournalArticle"
+  ],
+  "authors": [
+   "Andrew Pereira Gonçalves",
+   "R. Nascimento",
+   "Richard Viotto"
+  ],
+  "citations": 0,
+  "source": "semanticscholar",
+  "source_id": "0289cf956e2af5a4f6c212464b27149a24916ecd",
+  "paper_id": "doi:10.21680/2176-9036.2025v17n1id38676",
+  "doi": "10.21680/2176-9036.2025v17n1id38676",
+  "arxiv_id": "",
+  "dblp_key": "",
+  "paper_url": "https://doi.org/10.21680/2176-9036.2025v17n1id38676",
+  "published_iso": "2025-01-02"
+ },
+ {
+  "title": "PASS-Aided Over-the-Air Computation via A Graph-based Proximal Policy Optimization Approach",
+  "title_norm": "pass aided over the air computation via a graph based proximal policy optimizati",
+  "abstract": "A pinching antenna systems (PASS)-aided over-the-air computation (OAC) framework is proposed, where each edge server (ES) feeds a waveguide and radiates the guided signal via a selected set of active pinching antennas (PAs) to deliver an aggregate to an edge device (ED). An MSE-minimization problem is formulated to jointly optimize PA activations and locations, per-waveguide precoding, and the receiver combiner under transmit power budgets and practical PA deployment constraints. To solve the resulting mixed-integer and nonconvex problem, a hierarchical approach termed GPPO is developed. Specifically, a graph neural network policy trained with proximal policy optimization generates constraint-feasible multi-PA configurations, while an inner solver alternately updates the continuous transceiver coefficients in closed form. Simulation results validate that the proposed scheme achieves the lowest MSE and improved robustness over PASS-assisted and conventional OAC baselines across various system and geometric settings.",
+  "tldr": "",
+  "year": 2026,
+  "venue": "IEEE Conference on Computer Communications",
+  "publication_types": [
+   "Conference"
+  ],
+  "authors": [
+   "Meng Zhang",
+   "Ruikang Zhong",
+   "Yixuan Zou",
+   "Hyundong Shin",
+   "Yuanwei Liu"
+  ],
+  "citations": 0,
+  "source": "semanticscholar",
+  "source_id": "c7234c5da5465c3282b88917febf900a217ad546",
+  "paper_id": "doi:10.1109/INFOCOM59046.2026.11571310",
+  "doi": "10.1109/INFOCOM59046.2026.11571310",
+  "arxiv_id": "",
+  "dblp_key": "",
+  "paper_url": "https://www.semanticscholar.org/paper/c7234c5da5465c3282b88917febf900a217ad546",
+  "published_iso": "2026-05-18"
+ },
+ {
+  "title": "Inclusionary Housing Policy in Cities of the South: Navigating a Path Between Continuity and Disruption",
+  "title_norm": "inclusionary housing policy in cities of the south navigating a path between con",
+  "abstract": "Abstract Inclusionary housing policy (IHP) encourages developers to provide affordable housing in well-located areas. This can add to their costs and risks, so the process of policy adoption is complicated and contested. This paper provides a synthesis of the literature and then analyzes the efforts to implement IHP of two South African cities, Johannesburg and Cape Town. The core proposition is that making residential development more inclusive requires at least three ingredients to ensure meaningful change. First, the case for reform needs popular support and an active civil society to secure the backing of political leaders and officials facing resistance from entrenched real estate interests. Second, the policy needs to be feasible in an economic sense and calibrated in an incremental way that will not jeopardize private investment. Third, a robust legal framework is required to institutionalize the changes and to limit disputes and disruption.",
+  "tldr": "",
+  "year": 2024,
+  "venue": "Housing Policy Debate",
+  "publication_types": [
+   "JournalArticle"
+  ],
+  "authors": [
+   "I. Turok",
+   "Margot Rubin",
+   "Andreas Scheba"
+  ],
+  "citations": 8,
+  "source": "semanticscholar",
+  "source_id": "9acb1f91f36e0d3f9349f3731a204cf757378900",
+  "paper_id": "doi:10.1080/10511482.2024.2302053",
+  "doi": "10.1080/10511482.2024.2302053",
+  "arxiv_id": "",
+  "dblp_key": "",
+  "paper_url": "https://www.tandfonline.com/doi/pdf/10.1080/10511482.2024.2302053?needAccess=true",
+  "published_iso": "2024-02-12"
+ },
+ {
+  "title": "Reinforcement Learning Based Energy-Efficient Sensor Scheduling for Fresh Collaborative Sensing",
+  "title_norm": "reinforcement learning based energy efficient sensor scheduling for fresh collab",
+  "abstract": "Collaborative sensing relies on fresh and high-coverage sensing data for real-time monitoring of physical environments and supporting applications, such as digital twins. Energy-efficient scheduling of sensors is critical to ensure high coverage and timely data delivery considering the limited sensor battery. However, achieving a tradeoff between energy saving and the quality of sensing data is challenging under dynamic channel conditions. In this paper, we propose a reinforcement learning-based scheme for energy-efficient sensor scheduling in collaborative sensing, aiming to optimize the age of information (AoI) of sensing data and energy consumption under coverage constraints. This scheme selects the sleep cycle and the transmit power for each sensor based on the state consisting of the working mode, AoI, and the channel conditions. By utilizing a hierarchical structure, this scheme decomposes sensor scheduling into two sub-policies to reduce the computational complexity. At the top level, an actor network combined with an invalid action masking module selects the sleep cycle for each sensor from the feasible action space. A critic network outputs the state value to guide the update of the actor network. At the bottom level, an actor-critic architecture is designed to select the transmit power for active sensors determined by the top level. Simulation results show that our scheme outperforms benchmarks in terms of both AoI and energy consumption.",
+  "tldr": "",
+  "year": 2025,
+  "venue": "2025 IEEE International Conference on Unmanned Systems (ICUS)",
+  "publication_types": [
+   "Conference"
+  ],
+  "authors": [
+   "Yilin Xiao",
+   "Bo Liu",
+   "Xiaozhen Lu"
+  ],
+  "citations": 0,
+  "source": "semanticscholar",
+  "source_id": "1a2ebb555bc874db7b11f1d3c07de1c1ddc4a50b",
+  "paper_id": "doi:10.1109/ICUS66297.2025.11294355",
+  "doi": "10.1109/ICUS66297.2025.11294355",
+  "arxiv_id": "",
+  "dblp_key": "",
+  "paper_url": "https://www.semanticscholar.org/paper/1a2ebb555bc874db7b11f1d3c07de1c1ddc4a50b",
+  "published_iso": "2025-09-18"
+ },
+ {
+  "title": "Initiatives of Governmental Financial Policy for Socioeconomic Empowerment of Rural Women",
+  "title_norm": "initiatives of governmental financial policy for socioeconomic empowerment of ru",
+  "abstract": "In term \"financial inclusion\" describes initiatives to make financial services and products available for all people. In the sense of rural women financial inclusion is to eliminate the obstacles that keep rural women from engaging with the financial industry and utilizing its services to better their lives. An Rural women's participation has undergone many challenges and changes in India. A significant portion of rural women continue to face discrimination and destitution. If the nation is to advance in all areas of development, it is imperative that the enormous power of rural women be empowered. Thus this research paper investigates the role of financial inclusion policy and context in favour to women of rural areas still in rural areas it seems that a lot of gender inequality, women exploitation, and vulnerability of women in all walks of life. Therefore, empowering rural women in all areas of life is crucial. Without rural women's active involvement in financial inclusion initiatives, this would not be feasible.",
+  "tldr": "",
+  "year": 2024,
+  "venue": "International Journal of Science and Social Science Research",
+  "publication_types": [
+   "JournalArticle"
+  ],
+  "authors": [
+   "Shalini Garg",
+   "Dr. Shikha"
+  ],
+  "citations": 0,
+  "source": "semanticscholar",
+  "source_id": "6128a1a0f72ef23c4ed76e8ccaf90e67cf0f485b",
+  "paper_id": "doi:10.63671/ijsssr.v2i2.117",
+  "doi": "10.63671/ijsssr.v2i2.117",
+  "arxiv_id": "",
+  "dblp_key": "",
+  "paper_url": "https://www.ijsssr.com/j/article/download/117/106.pdf",
+  "published_iso": "2024-09-30"
+ },
+ {
+  "title": "Geometry-Aware Cross-Height Channel Knowledge Map Prediction for UAV-Assisted Communications With Uncertainty-Guided 3D Sensing",
+  "title_norm": "geometry aware cross height channel knowledge map prediction for uav assisted co",
+  "abstract": "Low-altitude Unmanned Aerial Vehicles (UAVs) often need to infer channel knowledge across a range of heights from only sparse observations collected at a few altitude layers. To address this challenge, this paper studies height-conditioned cross-height channel knowledge map (CKM) prediction for UAV-assisted communications in geometry-rich urban environments. We develop a geometry-aware conditional prediction framework that combines urban scene priors, sparse multi-altitude observations, and target-height descriptors to reconstruct dense CKMs at unobserved target heights. An uncertainty head is further introduced to characterize prediction confidence and to support cost-aware online UAV sensing under motion and safety constraints. Experiments on a layered aerial CKM benchmark show that the proposed Feature Pyramid Network (FPN)-Transformer achieves the best overall performance under both unseen-scene zero-shot and legacy patch-random protocols, reducing the Root Mean Square Error (RMSE) to 5.347dB and 1.111dB, respectively, compared with 6.937dB and 1.221dB for the strongest baseline 3D-RadioDiff. Moreover, after applying our unseen-scene few-shot adaptation, the RMSE further decreases from 5.347dB in zero-shot prediction to 3.518dB with 10-shot two-height support, while the uncertainty-guided cost-aware sensing policy improves active reconstruction from 6.94dB at initialization to 4.79dB at sensing budget 40, outperforming uncertainty-only sensing at 5.08dB and random aerial sampling at 5.84dB.",
+  "tldr": "A geometry-aware conditional prediction framework is developed that combines urban scene priors, sparse multi-altitude observations, and target-height descriptors to reconstruct dense CKMs at unobserved target heights in geometry-rich urban environments.",
+  "year": 2026,
+  "venue": "",
+  "publication_types": [],
+  "authors": [
+   "Zhihan Zeng",
+   "Amir Hussain",
+   "Yue Xiu",
+   "Phee Lep Yeoh",
+   "Lu Chen",
+   "Zhongpei Zhang"
+  ],
+  "citations": 0,
+  "source": "semanticscholar",
+  "source_id": "a67026febb1db3a035bb248d8825581f2cebe211",
+  "paper_id": "arxiv:2607.00887",
+  "doi": "",
+  "arxiv_id": "2607.00887",
+  "dblp_key": "",
+  "paper_url": "https://www.semanticscholar.org/paper/a67026febb1db3a035bb248d8825581f2cebe211",
+  "published_iso": "2026-07-01"
+ },
+ {
+  "title": "Dynamic spectrum sharing between active and passive users above 100 GHz",
+  "title_norm": "dynamic spectrum sharing between active and passive users above 100 ghz",
+  "abstract": "Sixth-generation wireless networks will aggregate higher-than-ever mobile traffic into ultra-high capacity backhaul links, which could be deployed on the largely untapped spectrum above 100 GHz. Current regulations however prevent the allocation of large contiguous bands for communications at these frequencies, since several narrow bands are reserved to protect passive sensing services. These include radio astronomy and Earth exploration satellites using sensors that suffer from harmful interference from active transmitters. Here we show that active and passive spectrum sharing above 100 GHz is feasible by introducing and experimentally evaluating a real-time, dual-band backhaul prototype that tracks the presence of passive users (in this case the NASA satellite Aura) and avoids interference by automatically switching bands (123.5–140 GHz and 210–225 GHz). Our system enables wide-band transmissions in the above-100-GHz spectrum, while avoiding harmful interference to satellite systems, paving the way for innovative spectrum policy and technologies in these crucial bands. Michele Polese and colleagues report a dual-band backhaul prototype operating above 100 GHz. It can be dynamically re-configured in real time to avoid interference to passive satellite sensing systems, enabling safe coexistence of active and passive users in this portion of the spectrum.",
+  "tldr": "This work shows that active and passive spectrum sharing above 100 GHz is feasible by introducing and experimentally evaluating a real-time, dual-band backhaul prototype that tracks the presence of passive users and avoids interference by automatically switching bands, paving the way for innovative spectrum policy and technologies in these crucial bands.",
+  "year": 2022,
+  "venue": "Communications Engineer",
+  "publication_types": [],
+  "authors": [
+   "Michele Polese",
+   "V. Ariyarathna",
+   "Priyangshu Sen",
+   "J. Siles",
+   "F. Restuccia",
+   "T. Melodia"
+  ],
+  "citations": 24,
+  "source": "semanticscholar",
+  "source_id": "14461abaaf5d1520986a79dc9a90f45eb922afc3",
+  "paper_id": "doi:10.1038/s44172-022-00002-x",
+  "doi": "10.1038/s44172-022-00002-x",
+  "arxiv_id": "",
+  "dblp_key": "",
+  "paper_url": "https://www.nature.com/articles/s44172-022-00002-x.pdf",
+  "published_iso": "2022-05-26"
+ },
+ {
+  "title": "Covert Bayesian Quickest Change Detection",
+  "title_norm": "covert bayesian quickest change detection",
+  "abstract": "We investigate the problem of covert quickest change detection in a Bayesian and infinite-horizon setting. A legitimate entity seeks to detect a change in the state of a discrete memoryless channel as quickly as possible by actively probing it. Simultaneously, the entity must ensure its probing remains covert from an adversary monitoring the channel for active sensing. We introduce the expected covertness budget (ECB) as an analytically tractable covertness metric that bounds from above the relative entropy between the observation sequences induced by active and passive sensing. Under constraints on both the probability of false alarm (PFA) and the ECB, we establish a second-order asymptotic converse bound on the average detection delay as the PFA constraint approaches zero, for any positive ECB constraint, explicitly quantifying the maximum square-root-order covert sensing gain possible. Furthermore, we propose an achievability scheme utilizing a constant-sensing-probability Shiryaev-type policy and show that it matches the second-order asymptotic converse. We illustrate our result with a numerical example.",
+  "tldr": "A second-order asymptotic converse bound on the average detection delay as the PFA constraint approaches zero is established for any positive ECB constraint, explicitly quantifying the maximum square-root-order covert sensing gain possible.",
+  "year": 2026,
+  "venue": "arXiv.org",
+  "publication_types": [
+   "JournalArticle"
+  ],
+  "authors": [
+   "Yun-Feng Lo",
+   "Matthieu R. Bloch"
+  ],
+  "citations": 0,
+  "source": "semanticscholar",
+  "source_id": "3bc7ecf94a0436bc7058894f151b00f869a963b8",
+  "paper_id": "dblp:journals/corr/abs-2605-16140",
+  "doi": "10.48550/arXiv.2605.16140",
+  "arxiv_id": "2605.16140",
+  "dblp_key": "journals/corr/abs-2605-16140",
+  "paper_url": "https://www.semanticscholar.org/paper/3bc7ecf94a0436bc7058894f151b00f869a963b8",
+  "published_iso": "2026-05-15"
+ },
+ {
+  "title": "Task-Aware Environment Augmentation for Reliable Navigation via Shielded Conditional Diffusion",
+  "title_norm": "task aware environment augmentation for reliable navigation via shielded conditi",
+  "abstract": "Reliable trajectory planning under partial observability depends not only on computing a feasible geometric path, but also on whether the robot receives informative observations while executing that trajectory. Existing approaches usually keep the environment fixed and adapt the robot through belief-space planning, active localization, or added sensing, often incurring costly uncertainty propagation and brittle behavior in observation-poor regions. We flip this perspective and address the largely open problem of \\emph{task-aware environment augmentation}: given a mapped environment, a planned task trajectory, and a small budget of visual fiducial markers, where should the environment be augmented so that the planned trajectory can be executed reliably under uncertainty? Our key observation is that useful marker layouts are defined by the localization support they provide along the task trajectory: a small number of well-timed observations can be sufficient to prevent uncertainty from accumulating in regions where state-estimation error would otherwise compromise control. Building on this observation, we present \\tbp{SCoDA}, $\\textbf{S}$hielded $\\textbf{Co}$nditional $\\textbf{D}$iffusion for Environment $\\textbf{A}$ugmentation. \\tbp{SCoDA} learns a conditional distribution over high-performing fiducial layouts from data, using the environment, planned trajectory, disturbance context, and desired execution profile as conditioning. Its shielded sampler reasons over where along the planned execution pose corrections should occur, and steers this distribution toward task-relevant, finite-budget augmentations. Across simulated benchmarks and hardware deployments, we show that \\tbp{SCoDA} improves trajectory execution reliability and completion time over strong baselines. Code, models and dataset available at: \\hyperlink{scoda-diffusion.github.io}{https://scoda-diffusion.github.io/}",
+  "tldr": "Across simulated benchmarks and hardware deployments, the SCoDA improves trajectory execution reliability and completion time over strong baselines, and learns a conditional distribution over high-performing fiducial layouts from data, using the environment, planned trajectory, disturbance context, and desired execution profile as conditioning.",
+  "year": 2026,
+  "venue": "",
+  "publication_types": [],
+  "authors": [
+   "Bharawee Phoompho",
+   "Gokul Puthumanaillam",
+   "Yan Miao",
+   "Ruben Hernández",
+   "T. Bretl",
+   "Sayan Mitra"
+  ],
+  "citations": 0,
+  "source": "semanticscholar",
+  "source_id": "7080e2055ea40c44cfa541b7527410a53b459166",
+  "paper_id": "arxiv:2606.15154",
+  "doi": "",
+  "arxiv_id": "2606.15154",
+  "dblp_key": "",
+  "paper_url": "https://www.semanticscholar.org/paper/7080e2055ea40c44cfa541b7527410a53b459166",
+  "published_iso": "2026-06-13"
+ },
+ {
+  "title": "General Non-Clairvoyant KV-Cache Scheduling via Regime-Aware Routing",
+  "title_norm": "general non clairvoyant kv cache scheduling via regime aware routing",
+  "abstract": "We study non-clairvoyant scheduling for batched Large Language Model (LLM) inference under a hard Key-Value (KV) cache memory budget. Each request has a known prompt length but an unknown response length, and its memory footprint comprises a fixed prompt component together with a response component that grows with each decoded token. At each decoding round, the scheduler chooses a feasible batch of active requests; evicting a request discards its accumulated cache states, wasting prior computation. The goal is to minimize total completion time against the optimal clairvoyant schedule that knows all response lengths. We present the first constant-competitive algorithm for arbitrary prompt lengths and arbitrary response lengths with no additional assumptions. Rather than relying on a single universal scheduling policy, our algorithm is built on a novel regime-aware routing framework. Specialized sub-schedulers handle different memory-growth geometries, while a meta-scheduler time-shares the memory budget across them and dynamically routes each job as its execution progressively reveals its behavior. This framework also yields constant-competitive guarantees for makespan and for total completion time under online arrivals.",
+  "tldr": "This work presents the first constant-competitive algorithm for arbitrary prompt lengths and arbitrary response lengths with no additional assumptions, built on a novel regime-aware routing framework.",
+  "year": 2026,
+  "venue": "",
+  "publication_types": [],
+  "authors": [
+   "Yiding Feng",
+   "Siyu Liu",
+   "Zonghan Yang",
+   "Yuhao Zhang"
+  ],
+  "citations": 0,
+  "source": "semanticscholar",
+  "source_id": "5fb5e0a4fa819bbc787939b4572515d817f30bb1",
+  "paper_id": "arxiv:2607.09248",
+  "doi": "",
+  "arxiv_id": "2607.09248",
+  "dblp_key": "",
+  "paper_url": "https://www.semanticscholar.org/paper/5fb5e0a4fa819bbc787939b4572515d817f30bb1",
+  "published_iso": "2026-07-10"
+ },
+ {
+  "title": "BETWEEN BUDGETARY SUPPORT AND SOCIAL INSURANCE: FINANCIAL RISKS AND SUSTAINABILITY OF UKRAINE'S VETERAN POLICY",
+  "title_norm": "between budgetary support and social insurance financial risks and sustainabilit",
+  "abstract": "Background. The full-scale armed aggression against Ukraine has led to the rapid formation of a large veteran community, transforming veteran status into a long-term and systemic social risk. The existing system of veteran support, which is predominantly based on budgetary benefits and one-off compensations, increasingly generates financial risks and affects the financial sustainability of the social protection and compulsory state social insurance systems, particularly the pension system. The purpose of this study is to assess the financial risks and limitations of the benefit- and budget-based model of veteran policy in Ukraine and to substantiate the need for its gradual transformation toward social insurance mechanisms for war-related social risks.\nMethods. The study employs an integrated methodological approach combining institutional analysis, comparative analysis, and a scenario-based assessment. The empirical basis includes official budgetary data for 2025–2026, legislative and regulatory acts, and analytical materials of national authorities and international organizations. Scenario modeling of the veteran population is applied to assess potential financial risks to the compulsory state social insurance system, with a focus on the Pension Fund of Ukraine under uncertainty about the duration of the war and the post-war recovery.\nResults. The results demonstrate the emergence of a structural asymmetry in which veterans constitute a growing group of recipients of social and pension benefits while contributing only partially to insurance premiums. This imbalance generates long-term financial risks for the social insurance system. A comparative analysis of veteran support models in the United States, Israel, and Ukraine reveals the institutional limitations of a purely budgetary approach and highlights the advantages of integrating insurance-based mechanisms to ensure predictability and financial stability.\nConclusions. The study substantiates the feasibility of developing a hybrid social insurance model for veterans that combines budgetary guarantees, insurance funds, and active labor-market reintegration policies. The application of a scenario-based approach is justified as an effective analytical tool for assessing the financial sustainability of veteran policy in the context of Ukraine's European integration and long-term social risk management.",
+  "tldr": "",
+  "year": 2026,
+  "venue": "Bulletin of Taras Shevchenko National University of Kyiv. Economics",
+  "publication_types": [
+   "JournalArticle"
+  ],
+  "authors": [
+   "L. Prymostka",
+   "O. Dymnich"
+  ],
+  "citations": 0,
+  "source": "semanticscholar",
+  "source_id": "b8aac6a86f9ce397de30ba5cee8c305e381d9a4e",
+  "paper_id": "doi:10.17721/1728-2667.2026/229-2/14",
+  "doi": "10.17721/1728-2667.2026/229-2/14",
+  "arxiv_id": "",
+  "dblp_key": "",
+  "paper_url": "https://econom.bulletin.knu.ua/article/download/10461/9177",
+  "published_iso": "2026-06-27"
+ },
+ {
+  "title": "Probabilistic Sensory Constraints Shape Swarm Cohesion in Echolocating Bats",
+  "title_norm": "probabilistic sensory constraints shape swarm cohesion in echolocating bats",
+  "abstract": "Cohesive animal groups rely on continuous behavioural updating to regulate spacing, alignment, and collision avoidance, yet all sensory-guided interaction is constrained by finite signal propagation delays, processing time, and motor latency. In actively sensing species such as echolocating bats, these constraints raise a fundamental ecological question: what limits the stability and density of cohesive groups under increasing interaction load? I develop a constraint-based framework in which neighbour-based interaction is treated as a closed-loop process that is only feasible when sensory updates can be acquired, processed, and acted upon within a finite temporal budget. Building on an asynchronous swarm simulation grounded in echo-timed biosonar control, I formalise two receiver-side feasibility constraints that become critical in dense groups: (i) temporal overlap between conspecific calls and the echo-processing window, and (ii) level dominance of the tracked neighbour’s echo over competing conspecific signals. Both constraints emerge as probabilistic feasibility boundaries rather than binary conditions for perceptual success or failure. Across a broad parameter space of responsivity, group density, and flight speed, the fraction of call events supporting reliable neighbour-based updates declines smoothly with compounded interaction load. Temporal overlap is organised by a single compound term integrating local density, neighbourhood call rate, call duration, and echo delay, while level dominance operates in a marginal regime where masking is frequent but intermittent. Simulation results show that stable, collision-averse swarm cohesion can persist across wide ranges of density and motion without explicit coordination or interference avoidance, provided that sufficiently frequent informative updates remain available. Breakdown occurs not because echoes become undetectable, but because the probability of obtaining timely, behaviourally relevant updates falls below what is required to sustain closed-loop control. Together, these findings identify temporal feasibility and interaction dominance as general constraints shaping cohesion, spacing, and fragmentation in actively sensing animal groups. Rather than invoking acoustic jamming as a failure mode, the framework reframes interference as a background condition that regulates the statistics of actionable information. This closed-loop perspective provides a unifying ecological principle for collective behaviour in active sensing systems and generates testable predictions for when cohesion should persist or fail under increasing sensory and interactional demand.",
+  "tldr": "A constraint-based framework in which neighbour-based interaction is treated as a closed-loop process that is only feasible when sensory updates can be acquired, processed, and acted upon within a finite temporal budget is developed and generates testable predictions for when cohesion should persist or fail under increasing sensory and interactional demand.",
+  "year": 2025,
+  "venue": "bioRxiv",
+  "publication_types": [],
+  "authors": [
+   "Ravi Umadi"
+  ],
+  "citations": 0,
+  "source": "semanticscholar",
+  "source_id": "f29f5f9f1b3418b779d181bd319436c64793ef1a",
+  "paper_id": "doi:10.1101/2025.07.05.663265",
+  "doi": "10.1101/2025.07.05.663265",
+  "arxiv_id": "",
+  "dblp_key": "",
+  "paper_url": "https://www.biorxiv.org/content/biorxiv/early/2025/07/06/2025.07.05.663265.full.pdf",
+  "published_iso": "2025-12-31"
+ },
+ {
+  "title": "A General Equilibrium Theory of Orchestrated AI Agent Systems",
+  "title_norm": "a general equilibrium theory of orchestrated ai agent systems",
+  "abstract": "We establish a general equilibrium theory for systems of large language model (LLM) agents operating under centralized orchestration. The framework is a production economy in the sense of Arrow-Debreu (1954), extended to infinite-dimensional commodity spaces following Bewley (1972). Each LLM agent is modeled as a firm whose production set Y a $\\subset$ H = L 2 ([0, T ], R R ) represents the feasible metric trajectories determined by its frozen model weights. The orchestrator is the consumer, choosing a routing policy over the agent DAG to maximize system welfare subject to a budget constraint evaluated at functional prices p $\\in$ H A . These prices-elements of the Hilbert dual of the commodity space-assign a shadow value to each metric of each agent at each instant. We prove, via Brouwer's theorem applied to a finitedimensional approximation V K $\\subset$ H, that every such economy admits at least one general equilibrium (p * , y * , $\\pi$ * ). A functional Walras'law holds as a theorem: the value of functional excess demand is zero for all prices, as a consequence of the consumer's budget constraint-not by construction. We further establish Pareto optimality (First Welfare Theorem), decentralizability of Pareto optima (Second Welfare Theorem), and uniqueness with geometric convergence under a contraction condition (Banach). The orchestration dynamics constitute a Walrasian t{\\^a}tonnement that converges globally under the contraction condition, unlike classical t{\\^a}tonnement (Scarf, 1960). The framework admits a DSGE interpretation with SLO parameters as policy rates.",
+  "tldr": "It is proved, via Brouwer's theorem applied to a finitedimensional approximation V K $\\subset$ H, that every system of large language model (LLM) agents operating under centralized orchestration admits at least one general equilibrium.",
+  "year": 2026,
+  "venue": "arXiv.org",
+  "publication_types": [
+   "JournalArticle"
+  ],
+  "authors": [
+   "Jean-Philippe Garnier"
+  ],
+  "citations": 0,
+  "source": "semanticscholar",
+  "source_id": "5234c9692875ec5bacfa7cc77dd472ece0dd3765",
+  "paper_id": "dblp:journals/corr/abs-2602-21255",
+  "doi": "10.48550/arXiv.2602.21255",
+  "arxiv_id": "2602.21255",
+  "dblp_key": "journals/corr/abs-2602-21255",
+  "paper_url": "https://www.semanticscholar.org/paper/5234c9692875ec5bacfa7cc77dd472ece0dd3765",
+  "published_iso": "2026-02-23"
+ },
+ {
+  "title": "nvPAX: Constrained Optimization for Dynamic Power Allocation in Hierarchical and Multi-Tenant Systems",
+  "title_norm": "nvpax constrained optimization for dynamic power allocation in hierarchical and ",
+  "abstract": "Power oversubscription is increasingly central to datacenter operation as power density grows, making it necessary to dynamically allocate limited power budgets across devices based on real-time demand. Existing approaches typically assume flat power domains, whereas in practice power distribution is hierarchical and allocation decisions must additionally respect tenant-level contractual constraints. We present nvPAX, a constrained-optimization policy that computes feasible power allocations at every control step via a three-phase hybrid QP/LP procedure. Phase I allocates power with minimum deviation from each device's power request, while respecting job priorities. Phase II fairly distributes excess power among active devices. Phase III fairly distributes any remaining power to idle devices. The rationale behind the three phases is to allow power oversubscription while maximizing datacenter utilization. On a trace-driven large-scale simulation using GPU power telemetry from a production datacenter, nvPAX runs with a mean wall-clock time of 264.69 ms per allocation interval and achieves a mean satisfaction ratio of 98.92%, outperforming static equal-share allocation and providing robustness beyond greedy proportional allocation in the presence of non-uniform hierarchical bottlenecks.",
+  "tldr": null,
+  "year": 2026,
+  "venue": "arXiv.org",
+  "publication_types": [
+   "JournalArticle"
+  ],
+  "authors": [
+   "Hadar Sivan",
+   "Gil Shabat",
+   "Y. Shkolnisky"
+  ],
+  "citations": 0,
+  "source": "semanticscholar",
+  "source_id": "fe31151fc4f3acec4a67b606548bf9bda43e03d1",
+  "paper_id": "dblp:journals/corr/abs-2605-01837",
+  "doi": "10.48550/arXiv.2605.01837",
+  "arxiv_id": "2605.01837",
+  "dblp_key": "journals/corr/abs-2605-01837",
+  "paper_url": "https://www.semanticscholar.org/paper/fe31151fc4f3acec4a67b606548bf9bda43e03d1",
+  "published_iso": "2026-05-03"
+ },
+ {
+  "title": "Batteryless Gesture Recognition via Learned Sampling",
+  "title_norm": "batteryless gesture recognition via learned sampling",
+  "abstract": "Batteryless wearables offer the potential for continuous and maintenance-free operation through ambient energy harvesting. However, the constrained and uncertain nature of harvested energy makes it impossible to continuously sense, process, and transmit data. In this batteryless setting, we no longer have access to complete and continuous data streams. Thus, we must adapt machine learning models to this new paradigm where only a limited subset of the data can be sampled and processed. In this work, we consider solar-powered gesture recognition as a target application where sensing and processing are constrained to a strict energy budget. We propose a learning-based approach where a sampling policy and gesture classifier are jointly trained via a shared representation. This enables the system to learn which sensor samples are informative while simultaneously optimizing the classifier for sparse inputs. By actively deciding when to sample, we improve gesture recognition accuracy by up to 10% compared to fixed-rate subsampling across a wide range of energy budgets. This closes the gap to a standard battery-powered approach by up to 40%.",
+  "tldr": "",
+  "year": 2025,
+  "venue": "International Conference on Wearable and Implantable Body Sensor Networks",
+  "publication_types": [
+   "JournalArticle",
+   "Conference"
+  ],
+  "authors": [
+   "Geffen Cooper",
+   "R. Marculescu"
+  ],
+  "citations": 0,
+  "source": "semanticscholar",
+  "source_id": "426017420816d55d0780adf48d644145ace94ca0",
+  "paper_id": "dblp:conf/bsn/CooperM25",
+  "doi": "10.1109/BSN66969.2025.11337480",
+  "arxiv_id": "",
+  "dblp_key": "conf/bsn/CooperM25",
+  "paper_url": "https://www.semanticscholar.org/paper/426017420816d55d0780adf48d644145ace94ca0",
+  "published_iso": "2025-11-03"
+ },
+ {
+  "title": "The Study on the Introduction of Tax Increment Financing (TIF) in South Korea: Focusing on the Linkage Between National and Local Taxes and Measures to Mitigate Tax Resistance",
+  "title_norm": "the study on the introduction of tax increment financing tif in south korea focu",
+  "abstract": "This study aims to examine the feasibility and application of the Tax Increment Financing (TIF) system as a method of financing urban development in South Korea. Existing urban development projects have often faced challenges due to the limitations of public finances and the difficulty of attracting private capital. In particular, in local cities, a lack of financial resources frequently delays development projects. \nTo address these issues, this study analyzes the case of TIF implementation in Chicago, USA, highlighting both its contributions to urban development and regional revitalization as well as its negative aspects, such as budget mismanagement and gentrification. The analysis reveals that for the successful implementation of the TIF system, it is essential to establish thorough pre-planning, ensure transparent management and operations, encourage active participation from local residents, and adopt policy efforts to mitigate tax resistance. \nThis study, in particular, takes into account the structural characteristics of South Korea’s tax system and proposes a hybrid Korean TIF model that diverges from the conventional property tax (holding tax)-centered TIF model. Instead, it incorporates various tax categories, including acquisition tax (local tax), value-added tax (VAT), withholding tax, and capital gains tax (national tax). By leveraging this multi-layered tax approach, short-term financial resources can be more easily secured, fiscal risks caused by economic fluctuations can be dispersed, and long-term stability can be ensured. \nAdditionally, to alleviate tax resistance, the study suggests strategies such as clear communication regarding tax burdens, enhanced public communication, tax incentives, transparent fund management, and increased community participation. Moreover, to ensure stable revenue repayment, it proposes the establishment of a hybrid TIF model combining various tax categories, the creation of an independent and transparent fund management system, and the clarification of tax revenue distribution between national and local taxes. \nIn conclusion, this study, based on insights from the Chicago TIF case, designs a Korean TIF model that incorporates both national and local taxes in a way that suits Korea’s circumstances. It presents institutional improvements and policy alternatives, offering an effective financing model for urban development in South Korea.",
+  "tldr": "",
+  "year": 2025,
+  "venue": "Korea Association Of Real Estate Law",
+  "publication_types": [
+   "JournalArticle"
+  ],
+  "authors": [
+   "Kyoung‐Mo Koo",
+   "Do-Ryung Oh",
+   "M. Lim"
+  ],
+  "citations": 0,
+  "source": "semanticscholar",
+  "source_id": "f58b62c3aa2e0cb0f307f79bc432bd8ba2078376",
+  "paper_id": "doi:10.32989/rel.2025.29.1.31",
+  "doi": "10.32989/rel.2025.29.1.31",
+  "arxiv_id": "",
+  "dblp_key": "",
+  "paper_url": "https://www.semanticscholar.org/paper/f58b62c3aa2e0cb0f307f79bc432bd8ba2078376",
+  "published_iso": "2025-03-31"
+ },
+ {
+  "title": "A Reinforcement Learning-Based Framework for Tariff-Aware Load Shifting in Energy-Intensive Manufacturing",
+  "title_norm": "a reinforcement learning based framework for tariff aware load shifting in energ",
+  "abstract": "Optimizing energy-intensive manufacturing under time-varying electricity tariffs requires scheduling strategies that reduce cost without compromising operational feasibility. This study is grounded in readily available industrial sensing: we exclusively use time-series measurements of aggregated active power and energy at the main distribution board of a quicklime production plant. We propose a tariff-aware load-shifting framework in which a Proximal Policy Optimization (PPO) reinforcement learning agent is trained in a custom Gymnasium environment to apply discrete consumption scaling actions constrained to 80–125% of a baseline profile during the operating shift (08:00–16:00), explicitly accounting for demand-charge exposure in the TOU peak window (13:00–15:00). The reward design combines instantaneous electricity cost with cumulative energy-tracking penalties and terms associated with operational constraints. Multi-day validation over N=30 working days shows consistent economic benefits, with a median total cost reduction on the order of 10% (narrow IQR) driven by reduced peak-window energy and demand peaks. However, the script-based binary compliance indicators (viol_energy, viol_prod_min) reveal deviations from the energy-balance criterion and occasional minimum-production shortfalls under the tolerances used, highlighting the cost–production trade-off and the need for stricter constraint handling for industrial deployment. In addition, we benchmark against dynamic programming (DP), an alternative RL policy (DQN), and a greedy heuristic (GREEDY), comparing cost; operational performance; and, when applicable, computational efficiency, which positions PPO as a competitive alternative among the considered methods. Overall, this work demonstrates how learning-based decision making can be coupled with real-world industrial sensing infrastructures, providing a data-driven tariff-aware scheduling layer for industrial energy management under practical constraints.",
+  "tldr": "",
+  "year": 2026,
+  "venue": "Italian National Conference on Sensors",
+  "publication_types": [
+   "JournalArticle"
+  ],
+  "authors": [
+   "Jersson X. Leon-Medina",
+   "Mario Eduardo González Niño",
+   "Claudia Patricia Siachoque Celys",
+   "Bernardo Umbarila Suarez",
+   "Francesc Pozo"
+  ],
+  "citations": 0,
+  "source": "semanticscholar",
+  "source_id": "3d9538980248786716c59ebd35fda84821a9b753",
+  "paper_id": "doi:10.3390/s26061858",
+  "doi": "10.3390/s26061858",
+  "arxiv_id": "",
+  "dblp_key": "",
+  "paper_url": "https://www.semanticscholar.org/paper/3d9538980248786716c59ebd35fda84821a9b753",
+  "published_iso": "2026-03-01"
+ },
+ {
+  "title": "Resilience and housing policy: an urban case study of Kharkiv",
+  "title_norm": "resilience and housing policy an urban case study of kharkiv",
+  "abstract": "This article provides a comprehensive analysis of post-war housing recovery in Kharkiv, focusing on the Pivnichna Saltivka district. It examines the geopolitical, social, spatial, and regulatory factors shaping reconstruction, alongside community engagement, international practices, and prospects for sustainable urban development. \nThe study aims to interpret the urban dynamics–social, geopolitical, and institutional–that influence the recovery of large-scale residential areas. Emphasis is placed on residents’ needs, community capacity, and the feasibility of resilience-oriented strategies amid limited resources and ongoing military threats. The methodology includes literature and policy analysis, sociological surveys, structured interviews, and spatial diagnostics. \nFindings highlight that effective recovery requires integrating sustainability, inclusive governance, and cross-sectoral collaboration. Urban resilience is framed not just as physical rebuilding, but as a multidimensional process involving social cohesion, institutional strength, environmental responsibility, and economic adaptability. Despite severe damage, Pivnichna Saltivka holds potential for transformation into a modern, resident-centered urban space. Survey data show strong civic readiness to engage in recovery, supporting cooperative housing, municipal rental programs, and socially just policies. \nEuropean experience underscores that successful regeneration depends on the synergy of physical, social, economic, and environmental interventions. These models offer Ukraine a foundation for strategies that go beyond reconstruction to ensure long-term resilience and quality of life. \nFuture research should develop tools to assess neighborhood resilience, evaluate pilot projects, and explore participatory planning. Digital platforms for civic engagement in recovery are of particular interest. \nThe study concludes that Kharkiv’s housing recovery should not aim to restore the pre-war status quo but should pursue qualitative urban transformation aligned with sustainable development. Current efforts are supported by national and local budgets, philanthropic initiatives, and platforms like United24. The European Investment Bank (EIB), in partnership with the Ministry for Restoration, co-develops energy-efficient housing programs under the “eVidnovlennia” initiative. While pilot projects are active in Mykolaiv and Kyiv regions, implementation in Kharkiv is paused due to security concerns. \nThe EIB emphasizes public oversight, community capacity, and inclusive decision-making, highlighting the need to strengthen local institutions. Despite current limitations, strong civic interest provides momentum for long-term strategic planning–even amid conflict.",
+  "tldr": "",
+  "year": 2025,
+  "venue": "Current problems of architecture and urban planning",
+  "publication_types": [
+   "JournalArticle",
+   "Review"
+  ],
+  "authors": [
+   "L. Shvets"
+  ],
+  "citations": 0,
+  "source": "semanticscholar",
+  "source_id": "78dfed107b92a55642f1cf394c21cace1e755bef",
+  "paper_id": "doi:10.32347/2077-3455.2025.73.389-405",
+  "doi": "10.32347/2077-3455.2025.73.389-405",
+  "arxiv_id": "",
+  "dblp_key": "",
+  "paper_url": "http://archinform.knuba.edu.ua/article/download/346847/335174",
+  "published_iso": "2025-06-27"
+ },
+ {
+  "title": "The innovation of ecological fiscal transfers policy at Siak Regency",
+  "title_norm": "the innovation of ecological fiscal transfers policy at siak regency",
+  "abstract": "For several decades, the problem of forest fires has been recurring almost every year in Siak regency, Riau Province. This phenomenon affected a huge portion of damage for public. However, the previous policy has been failed to solve the forest fires problem. However, some local government has attempting to address the problem of forest fires with policy innovation. This article focuses on innovation by the Siak local government through ecological transfer policy. Although the idea of ecological transfer policy is not new, there are few Indonesian local governments has initiate in the policy. Siak is one step ahead to initiate the ecological transfer policy during Siak Hijau vision. This article analyses the success story of Siak in formulating the ecological transfer policy in local budget. Through a qualitative research method, we found that the ecological transfer policy can occur due to combination of local elite support and advocacy of civil society organizations. Both actors played an active role in the ecological transfer policy. However, the women tended to be alienated in the formulation of the ecological transfer policy due to cultural and political barriers. In that sense, it is important to create inclusiveness for policy formulation‥",
+  "tldr": "",
+  "year": 2022,
+  "venue": "IOP Conference Series: Earth and Environment",
+  "publication_types": [
+   "Conference"
+  ],
+  "authors": [
+   "M. Kabullah"
+  ],
+  "citations": 5,
+  "source": "semanticscholar",
+  "source_id": "b918c49c999292718e9885e27680775ac8c8498c",
+  "paper_id": "doi:10.1088/1755-1315/1041/1/012040",
+  "doi": "10.1088/1755-1315/1041/1/012040",
+  "arxiv_id": "",
+  "dblp_key": "",
+  "paper_url": "https://iopscience.iop.org/article/10.1088/1755-1315/1041/1/012040/pdf",
+  "published_iso": "2022-06-01"
+ },
+ {
+  "title": "Integrating Sustainability into Monetary Policy to Address Climate Change—A Critical Literature Review",
+  "title_norm": "integrating sustainability into monetary policy to address climate change a crit",
+  "abstract": "Climate change is one of the major global challenges of modern times. It also poses a significant threat to price stability—the major objective of modern central banks. It creates the risk of stagflation, as it can lead to price increases (due to the increased frequency of extreme weather events, which will impact food production) and simultaneously weaken economic activity (due to lower productivity resulting from temperature changes). Climate change and political pressure have sparked a lively scientific debate on whether and how central banks should adapt their monetary policy frameworks to support efforts to stop climate change. Although the literature analyzes actions undertaken by monetary authorities in the areas of sustainable finance and climate risk analysis, this research still needs to be developed and disseminated. Therefore, the main aim of this article is to theoretically analyze the integration of climate issues with the monetary policy of modern central banks. This article provides a theoretical and integrative analysis of the role of modern central banks in addressing climate change, with a particular focus on implications for monetary policy. The study is based on a structured critical literature review and desk research, employing a transparent, multi-stage selection and analysis process, based on the PRISMA approach. The article contributes to the existing literature by offering a systematic synthesis of the main approaches to integrating climate-related considerations into central banking. The analysis organizes the literature into distinct analytical strands, including institutional and coordination-based initiatives, theoretical justifications for central bank involvement, debates on mandates and independence and the development of green monetary policy instruments. The findings suggest that the integration of climate considerations into monetary policy is feasible primarily within a risk-based and prudential framework, while more interventionist approaches may generate tensions with the primary objective of price stability. At the same time, the literature reveals persistent trade-offs between market neutrality and active policy intervention, as well as between institutional constraints and policy effectiveness. The study highlights that climate-related measures are often implemented through macroprudential, supervisory and financial stability functions, which complement rather than substitute monetary policy in the strictest sense. The article contributes to a more coherent understanding of the evolving role of central banks in the context of climate change by synthesizing a fragmented body of research and identifying key conceptual tensions that remain unresolved.",
+  "tldr": "",
+  "year": 2026,
+  "venue": "Sustainability",
+  "publication_types": [
+   "JournalArticle",
+   "Review"
+  ],
+  "authors": [
+   "Aleksandra Nocoń"
+  ],
+  "citations": 0,
+  "source": "semanticscholar",
+  "source_id": "efa1b288947c9321364313952b6c01bacf57c2be",
+  "paper_id": "doi:10.3390/su18104791",
+  "doi": "10.3390/su18104791",
+  "arxiv_id": "",
+  "dblp_key": "",
+  "paper_url": "https://doi.org/10.3390/su18104791",
+  "published_iso": "2026-05-11"
+ },
+ {
+  "title": "A network analysis for providing insights into national R&D budget allocation and investment planning",
+  "title_norm": "a network analysis for providing insights into national r d budget allocation an",
+  "abstract": "\nPurpose\nThis paper aims to shed light on the linkage between research and development (R&D) networks and public funding presented in a given period by using network-based evaluation tools as a means of exploring the relational dimension in public projects designed to foster technology R&D activities.\n\n\nDesign/methodology/approach\nThis research uses co-occurrence network analysis of relevant public projects to assess how technological associations might occur within the R&D activities of given publicly funded projects as well as conducts correlation analysis to understand the extent to which linkages of R&D activity in technology fields are related to public expenditure.\n\n\nFindings\nCore technology fields, regarded as eligible to receive continued public funding, are critical for enhancing competitiveness and sustainable growth at the nationally strategic technology level. Thus, the relationship between R&D and the level of government funding for these fields is generally perceived as strong. However, a few technology fields, which did not actively form specific network relationships with other technology fields, are considered to exceptionally drive the largest government support. This trend indicates that the government-funded R&D should be designed and managed not only to curb the inefficiencies existing in the current funding programs but also to achieve the appropriateness for further technology development.\n\n\nResearch limitations/implications\nDespite the comprehensive findings, this study has several limitations. First, it is difficult to control any confounding factors, such as the determinants and constraints of the government budget allocation and expenditure decisions over S&T areas, strategic frameworks for public investment and evolving policy landscapes in technology sectors, which lead to bias in the study results. Second, this study is based on a narrow, single-year data set of a specific field of projects supported by the Korean government’s R&D program. Therefore, the generalization of findings may be limited. The authors assumed that influences caused by confounding variables during the initial phase of the public funding schemes would not be significant, but they did not take into account possible factors that might arise coincident with the subsequent phase changes. As such, the issue of confounding variables needs to be carefully considered in research design to provide alternative explanations for the results that have been ruled out. The limitations of this study, therefore, could be overcome by comparing the outcome difference between subsidized and non-subsidized R&D projects or evaluating targeted funding schemes or tax incentives that support and promote various areas of R&D with sufficiently large, evidence-based data sets. Also, future research must identify and analyze the R&D activities concerning public support programs performed in other countries associated with strategic priorities to provide more profound insight into how they differ. Third, there are some drawbacks to using these principal investigators-provided classification codes, such as subjectivity, inaccuracy and non-representation. These limitations may be addressed by using content-based representations of the projects rather than using pre-defined codes. Finally, the role that government investment in R&D has played in developing new science and manufacturing technologies of materials and components through network relationships could be better examined using longitudinal analysis. Furthermore, the findings suggest the need for further research to integrate econometric models of performance outcomes such as input–output relations into the network analysis for analyzing the flow of resources and activities between R&D sectors in a national economy. Therefore, future research would be helpful in developing a methodological strategy that could analyze temporal trends in the identification of the effects of public funding on the performance of R&D activity and demand.\n\n\nPractical implications\nPublic funding schemes and their intended R&D relationships still depend on a framework to generate the right circumstances for leading and promoting coordinated R&D activities while strengthening research capacity to enhance the competitiveness of technologies. Each technology field has a relatively important role in R&D development that should be effectively managed and supervised to accomplish its intended goals of R&D budgeting. Thus, when designing and managing R&D funding schemes and strategy-driven R&D relations, potential benefits and costs of using resources from each technology field should be defined and measured. In this regard, government-funded R&D activities should be designed to develop or accommodate a coordinated program evaluation, to be able to examine the extent to which public funding is achieving its objectives of fostering R&D networks, balancing the purpose of government funding against the needs of researchers and technology sectors. In this sense, the examination of public R&D relations provides a platform for discussion of relational network structures characterizing R&D activities, the strategic direction and priorities for budget allocation of the R&D projects. It also indicates the methodological basis for addressing the impact of public funding for R&D activities on the overall performance of technology fields.\n\n\nOriginality/value\nThe value of this work lies in a preliminary exploratory analysis that provides a high-level snapshot of the areas of metallurgy, polymers/chemistry/fibers and ceramics, funded by the Korean Government in 2016 to promote technological competitiveness by encouraging industries to maintain and expand their competencies.\n",
+  "tldr": "",
+  "year": 2023,
+  "venue": "Foresight",
+  "publication_types": [],
+  "authors": [
+   "C. Yang",
+   "Na-Hyun Cho"
+  ],
+  "citations": 1,
+  "source": "semanticscholar",
+  "source_id": "5cacf403153fa9556c1b167dcb3fa096dde9ba73",
+  "paper_id": "doi:10.1108/fs-10-2021-0201",
+  "doi": "10.1108/fs-10-2021-0201",
+  "arxiv_id": "",
+  "dblp_key": "",
+  "paper_url": "https://www.semanticscholar.org/paper/5cacf403153fa9556c1b167dcb3fa096dde9ba73",
+  "published_iso": "2023-01-04"
+ },
+ {
+  "title": "Women’s Representation on Forest Transfer Policy in Siak Regency",
+  "title_norm": "women s representation on forest transfer policy in siak regency",
+  "abstract": ". The recurrence of cases of forest and land fires in Siak regency indicates that the policies have not been solve completely by the local governments. Although there are numerous policies on forest fire prevention, there have been little studies that systematically focus the women representation on this issue. This article analyses an involvement of women on forest transfer (Take) policy in Siak Regency. This policy has one of best practices to protect the environment through budget policy innovations in line with the goals of the Sustainable Development Goals (SDGs) and Reducing Emissions from Deforestation and forest Degradation (REDD+) agendas. In that sense, we explore how women involve in the Take policy through qualitative methods especially in-depth interviews, observation, and documentation. Based on our research, there were limits of women in the Take policy. It argues that the women have chance to participate in the Take policy. However, the women have not played an active role in the Take policy. The women tended to be alienated in the implementation of Take policy due to cultural and political barriers. As a result, the women who sit in power should be able to supervise the Take policy.",
+  "tldr": "",
+  "year": 2022,
+  "venue": "Proceedings of the 1st International Conference on Gender, Culture and Society, ICGCS 2021, 30-31 August 2021, Padang, Indonesia",
+  "publication_types": [
+   "Conference"
+  ],
+  "authors": [
+   "M. Kabullah",
+   "W. Rahayu",
+   "Rifki Dermawan"
+  ],
+  "citations": 1,
+  "source": "semanticscholar",
+  "source_id": "a3ef26f46350e17741ae08e5e15d359319be0301",
+  "paper_id": "doi:10.4108/eai.30-8-2021.2316265",
+  "doi": "10.4108/eai.30-8-2021.2316265",
+  "arxiv_id": "",
+  "dblp_key": "",
+  "paper_url": "http://eudl.eu/pdf/10.4108/eai.30-8-2021.2316265",
+  "published_iso": null
+ },
+ {
+  "title": "Coordinated Beamforming for Multi-Cell ISAC Using Graph Neural Networks",
+  "title_norm": "coordinated beamforming for multi cell isac using graph neural networks",
+  "abstract": "This paper proposes a coordinated beamforming scheme for a multi-cell integrated sensing and communication (ISAC) system. A target-centric graph is constructed, with the coordinate system centered at the detection target. Specifically, base stations (BSs) and users are represented as nodes, with their coordinates serving as node features, while channel realizations between nodes are modeled as edge features. To evaluate sensing performance, the Neyman-Pearson detector is employed to compute the detection probability for a fixed false alarm probability. The optimization problem is formulated to maximize the detection probability of the target at the origin while ensuring QoS communication requirements and satisfying the transmit power budget. This sensing-centric problem is addressed using graph neural networks (GNNs), which generate parameterized policies for coordinated beamforming. The GNNs are trained via primal-dual approach, leveraging a small duality gap for efficient convergence. Additionally, specific layers are utilized to generate user association policies for communication links, enabling efficient processing of the graph-structured data after sparsity enhancement. Simulation results validate the feasibility and effectiveness of the proposed GNN-based approach in achieving high detection probability.",
+  "tldr": "",
+  "year": 2026,
+  "venue": "IEEE Transactions on Wireless Communications",
+  "publication_types": [
+   "JournalArticle"
+  ],
+  "authors": [
+   "Xiang Liu",
+   "Carlo Fischione"
+  ],
+  "citations": 3,
+  "source": "semanticscholar",
+  "source_id": "99d35599ce3ea342a7b9e4f38cca9bbe3bec758e",
+  "paper_id": "dblp:journals/twc/LiuF26",
+  "doi": "10.1109/TWC.2025.3621437",
+  "arxiv_id": "",
+  "dblp_key": "journals/twc/LiuF26",
+  "paper_url": "https://www.semanticscholar.org/paper/99d35599ce3ea342a7b9e4f38cca9bbe3bec758e",
+  "published_iso": null
+ },
+ {
+  "title": "Optimizing Hybrid RIS-Aided ISAC Systems in V2X Networks: A Deep Reinforcement Learning Method for Anti-Eavesdropping Techniques",
+  "title_norm": "optimizing hybrid ris aided isac systems in v2x networks a deep reinforcement le",
+  "abstract": "Physical layer security (PLS) technique is expected to play a crucial part in the vehicle-to-everything (V2X) networks, by offering secure transmission to protect confidential information from potential eavesdropper. Considering a hybrid active-passive reconfigurable intelligent surfaces (RISs)-enhanced integrated sensing and communication (ISAC) system, this paper proposes a novel secure scheme for transmitting confidential information and performing radar sensing, where vehicle-to-vehicle (V2V) links share the spectrum resource preoccupied by vehicle-to-infrastructure (V2I) links. We aim to optimize the sum secrecy rate of V2I links by jointly designing the transmit beamforming of RSU, the radio spectrum reuse scheme of V2X links, and active and passive reflection beamforming of hybrid RIS. With above optimization, the proposed approach can enhance secure communication performance of V2I links while guaranteeing the communication quality of V2V links and target sensing capacity of RSU. Since the system model is dynamic, and it is difficult to handle the nonconvex problem, an efficient hierarchical twin delayed deep deterministic policy gradient (HTD3) method is developed to learn the secure beamforming and spectrum sharing strategies against potential eavesdropping. The proposed method decomposes the spectrum allocation into the deep Q-network procedure and designs the secure beamforming variables by employing the TD3 algorithm. Numerical results exhibit that given a sufficient power budget of hybrid RIS, our HTD3-based method enhances both the secure communication performance of V2I links and radar detection capability of RSU compared with the existing learning methods.",
+  "tldr": "",
+  "year": 2025,
+  "venue": "IEEE Transactions on Vehicular Technology",
+  "publication_types": [
+   "JournalArticle"
+  ],
+  "authors": [
+   "Yu Yao",
+   "Zhixing Zhu",
+   "P. Miao",
+   "Xu Cheng",
+   "Feng Shu",
+   "Jiangzhou Wang"
+  ],
+  "citations": 26,
+  "source": "semanticscholar",
+  "source_id": "85c4826a85659d7846a5a8f53f96d820eea14495",
+  "paper_id": "dblp:journals/tvt/YaoZMCSW25",
+  "doi": "10.1109/TVT.2025.3538471",
+  "arxiv_id": "",
+  "dblp_key": "journals/tvt/YaoZMCSW25",
+  "paper_url": "https://www.semanticscholar.org/paper/85c4826a85659d7846a5a8f53f96d820eea14495",
+  "published_iso": "2025-06-01"
+ },
+ {
+  "title": "Combating cyber threats as an element of the Visegrad Group’s cybersecurity policy",
+  "title_norm": "combating cyber threats as an element of the visegrad group s cybersecurity poli",
+  "abstract": "The Visegrad Group countries are taking actions that confirm their ambitions in the framework of cyber security policy. The tasks formulated both in strategic documents and in international forums are evidence of the active role of Central European governments in the area of cyber security. Many countries are facing a rising tide of cyberattacks, which are likely to intensify over time. Any such incident has the potential to inflict significant damage, undermining trust in government and causing unpredictable political consequences. For this reason, there is an apparent desire on the part of the V4 countries to build common cyber resilience based on close cooperation with the EU and NATO. Another way of describing the actions taken in the article is budget spending on cyber security, which is an important measure for assessing the development of the cyber capabilities of individual countries. The article is an attempt to summarize the actions taken by the V4 countries in the period 2013-2021 within the framework of cyber security policy, which for the most part remains in the sphere of mere political declarations. The research analysis undertaken can serve as a starting point for further consideration of V4 cooperation especially in the context of the military aggression of the Russian Federation after 24 February 2022. This event mandates consideration of the future of cooperation between Central European countries – in the broadest sense – on security policy.",
+  "tldr": "The article is an attempt to summarize the actions taken by the V4 countries in the period 2013-2021 within the framework of cyber security policy, which for the most part remains in the sphere of mere political declarations.",
+  "year": 2022,
+  "venue": "Rocznik Instytutu Europy Środkowo-Wschodniej",
+  "publication_types": [],
+  "authors": [
+   "Marek Górka"
+  ],
+  "citations": 0,
+  "source": "semanticscholar",
+  "source_id": "4349f7759f976a4f34b762c06ad795a8cdd6fa48",
+  "paper_id": "doi:10.36874/riesw.2022.1.7",
+  "doi": "10.36874/riesw.2022.1.7",
+  "arxiv_id": "",
+  "dblp_key": "",
+  "paper_url": "https://www.semanticscholar.org/paper/4349f7759f976a4f34b762c06ad795a8cdd6fa48",
+  "published_iso": "2022-12-01"
+ },
+ {
+  "title": "Edge-Inference Governors Need Memory-Clock State",
+  "title_norm": "edge inference governors need memory clock state",
+  "abstract": "On integrated edge SoCs whose memory fabric is governed independently of the compute clocks, frequency-aware latency estimators let deadline-aware DVFS governors schedule ML inference by modeling latency over CPU and GPU clocks -- but they do not condition on the memory clock (EMC), a deployment state that decides whether a governor meets its deadlines and at what energy. We show this with a deployed, measured governor on Jetson Orin: an EMC-blind GPU-only fit misses 25-28% of cycles at tight deadlines, whereas an EMC-aware two-cell refit holds misses to<=0.9% under a 2% QoS budget -- selecting a budget-feasible operating point proactively, where latency-only reactive calibration cannot repair memory-clock-dependent slope error. Across six models on two Orin SKUs, the core MobileNetV2 and ViT-Small results replicate on both boards; detection and LLM deployments reproduce the failure on the NX. Sustained deployment requires two further state layers: decode horizon, where KV-cache growth erodes tight-deadline feasibility over long responses, and GPU co-tenancy, whose occupancy opens queueing tails. A contract-admission policy composes the three layers from bounded probes and deploys live, including a joint cell decoding 2,000 tokens against an active GPU co-tenant where tenancy-blind admission misses 32% of tokens. Under the reference-probe maximum-guard accounting, every accepted contract is decisively measured-feasible. Fresh-probe stress tests then expose a probe-variance failure mode at knife-edge admissions; a dispersion-banded guard, validated on held-out trials, eliminates the observed probe-induced low-clock selections (held-out aggregate 1.19%); and one bin of headroom yielded observed per-launch compliance across eight fresh launches. A governor's guarantee is thus a measured conservatism ladder -- state repair, probe-variance banding, and headroom for launch realization.",
+  "tldr": "A governor's guarantee is thus a measured conservatism ladder -- state repair, probe-variance banding, and headroom for launch realization on integrated edge SoCs whose memory fabric is governed independently of the compute clocks.",
+  "year": 2026,
+  "venue": "",
+  "publication_types": [],
+  "authors": [
+   "J. Kang"
+  ],
+  "citations": 0,
+  "source": "semanticscholar",
+  "source_id": "833dab9fe21ef7b9ab13e591ef05f807e8754d33",
+  "paper_id": "arxiv:2606.16106",
+  "doi": "",
+  "arxiv_id": "2606.16106",
+  "dblp_key": "",
+  "paper_url": "https://www.semanticscholar.org/paper/833dab9fe21ef7b9ab13e591ef05f807e8754d33",
+  "published_iso": "2026-06-15"
+ },
+ {
+  "title": "Tourism in Rural Newfoundland: Self-imposed Public Policy Obstacle",
+  "title_norm": "tourism in rural newfoundland self imposed public policy obstacle",
+  "abstract": "All of the societies within the North Atlantic Zone are faced with an evolving business environment. Among the changes are more open and fluid markets for goods and services, technological change, and an unrelenting shift from primary and manufacturing industries to service-based economies. Those changes tend to create uncertainty for businesses, leading them to seek to find efficiencies, and have nimbler workforces and operations. In turn, then, workers are also sensing a decline in job stability and security, constraints on pay and benefits, and an intensification of work responsibilities. We would argue that the individuals and businesses in rural and remote villages tend to face particular challenges due to heavy reliance on a small number of industries or employers, net out-migration of young people, and fewer local training/education options, in addition to inherent geographic complications. \nWhile tourism is an industry that can have distinct negative effects, it is understandable that, in many rural areas, decision-makers (i.e. municipal officials, individual workers, and community groups) are eyeing tourism as a tool to sustain local economies. When considering the economic feasibility of tourism to sustain and increase jobs and populations in rural Newfoundland, we believe that it is important to consider the impact of broader government decisions (such as active vs. passive labour market policies, and the degree of infrastructure investment). In this presentation, we will look at summer job policies, timing of subsidized festivals, social payment qualifications, and insufficient coordination between Federal, Provincial, and local industry stakeholders that, as a set, hinder, rather than spur on, the creation of self-sustaining tourism operations.",
+  "tldr": "",
+  "year": 2023,
+  "venue": "Proceedings of the Canadian Rural Revitalization Foundation",
+  "publication_types": [
+   "JournalArticle"
+  ],
+  "authors": [
+   "Gordon B. Cooke",
+   "Búi K. Petersen"
+  ],
+  "citations": 0,
+  "source": "semanticscholar",
+  "source_id": "bbd7d4d918f2ef15939fd6acfb5d491d7fd13bc7",
+  "paper_id": "doi:10.21083/crrf.v31i1.7335",
+  "doi": "10.21083/crrf.v31i1.7335",
+  "arxiv_id": "",
+  "dblp_key": "",
+  "paper_url": "https://www.semanticscholar.org/paper/bbd7d4d918f2ef15939fd6acfb5d491d7fd13bc7",
+  "published_iso": "2023-03-20"
+ },
+ {
+  "title": "Aerosol‐Cloud Interactions: Overcoming a Barrier to Projecting Near‐Term Climate Evolution and Risk",
+  "title_norm": "aerosol cloud interactions overcoming a barrier to projecting near term climate ",
+  "abstract": "Aerosol‐cloud interactions (ACI) are a major source of uncertainty in climate science, critically affecting our ability to project near‐term climate evolution and assess societal risks. These interactions influence effective radiative forcing, cloud dynamics, and precipitation patterns, yet remain insufficiently constrained due to limitations in observations, modeling, and process understanding. This uncertainty hampers robust policy advice across multiple domains—from estimating remaining carbon budgets and climate sensitivity, to anticipating regional extreme events and evaluating climate interventions such as solar radiation modification. In many cases, the influence of ACI is either underappreciated or excluded from decision‐making frameworks due to its complexity and lack of quantification. This perspective outlines a path forward to overcome these barriers by leveraging emerging opportunities in satellite remote sensing, ground‐based and airborne observations, high‐resolution climate modeling, and machine learning. We identify key areas where rapid progress is feasible, including improved retrievals of cloud microphysical properties, better representation of natural aerosols in a warming world, and enhanced integration of observational and modeling communities. Even as anthropogenic aerosol and its impacts on clouds is reducing owing to emissions controls, addressing ACI uncertainties remains essential for refining climate projections, supporting effective mitigation and adaptation strategies, and delivering actionable science to policymakers in a rapidly changing climate system.",
+  "tldr": "",
+  "year": 2026,
+  "venue": "AGU Advances",
+  "publication_types": [
+   "JournalArticle"
+  ],
+  "authors": [
+   "Ulas Im",
+   "B. Samset",
+   "A. Nenes",
+   "Jennie L. Thomas",
+   "H. Kokkola",
+   "O. Dubovik"
+  ],
+  "citations": 1,
+  "source": "semanticscholar",
+  "source_id": "3b105146e79e06cac658560af396f2962a279ab6",
+  "paper_id": "doi:10.1029/2025AV001872",
+  "doi": "10.1029/2025AV001872",
+  "arxiv_id": "",
+  "dblp_key": "",
+  "paper_url": "https://onlinelibrary.wiley.com/doi/pdfdirect/10.1029/2025AV001872",
+  "published_iso": "2026-02-01"
+ },
+ {
+  "title": "Current status and prospects of investment in the field of rehabilitation in Ukraine",
+  "title_norm": "current status and prospects of investment in the field of rehabilitation in ukr",
+  "abstract": "Introduction. Active military operations in Ukraine have led to an increase in people with multiple and complex injuries, the successful rehabilitation of which requires innovative approaches to treatment and quality service. Therefore, the field of medical rehabilitation has faced a significant increase in demand for quality services, and the need for rapid adaptation and modernization to meet the needs of patients.\n\nProblem Statement. Solving new social challenges in the rehabilitation sector requires significant funding, which is problematic in conditions of a state budget deficit. Attracting funds from private partners is risky in conditions of an unstable economic and political situation.\n\nThe purpose is to determine the role of charitable funds in the field of rehabilitation in Ukraine, the prospects for the development of charitable forms of investment in socially significant areas.\n\nMethods. The study used general scientific and special methods: analysis, synthesis, logical generalization.\n\nResults. The feasibility of transitioning from classical models of public-private partnership to the innovative format of public-private-philanthropic partnerships (4P), which provides for charitable investments for the implementation of socially important projects, is substantiated. Attention is focused on the features and advantages of the development of public-private-philanthropic partnerships as an effective tool for investing in risky projects with high social significance. The importance of attracting catalytic capital, which is a new form of charity in the form of investments that assume the main risks and open the way for attracting private partners, is highlighted.\n\nConclusions. The recommendations provided are of an applied nature and relate to the development of agreements in the form of 4P, which are designed to optimize the expenditure of budget funds and significantly improve the quality and volume of rehabilitation services in sanatoriums and resort institutions of the Ministry of Social Policy, Family and Unity in Ukraine.",
+  "tldr": "The purpose is to determine the role of charitable funds in the field of rehabilitation in Ukraine, the prospects for the development of charitable forms of investment in socially significant areas, and the development of agreements in the form of 4P to optimize the expenditure of budget funds.",
+  "year": 2026,
+  "venue": "Fìnansi Ukraïni",
+  "publication_types": [
+   "JournalArticle"
+  ],
+  "authors": [
+   "N. Vernihorova"
+  ],
+  "citations": 0,
+  "source": "semanticscholar",
+  "source_id": "a34fd9776be0d6ae8f373efcb30832c2a691f182",
+  "paper_id": "doi:10.33763/finukr2026.02.088",
+  "doi": "10.33763/finukr2026.02.088",
+  "arxiv_id": "",
+  "dblp_key": "",
+  "paper_url": "https://doi.org/10.33763/finukr2026.02.088",
+  "published_iso": "2026-02-27"
+ },
+ {
+  "title": "Look, Zoom, Understand: The Robotic Eyeball for Embodied Perception",
+  "title_norm": "look zoom understand the robotic eyeball for embodied perception",
+  "abstract": "In embodied AI, visual perception should be active rather than passive: the system must decide where to look and at what scale to sense to acquire maximally informative data under pixel and spatial budget constraints. Existing vision models coupled with fixed RGB-D cameras fundamentally fail to reconcile wide-area coverage with fine-grained detail acquisition, severely limiting their efficacy in open-world robotic applications. We study the task of language-guided active visual perception: given a single RGB image and a natural language instruction, the agent must output pan, tilt, and zoom adjustments of a real PTZ (pan-tilt-zoom) camera to acquire the most informative view for the specified task. We propose EyeVLA, a unified framework that addresses this task by integrating visual perception, language understanding, and physical camera control within a single autoregressive vision-language-action model. EyeVLA introduces a semantically rich and efficient hierarchical action encoding that compactly tokenizes continuous camera adjustments and embeds them into the VLM vocabulary for joint multimodal reasoning. Through a data-efficient pipeline comprising pseudo-label generation, iterative IoU-controlled data refinement, and reinforcement learning with Group Relative Policy Optimization (GRPO), we transfer the open-world understanding of a pre-trained VLM to an embodied active perception policy using only 500 real-world samples. Evaluations on 50 diverse real-world scenes across five independent evaluation runs demonstrate that EyeVLA achieves an average task completion rate of 96%. Our work establishes a new paradigm for instruction-driven active visual information acquisition in multimodal embodied systems.",
+  "tldr": "EyeVLA establishes a new paradigm for instruction-driven active visual information acquisition in multimodal embodied systems by integrating visual perception, language understanding, and physical camera control within a single autoregressive vision-language-action model.",
+  "year": 2025,
+  "venue": "arXiv.org",
+  "publication_types": [
+   "JournalArticle"
+  ],
+  "authors": [
+   "Jiashu Yang",
+   "Yifan Han",
+   "Yu-Han Xie",
+   "Ning Guo",
+   "Wenzhao Lian"
+  ],
+  "citations": 0,
+  "source": "semanticscholar",
+  "source_id": "2c0375bf1aaa5637453373a5bd9b267bfdaab26d",
+  "paper_id": "dblp:journals/corr/abs-2511-15279",
+  "doi": "10.48550/arXiv.2511.15279",
+  "arxiv_id": "2511.15279",
+  "dblp_key": "journals/corr/abs-2511-15279",
+  "paper_url": "https://www.semanticscholar.org/paper/2c0375bf1aaa5637453373a5bd9b267bfdaab26d",
+  "published_iso": "2025-11-19"
+ },
+ {
+  "title": "INFORMATION&ANALYTICAL TOOLS OF MANAGING SPATIAL DEVELOPMENT OF TERRITORIAL-ECONOMIC SYSTEMS: EU EXPERIENCE AND PRIORITIES FOR UKRAINE",
+  "title_norm": "information analytical tools of managing spatial development of territorial econ",
+  "abstract": "Topicality. Managing spatial development is an extremely pressing task at national, regional, and local levels. Ensuring the effectiveness of this process becomes particularly significant under conditions of limited resources, which 100 ECONOMIC is typical for a country in wartime. For Ukraine, the need to adapt to EU standards across various spheres of public policy is not only tied to the fact that European integration remains a key foreign policy direction for the country. More critically, without the necessary reforms, funding for a significant portion of state budget programs (in one form or another) will not be guaranteed by the European Commission. The extraordinary reliance of Ukraine’s state budget on external financial and technical assistance, which has increased dramatically since the beginning of russia’s full-scale aggression against Ukraine, has further reinforced the necessity of implementing European integration reforms. To enhance the scientific rigor and accuracy of spatial planning decisions, national, regional, and local governing bodies can systematically employ advanced visualization technologies, including Geographic Information Systems (GIS), 3D modeling and visualization frameworks, scenario-based planning methodologies, participatory governance instruments, integrated data dashboards, remote sensing techniques, and satellite imagery analysis. These tools facilitate evidence-based decision-making by enabling comprehensive spatial analysis, fostering stakeholder engagement, and optimizing resource allocation within territorial and economic systems. The application of information-analytical tools such as Geographic Information Systems (GIS) is a highly relevant element of digital transformation in a governance of regional development. This process is actively being developed under current conditions by the Ministry of Regional Development, specifically regarding GIS. It aims to create a nationwide database of territorial development indicators, facilitating the harmonization of Ukrainian statistics with corresponding EU data. Additionally, it enables interregional comparisons between EU and Ukrainian regions and communities. The development and implementation of GIS systems will, in the future, serve as a prerequisite for gaining access to EU funding instruments and programs for Ukraine’s regions and communities. Aim and Tasks. The objective of this study is to explore ways to develop and enhance the information-analytical tools used for managing the spatial development of territorial-economic systems in Ukraine. The realization of this objective is carried out through the following tasks: (1) To examine the EU experience in applying information-analytical tools in the context of spatial development governance of territorial-economic systems; (2) To describe the advantages of utilizing analytical instruments to assess the key socio-economic characteristics of a territory at different levels of decision-making regarding territorial development; (3) To propose a new tool (or improve an existing one) for territorial development governance based on data visualization, which would illustrate the current socio-economic state of the territory and provide relevant territorial characteristics (using Odesa Oblast as an example) to enhance the decision-making process for various stakeholders. Materials and Methods. The methodological framework of this study is based on general scientific and specialized research methods. In particular, system analysis was employed to examine interactive tools used for interterritorial comparisons at the regional and local levels within the EU. The generalization method was applied in formulating a list of visualization tools utilized for more informed decision-making in rational spatial planning at national, regional, and local governance levels. The synthesis method was used to develop a set of socio-economic development indicators for a GIS system across three statistical levels (community, district, and oblast). These indicators are categorized into five key dimensions: economic, social, spatial, governance, and environmental components. Research results. The study examines the experience of the Ministry of Regional Development in implementing Geographic Information Systems (GIS), which constitute a crucial element of the digital transformation of regional development management. Additionally, at the national level, the establishment of a territorial development indicator database will facilitate the harmonization of domestic statistics with corresponding EU data, enabling interterritorial comparisons between regions and communities in Ukraine and the EU. In the future, this will serve as a prerequisite for access to EU financial instruments and funding programs for Ukrainian regions and communities. A key factor in the development of Ukraine’s state regional policy is that GIS relies on European methodologies for collecting socio-economic development indicators to shape regional policy. The updated system parameters will be aligned with European standards, granting Ukraine access to leading EU policies and funding programs. The GIS information-analytical framework and the visualization tools built upon it contribute to informed decision-making, resource optimization, and enhanced efficiency in state regional policy. Thus, the application of GIS in the formulation and implementation of regional development policies ensures scientific validity, systematic planning, and predictive capabilities. This makes GIS an essential component of state governance, aimed at restoring and developing communities in post-crisis conditions. Based on the conducted research, a set of socio-economic development indicators for the GIS system has been proposed at three statistical levels (community, district, and oblast). These indicators, developed using the existing Investment Navigator of Odesa Oblast, are categorized into five key dimensions: economic, social, spatial, governmental, and environmental components. Conclusion. The findings of the study suggest that one of the initial steps toward integrating Ukraine’s territorial and spatial development policy into the frameworks of the European Union’s territorial development and spatial planning policy (commonly referred to as the EU Cohesion Policy) is the implementation of Geographic Information Systems (GIS) by the Ministry of Regional Development. GIS serves as a crucial element in the digital transformation of regional development governance. Regarding the implementation of this tool, the study proposes the formation of a set of socio-economic development indicators for the GIS system at three statistical levels community, district, and oblast. This proposal is intended for egorizes indicators into five key components: economic, social, spatial, governmental, and environmental dimensions.",
+  "tldr": "",
+  "year": 2025,
+  "venue": "Economic innovations",
+  "publication_types": [
+   "JournalArticle"
+  ],
+  "authors": [
+   "O. Laiko",
+   "I. Tsynalievska"
+  ],
+  "citations": 1,
+  "source": "semanticscholar",
+  "source_id": "4404ffb63fe51f21899518f43fc489475a3aed9b",
+  "paper_id": "doi:10.31520/ei.2025.27.2(95).98-110",
+  "doi": "10.31520/ei.2025.27.2(95).98-110",
+  "arxiv_id": "",
+  "dblp_key": "",
+  "paper_url": "https://doi.org/10.31520/ei.2025.27.2(95).98-110",
+  "published_iso": "2025-06-20"
+ },
+ {
+  "title": "Legal Politics of Preservation of Borobudur Temple As A World Cultural Heritage",
+  "title_norm": "legal politics of preservation of borobudur temple as a world cultural heritage",
+  "abstract": "This study analyzes the legal politics behind the preservation of Borobudur Temple as a World Cultural Heritage site. Recognized by UNESCO in 1991, Borobudur Temple holds significant historical, architectural, and spiritual value and serves as a vital asset for Indonesian tourism. However, its sustainability faces various threats, including physical damage due to natural and human factors, as well as pressures from unsustainable tourism practices. Using a qualitative approach with a case study method, this research examines the national legal framework (particularly Law No. 11 of 2010) and international regulations (the UNESCO Convention of 1972) governing the temple’s preservation. The findings indicate that despite the existence of legal frameworks and various government-led programs, policy implementation still encounters significant challenges. These include limited budget and human resources, low public awareness, and the negative impacts of commercialization and mass tourism. The study emphasizes the importance of a collaborative approach involving the government, local communities, non-governmental organizations, and international stakeholders. Active community participation through empowerment and education programs is deemed crucial to foster a sense of ownership and responsibility. In conclusion, the study offers recommendations to increase budget allocation, utilize modern technology for monitoring, strengthen regulations, and develop sustainable tourism and comprehensive education programs to ensure the preservation of Borobudur Temple for future generations.",
+  "tldr": "",
+  "year": 2026,
+  "venue": "Journal of Posthumanism",
+  "publication_types": [
+   "JournalArticle"
+  ],
+  "authors": [
+   "Agustinus Supriyanto"
+  ],
+  "citations": 0,
+  "source": "semanticscholar",
+  "source_id": "31282cb6df9ac4dacf3de3f0afc0d4a558f3b258",
+  "paper_id": "doi:10.63332/joph.v6i6.4228",
+  "doi": "10.63332/joph.v6i6.4228",
+  "arxiv_id": "",
+  "dblp_key": "",
+  "paper_url": "https://posthumanism.co.uk/jp/article/download/4228/2576",
+  "published_iso": "2026-07-01"
+ },
+ {
+  "title": "MULTI-OBJECTIVE FRAMEWORK FOR END-DEVICE PROCESSING AND OFFLOADING IN INDUSTRIAL IOT",
+  "title_norm": "multi objective framework for end device processing and offloading in industrial",
+  "abstract": "The paper develops an integrated theoretical and mathematical framework for information processing on resource-limited Industrial Internet of Things (IIoT) end devices operating within cloud–fog–edge architectures. The study is motivated by heterogeneous, nonstationary event streams whose direct transmission to upper tiers is often infeasible due to bandwidth scarcity, strict latency targets, and the energy and computational limitations of end devices. Consequently, the end device must execute sensing-driven preprocessing, manage finite-buffer queues, and regulate outgoing traffic while preserving the informativeness required for monitoring, control, and analytics. The proposed formalization treats the end device as an active decision node that shapes system dynamics by controlling local transformations and offloading decisions under time-varying resource conditions. A class- and priority-aware stream model captures heterogeneity in criticality and service requirements, while finite-buffer queueing dynamics represent delay and loss under bursty arrivals and constrained service capacity. The device state is described by a resource vector reflecting available CPU capacity, memory and buffer occupancy, channel quality and transmission rate, and energy-related limitations, enabling state-dependent admissibility conditions for local computation and communication. An operator-level processing chain systematizes the end-device reduction pipeline, including preprocessing, informativeness assessment, adaptive filtering, temporal and semantic aggregation, controlled compression, and compact feature formation. The chain produces structured, semantically annotated packets supporting lightweight local decision-making and selective offloading to fog or cloud tiers. A multi-criteria efficiency structure is specified to jointly account for latency, packet loss, energy expenditure, communication load, and informativeness preservation, thereby enabling Pareto-oriented synthesis of admissible adaptive policies. The research objective is to establish unified decision variables, constraints, and stability and feasibility conditions coupling queue behavior with resource limitations, providing an analytically traceable basis for subsequent method construction, parameter tuning, and scenario-driven validation in realistic industrial environments. Unlike purely empirical benchmarking, the contribution is intentionally analytical: it consolidates fragmented models of local reduction and offloading, and exposes explicit operator definitions for reproducible analysis.",
+  "tldr": "An integrated theoretical and mathematical framework for information processing on resource-limited Industrial Internet of Things end devices operating within cloud–fog–edge architectures is developed, providing an analytically traceable basis for subsequent method construction, parameter tuning, and scenario-driven validation in realistic industrial environments.",
+  "year": 2026,
+  "venue": "Advanced Information Systems",
+  "publication_types": [
+   "JournalArticle"
+  ],
+  "authors": [
+   "Eduard Malokhvii",
+   "H. Kuchuk",
+   "A. Korobko",
+   "Nataliia Zhovnir",
+   "Serhii Oryshchenko"
+  ],
+  "citations": 0,
+  "source": "semanticscholar",
+  "source_id": "5462de881af2ae55934451f661894dd30fe56005",
+  "paper_id": "doi:10.20998/2522-9052.2026.2.12",
+  "doi": "10.20998/2522-9052.2026.2.12",
+  "arxiv_id": "",
+  "dblp_key": "",
+  "paper_url": "https://doi.org/10.20998/2522-9052.2026.2.12",
+  "published_iso": "2026-04-03"
+ },
+ {
+  "title": "Autonomous UAV Navigation for Individual Wildlife Re-Identification",
+  "title_norm": "autonomous uav navigation for individual wildlife re identification",
+  "abstract": "Reliable individual re-identification (re-ID) of wildlife is essential for population monitoring, behavioral tracking, and conservation policy evaluation, yet large-scale data collection remains labor-intensive, relying on manual efforts by ecologists or citizen scientists. We propose an autonomous drone navigation system that actively optimizes image capture for downstream re-ID, moving beyond passive aerial sensing. The system combines YOLOv11 object detection with a DINOv2-based pose classifier to guide real-time flight decisions: detecting animals, orienting to expose the lateral flank (the surface of interest for pattern-based re-ID), and approaching until the subject meets a minimum bounding-box threshold. Unlike prior drone systems that optimize for group-level behavioral video, ours targets the specific image-quality requirements of individual-identification models. We demonstrate feasibility through a case study on zebra using footage collected in Kenya, and show the approach generalizes to other species with diagnostic surface patterns, including giraffes, tigers, and elephants. Our work establishes a framework for task-aware embodied AI for ecological data collection, in which downstream re-ID requirements drive real-time perception and control.",
+  "tldr": "An autonomous drone navigation system that actively optimizes image capture for downstream re-ID, moving beyond passive aerial sensing and establishing a framework for task-aware embodied AI for ecological data collection, in which downstream re-IDs drive real-time perception and control.",
+  "year": 2026,
+  "venue": "",
+  "publication_types": [],
+  "authors": [
+   "Claire Sun",
+   "T. Berger-Wolf",
+   "Jenna Kline"
+  ],
+  "citations": 0,
+  "source": "semanticscholar",
+  "source_id": "13e450f36b6a68eadd1600975189bc04a85c818a",
+  "paper_id": "arxiv:2606.31772",
+  "doi": "",
+  "arxiv_id": "2606.31772",
+  "dblp_key": "",
+  "paper_url": "https://www.semanticscholar.org/paper/13e450f36b6a68eadd1600975189bc04a85c818a",
+  "published_iso": "2026-06-30"
+ },
+ {
+  "title": "An ancillary care policy in a vaccine trial conducted in a resource-constrained setting: evaluation and policy recommendations",
+  "title_norm": "an ancillary care policy in a vaccine trial conducted in a resource constrained ",
+  "abstract": "Introduction Clear guidelines to implement ancillary care (AC) in clinical trials conducted in resource-constrained settings are lacking. Here, we evaluate an AC policy developed for a vaccine trial in the Democratic Republic of the Congo and formulate policy recommendations. Methods To evaluate the AC policy, we performed a longitudinal cohort study, nested in an open-label, single-centre, randomised Ebola vaccine trial conducted among healthcare personnel. Participants’ demographic information, residence distance to the study site and details on the financial and/or medical support provided for any (serious) adverse events ((S)AE) were combined and analysed. To assess the feasibility of the AC policy, an expenditure analysis of the costs related to AC support outcomes was performed. Results Enrolment in this evaluation study started on 29 November 2021. The study lasted 11 months and included 655 participants from the Ebola vaccine trial. In total, 393 participants used the AC policy, mostly for AE management (703 AE and 94 SAE) via medication provided by the study pharmacy (75.3%). Men had a 35.2% (95% CI 4.0% to 56.6%) lower likelihood of reporting AE compared with women. Likewise, this was 32.3% lower (95% CI 5.8% to 51.4%) for facility-based compared with community-based healthcare providers. The daily AE reporting was 78.8% lower during the passive vs the active trial stage, and 97.4% lower during unscheduled vs scheduled visits (p<0.001). Participants living further than 10 km from the trial site more frequently reported the travel distance as a reason for not using the policy (p<0.04). In practice, only 1.1% of the operational trial budget was used for AC policy support. Conclusion The trial design, study population and local health system impacted the use of the AC policy. Nonetheless, the AC policy implementation in this remote and resource-constrained setting was feasible, had negligible budgetary implications and contributed to participants’ healthcare options and well-being.",
+  "tldr": "The AC policy implementation in this remote and resource-constrained setting was feasible, had negligible budgetary implications and contributed to participants’ healthcare options and well-being.",
+  "year": 2024,
+  "venue": "BMJ Global Health",
+  "publication_types": [
+   "JournalArticle"
+  ],
+  "authors": [
+   "Gwen Lemey",
+   "Ynke Larivière",
+   "Bernard Isekah Osang'ir",
+   "T. Zola",
+   "Primo Kimbulu",
+   "Solange Milolo"
+  ],
+  "citations": 1,
+  "source": "semanticscholar",
+  "source_id": "e0716c9de0c311217db5e189ef3ab75d25bf7f28",
+  "paper_id": "doi:10.1136/bmjgh-2024-015259",
+  "doi": "10.1136/bmjgh-2024-015259",
+  "arxiv_id": "",
+  "dblp_key": "",
+  "paper_url": "https://gh.bmj.com/content/bmjgh/9/6/e015259.full.pdf",
+  "published_iso": "2024-06-01"
+ },
+ {
+  "title": "Navigating Earth governance: A cybernetic and pragmatic pathway to digital twin Earth",
+  "title_norm": "navigating earth governance a cybernetic and pragmatic pathway to digital twin e",
+  "abstract": "Digital Twin Earth (DTE) stands at a transformative crossroads: evolve beyond sophisticated “digital mimicry” into a revolutionary planetary governance engine or remain confined to passive observation. We propose that DTE's transformative potential lies in integrating Human-AI synergy to enable proactive Earth governance through continuous intervention-feedback loops connecting real Earth systems, digital simulations, and policy implementation. This paradigm transforms passive environmental monitoring into active navigation of Earth's trajectory within planetary boundaries. While deliberate large-scale intervention carries inherent risks, the potential benefits—building systemic resilience against cascading environmental crises—substantially outweigh the drawbacks of continued passive evolutionary approach. We posit DTE as the high-fidelity simulation environment and AI as the core analytical intelligence within this dynamic governance loop, enabling human stakeholders to continuously design, test, implement, and refine governance strategies. We propose Digital Cousins as a pragmatic implementation pathway that balances scientific robustness with computational feasibility, offering targeted regional governance solutions. By operationalizing AI-powered DTE as an adaptive decision-making system, humanity can consciously navigate Earth’s futures through integrated sensing, simulation, and policy implementation.",
+  "tldr": "It is proposed that DTE's transformative potential lies in integrating Human-AI synergy to enable proactive Earth governance through continuous intervention-feedback loops connecting real Earth systems, digital simulations, and policy implementation.",
+  "year": 2026,
+  "venue": "The Innovation Geoscience",
+  "publication_types": [
+   "JournalArticle"
+  ],
+  "authors": [
+   "Xin Li",
+   "Jianbin Su",
+   "Shiwei Yuan"
+  ],
+  "citations": 1,
+  "source": "semanticscholar",
+  "source_id": "f6fb51173886c8cc4913aa8e67af7958d69b2aa3",
+  "paper_id": "doi:10.59717/j.xinn-geo.2026.100203",
+  "doi": "10.59717/j.xinn-geo.2026.100203",
+  "arxiv_id": "",
+  "dblp_key": "",
+  "paper_url": "https://www.the-innovation.org/data/article/export-pdf?id=69856e65cf3295331f83d1e6",
+  "published_iso": null
+ },
+ {
+  "title": "A mathematical characterization of minimally sufficient robot brains",
+  "title_norm": "a mathematical characterization of minimally sufficient robot brains",
+  "abstract": "This paper addresses the lower limits of encoding and processing the information acquired through interactions between an internal system (robot algorithms or software) and an external system (robot body and its environment) in terms of action and observation histories. Both are modeled as transition systems. We want to know the weakest internal system that is sufficient for achieving passive (filtering) and active (planning) tasks. We introduce the notion of an information transition system (ITS) for the internal system which is a transition system over a space of information states that reflect a robot’s or other observer’s perspective based on limited sensing, memory, computation, and actuation. An ITS is viewed as a filter and a policy or plan is viewed as a function that labels the states of this ITS. Regardless of whether internal systems are obtained by learning algorithms, planning algorithms, or human insight, we want to know the limits of feasibility for given robot hardware and tasks. We establish, in a general setting, that minimal information transition systems (ITSs) exist up to reasonable equivalence assumptions, and are unique under some general conditions. We then apply the theory to generate new insights into several problems, including optimal sensor fusion/filtering, solving basic planning tasks, and finding minimal representations for modeling a system given input-output relations.",
+  "tldr": "It is established, in a general setting, that minimal information transition systems (ITSs) exist up to reasonable equivalence assumptions, and are unique under some general conditions.",
+  "year": 2023,
+  "venue": "Int. J. Robotics Res.",
+  "publication_types": [
+   "JournalArticle"
+  ],
+  "authors": [
+   "Basak Sakçak",
+   "K. Timperi",
+   "Vadim Weinstein",
+   "S. LaValle"
+  ],
+  "citations": 10,
+  "source": "semanticscholar",
+  "source_id": "657a4b2e8a31fdb5ed38579df3c2d52705e6cd13",
+  "paper_id": "dblp:journals/ijrr/SakcakTWL24",
+  "doi": "10.1177/02783649231198898",
+  "arxiv_id": "2308.09041",
+  "dblp_key": "journals/ijrr/SakcakTWL24",
+  "paper_url": "https://arxiv.org/pdf/2308.09041",
+  "published_iso": "2023-08-17"
+ },
+ {
+  "title": "Ethical Significance of Brain-Computer Interfaces as Enablers of Communication",
+  "title_norm": "ethical significance of brain computer interfaces as enablers of communication",
+  "abstract": "Photo ID 132826187 © Blackboard373 | Dreamstime.com\nAbstract\nThis article argues that the primary ethical significance of brain-computer interfaces (BCIs) lies not in the specific content they transmit, but in their capacity to restore communicative agency to individuals otherwise excluded from ethical engagement due to conditions such as complete locked-in syndrome. While current ethical frameworks focus largely on risks, privacy, and clinical outcomes, this analysis foregrounds the ontological dimension: BCIs safeguard and re-establish the practical conditions under which autonomy, recognition, and interpersonal accountability can be exercised. Drawing on documented clinical cases, the article applies the concept of communicative reinstatement to describe how BCIs reconfigure relationships between patients, caregivers, and the broader moral community. The argument culminates in a normative claim: societies have an ethical obligation to maintain and protect communicative capacity where feasible, treating BCIs not merely as therapeutic tools but as infrastructures of moral inclusion. This reorientation carries implications for regulation, informed consent, policy, and distributive justice.\nIntroduction\nBrain-computer interface (BCI) technology has emerged as one of the most ethically consequential developments in contemporary medicine and neurotechnology. Much of the public discourse surrounding BCIs has centered on high-profile commercial ventures—such as Elon Musk’s Neuralink—and the controversies these projects generate. These controversies include the ethics of animal testing protocols, speculative claims regarding human enhancement and human-AI symbiosis, and the broader societal implications of merging minds with machines.[1] While these debates are significant, there is a more fundamental ethical dimension inherent to BCIs. They constitute a novel class of moral technology that reconfigures the very possibility of communicative agency for individuals with severe disabilities.\nThe current ethical literature predominantly analyzes BCIs through two prevailing frameworks. The first treats them as medical devices warranting standard risk-benefit analysis, assessing safety, efficacy, and clinical outcomes.[2] The second framework situates BCIs within the emerging field of neuroethics, emphasizing concerns about privacy, cognitive liberty, data security, and the potential for manipulation.[3] Although previous work has already emphasized the ethical importance of BCIs in restoring communicative capacities, this paper develops the claim further by foregrounding what may be termed the ethical function of BCIs.[4] Their significance lies not just in enhancing particular interactions or reducing barriers, but in re-establishing the very possibility of communication, through which individuals assert their will, can participate in community, and be recognized as interlocutors. In this sense, BCIs are ethically constitutive, since they sustain the conditions under which autonomy and accountability can be expressed. Following this reasoning, this paper argues that the primary ethical significance of BCIs lies not in the specific content they transmit or in the circumstances under which they are implanted, but in the fact that they render transmission possible at all.\nTo develop this argument, the paper first examines documented clinical cases of BCI-mediated communication in locked-in patients. These cases show how BCIs reconfigure ethical relationships among patients, caregivers, and society by transforming patients from passive recipients of care into more active participants. Subsequently, the paper considers the broader implications of this ethical perspective for clinical practice and policy, especially regarding long-term maintenance obligations.\nThe central claim is that BCIs should be understood not merely as therapeutic tools but as infrastructures of moral inclusion, generating ethical duties to establish, maintain, and protect communicative capacity where feasible.\nBCIs as a Way to Restore Communication\nThe ethical significance of BCIs becomes most evident in the context of complete locked-in syndrome (CLIS), a condition in which patients retain cognitive awareness but lose all voluntary muscle control. Traditional assistive technologies relying on residual movements, such as eye-tracking systems, become ineffective under these circumstances. Intracortical BCIs, by contrast, can restore communicative capacity by directly decoding neural signals associated with intended speech or movement.[5] One landmark study documented an amyotrophic lateral sclerosis (ALS) patient who, after entering CLIS, learned to use an implanted BCI speller to construct sentences at a rate of approximately one character per minute. The patient’s communications ranged from the mundane, such as requesting music, to expressions of existential significance involving care preferences.[6] Importantly, when researchers were asked how they would respond if the patient spelled “unplug my ventilator,” they emphatically stated that BCI output would not determine decisions regarding life support withdrawal. This position reflects appropriate clinical caution but also reveals a critical ethical distinction. While the content of BCI-mediated communication requires verification and contextual interpretation, the very fact that said communication occurs transforms the patient’s moral status from a passive recipient of care to an active participant in ethical dialogue.[7]\nA comparable case involved an electrocorticography (ECoG) based BCI, which restored communication for a patient previously reliant on eye movement interpretation with limited accuracy. This patient gained the ability to produce verified short phrases and, among the first communications, corrected care team assumptions about personal preferences. Such moments fundamentally reconfigure the ethical relationship, shifting the patient from an object of interpretation to a subject capable of self-representation and autonomous expression.[8]\nThese cases share the same ethical pattern: the BCI’s biggest impact is not the specific messages it transmits but its role as the enabler of transmission itself. This transition from silence to speech might be termed “communicative reinstatement,” the re-entry of a person into a moral community through restored capacity for expression.\nDifferent Dimensions of BCI Ethics\nTraditional ethical frameworks for medical devices focus predominantly on what we commonly refer to as the “concrete dimension,” addressing concrete outcomes, risks, and clinical applications. For BCIs, this focus materializes in debates over whether to honor euthanasia requests (where legal) communicated through neural implants or concerns about data privacy and cognitive liberty. While these concerns are valid and urgent, they fail to capture the more “fundamental dimension,” which is how BCIs alter the conditions of moral personhood by restoring the capacity to communicate.\nFrom a philosophical standpoint, the concrete pertains to particular instances such as the content of a patient’s message, technical specifications, or safety reports. The fundamental, by contrast, concerns the foundational preconditions that make communication and moral agency possible. This distinction bears significant ethical weight. For example, consider a patient with locked-in syndrome who can communicate “I am in pain” through a BCI. In this scenario, caregivers and clinicians must deliberate on how to interpret and respond to the patient’s expressed experience. In contrast, if the patient lacks any means of communication, no such ethical deliberation can occur because the patient’s perspective remains inaccessible to the moral and caregiving community. In this latter case, the BCI functions ethically by creating the very possibility for ethical engagement where none previously existed.\nThis fundamental perspective also shows why device failure or abandonment inflicts harm that transcends mere technical malfunction. Clinical reports describe psychological trauma among patients who lost access to BCI functionality due to corporate discontinuation, comparable to the loss of a sensory organ.[9] This harm is not simply empirical or technical but ethical and existential, since it represents the collapse of a reconstructed mode of engagement and involvement with one’s community as a speaking subject. Such cases underscore that BCIs are not simply devices but essential conditions for sustaining moral agency and personhood.\nObligations of Maintenance and Moral Inclusion\nFrom this understanding emerges an ethical imperative. If BCIs can restore communicative agency, and if communicative agency constitutes a foundation of moral personhood, then society holds an obligation to provide and maintain technologies that enable such restoration wherever reasonably possible. This obligation extends beyond traditional medical ethics in three key respects.\nFirst, it recognizes communicative restoration as a distinct ethical good, irreducible to conventional therapeutic aims focused on curing disease or alleviating symptoms. BCIs address a deeper deprivation, namely, the exclusion from the communal domain where moral relations and agency occur.\nSecond, this obligation entails durable responsibilities extending beyond initial implantation. Communicative capacity depends on sustained technical support, ongoing software updates, and user training, demands that challenge existing models of medical device regulation and healthcare infrastructure. Historical cases of early BCI users abandoned by manufacturers exemplify the grave ethical costs incurred when these responsibilities are neglected.[10]\nThird, the imperative to restore communication reshapes informed consent practices. Traditional consent protocols emphasize risk disclosure and benefit assessment, but BCI users face a unique transition from communicative isolation to re",
+  "tldr": "It is argued that the primary ethical significance of brain-computer interfaces (BCI) lies not in the specific content they transmit, but in their capacity to restore communicative agency to individuals otherwise excluded from ethical engagement due to conditions such as complete locked-in syndrome.",
+  "year": 2025,
+  "venue": "Voices in Bioethics",
+  "publication_types": [
+   "JournalArticle"
+  ],
+  "authors": [
+   "Toma Gruica"
+  ],
+  "citations": 1,
+  "source": "semanticscholar",
+  "source_id": "f1d6edac757e8e474e4b714b46b5a6b82f70d135",
+  "paper_id": "doi:10.52214/vib.v11i.14149",
+  "doi": "10.52214/vib.v11i.14149",
+  "arxiv_id": "",
+  "dblp_key": "",
+  "paper_url": "https://journals.library.columbia.edu/index.php/bioethics/article/download/14149/7813",
+  "published_iso": "2025-08-25"
+ },
+ {
+  "title": "Fractional Insights in Tumor Modeling: An Interactive Study Between Tumor Carcinogenesis and Macrophage Activation",
+  "title_norm": "fractional insights in tumor modeling an interactive study between tumor carcino",
+  "abstract": "Biological studies have shown that macrophages play a dual role in cancer dynamics. Through the secretion of different factors, they can modulate the tumor microenvironment and directly interact with tumor cells. Active macrophages, more precisely tumor‐associated macrophages (TAM), can secrete substances that increase the proliferation and survival of tumor cells, thus promoting tumor growth. This study explores the dynamic interactions between tumor carcinogenesis and macrophage activation through a newly developed mathematical model using the Caputo sense fractional operator. The main focus is to analyze the influence of macrophage polarization on tumor progression and cancer development. To precisely capture the dynamic behavior of macrophage‐tumor interactions, the model is verified for qualitative analysis. The fixed points of the model are obtained and their stability analysis is carried out. It is started by explaining the essential components of the model and then assuring its mathematical reliability. The Adams–Bashforth–Moulton method (ABM) is also discussed to show its applicability and efficiency for the numerical results of the developed model. The findings shed light on cancer progress, potential analyses, and the influence of public information. The outcome of the study offers a more detailed understanding of possible treatment targets by highlighting the delicate balance between macrophage pro‐ and anti‐tumor effects. The outcomes might improve public health policy, healthcare budget apportionment, and contest tumors and related infections. Further, it improves the understanding of tumor‐immune system interactions and lays the solid basis for cancer treatment research. Finally, numerical simulations make our outcomes more significant.",
+  "tldr": "This study explores the dynamic interactions between tumor carcinogenesis and macrophage activation through a newly developed mathematical model using the Caputo sense fractional operator to improve the understanding of tumor‐immune system interactions and lays the solid basis for cancer treatment research.",
+  "year": 2025,
+  "venue": "Advanced Theory and Simulations",
+  "publication_types": [
+   "JournalArticle"
+  ],
+  "authors": [
+   "Parvaiz Ahmad Naik",
+   "B. Yeolekar",
+   "Sania Qureshi",
+   "M. Yavuz",
+   "Zhengxin Huang",
+   "Mahesh A. Yeolekar"
+  ],
+  "citations": 25,
+  "source": "semanticscholar",
+  "source_id": "151aebb0fcbe4a67dbfa8ab1efbaeb3b329e83ea",
+  "paper_id": "doi:10.1002/adts.202401477",
+  "doi": "10.1002/adts.202401477",
+  "arxiv_id": "",
+  "dblp_key": "",
+  "paper_url": "https://www.semanticscholar.org/paper/151aebb0fcbe4a67dbfa8ab1efbaeb3b329e83ea",
+  "published_iso": "2025-03-11"
+ }
+]

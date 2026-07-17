@@ -1,0 +1,61 @@
+{
+  "title": "Deadline-Conditioned Mask-Flow Control for Diffusion Language Models",
+  "hook": "At a fixed 32-NFE deadline, spending one denoiser evaluation without revealing any token can increase HumanEval Pass@1, but only after earlier easy commitments have created certified mask-flow slack. A decoder that always uses every call to reveal or roll back tokens therefore wastes some of its tightest-budget compute.",
+  "hook_shape_rationale": "This is shape (a), a surprising empirical reveal: the named metric is HumanEval Pass@1 at exactly 32 NFE, and the non-obvious predicted direction is upward when a no-commit probe is admitted by the completion certificate. Shape (c) was also viable because the method uses no learned controller or rollout tree, but it was rejected because zero added parameters is less discriminating than the claim that an apparently wasted call improves matched-budget task quality.",
+  "gap_closure": [
+    {
+      "gap": "No retrieved frontier leaf supplies a common horizon-aware value for the competing uses of one additional unit of latency: resolving currently masked positions, reconsidering an earlier commitment, or reducing uncertainty before acting.",
+      "main_pattern": "generative_process_redesign",
+      "sub_pattern": "C23 (Liberate a Fixed Generative Component)",
+      "companion_pattern": null,
+      "how_closed": "Closed by making the inherited evaluation schedule a state-dependent design variable and scoring commit, repair, and paired-time probe calls in one deadline-conditioned mask-flow certificate."
+    },
+    {
+      "gap": "Under a hard deadline, no retrieved frontier leaf ensures that unanticipated conservative steps or recovery steps do not consume the calls needed to finish the remaining masked positions with the best attainable terminal sequence quality.",
+      "main_pattern": "structural_prior_encoding",
+      "sub_pattern": "C20 (Encode Structure by Construction)",
+      "companion_pattern": null,
+      "how_closed": "Closed by prescribing a linear remaining-mask envelope as the forward budget law and admitting only reverse-decoding transitions whose post-call mask count stays inside it, which guarantees zero masks when the budget reaches zero."
+    },
+    {
+      "gap": "No retrieved frontier leaf tests whether the remaining global inference budget must stay an external stopping parameter rather than become part of the state used by every token-action decision.",
+      "main_pattern": "assumption_audit_and_pivot",
+      "sub_pattern": "C11 (Audit and Pivot an Assumption)",
+      "companion_pattern": "generative_process_redesign",
+      "how_closed": "The C11 pivot replaces the external-only budget assumption with an inductive completion certificate, while the generative-process-redesign companion ships the executable frozen-model decoder whose every commit, repair, or probe decision reads remaining budget."
+    }
+  ],
+  "core_mechanism": "The shared object is a deadline-conditioned mask-flow certificate Q_b(a), evaluated for every candidate use a of the next denoiser call when b of the original B forward-equivalent budget units remain. For an output canvas of L positions, the state contains the current masked set M, committed tokens z_j, the latest frozen-model distributions p_i, and c_i=max_v p_i(v); no external oracle or learned controller is used. Token instability is d_i=JS(p_i^current,p_i^previous)/log(2), using consecutive evaluations while a position retains its status, with d_i=1-c_i on the first evaluation; a probe evaluates the identical sequence at the immediately adjacent, more-corrupted schedule index and overwrites d_i with the same-state paired-time value. The prescribed forward budget law is E_B(b)=ceil(L*b/B), and an action of measured cost c(a) is admissible only if its post-call mask count |M_a| is at most E_B(b-c(a)); commit has |M_a|=|M|-|S|, repair has |M_a|=|M|-|S|+|R|, and probe has |M_a|=|M|. Thus a probe or repair is possible only after earlier commitments create slack, and induction on b gives |M|=0 at b=0 without a separately tuned stopping or rollback quota. Masked positions are ranked by c_i-d_i, committed positions for repair by c_i-p_i(z_i)+d_i, and the controller enumerates every prefix size for commit plus every pair of commit and repair prefixes, so there is no hidden set-size choice. Their normalized gains are respectively the mean commit rank, the mean over the combined commit and repair ranks, and lambda_p times mean instability over M for a probe; lambda_p is chosen once from {0.5,1,2} on 32 held-out prompts and frozen across models and tasks. The common value is Q_b(a)=gain(a)/c(a)+eta*(E_B(b-c(a))-|M_a|)/L, where eta is chosen once from {0,0.25,0.5,1} on the same held-out prompts; for a hard call cap c(a)=1, while a latency cap uses measured action latency divided by one ordinary denoiser-forward latency. The highest-Q admissible action is executed, ties prefer commit then repair then probe and then lower token indices, and every committed token is still the frozen DLM's argmax under the newly obtained distribution, so the method changes evaluation placement and mask transitions rather than logits or model parameters. This realizes the assumption pivot as a runnable C23 schedule redesign and the C20 reverse of an explicit masking envelope, while making paired-time instability the DLM-specific local primitive that distinguishes it from generic resource allocation. The strongest comparisons are Saber, MEDAL, and ADAS at exactly matched calls and measured latency, including all probe calls and tuning overhead.",
+  "core_mechanism_reasoning": "All three gaps concern the same evolving mask set under the same remaining horizon, so a shared certificate is stronger and simpler than separate stopping, rollback, and lookahead modules. I rejected a finite-horizon MDP or generic value-of-computation function, static knapsack selection, full-trajectory MCTS, and learned adaptive halting because those land on occupied lineage nodes and require values, rollouts, or training unavailable here; the mask-envelope invariant plus paired-time DLM disagreement is the unoccupied source. The anchor moved from the provisional operator-substitution parent to C23 because none of that parent's sub-clusters offered a method-grade surrogate for this sequential decoding object, whereas C23 directly redesigns a frozen refinement schedule without changing the backbone.",
+  "core_mechanism_steps": "1. Add a budget-state record to the sampler containing B, b, L, M, committed tokens, cached per-position distributions, and each token's last mask status; the input is the ordinary decoder state and the output is an initialized certificate state. 2. Run the first frozen-DLM evaluation, decrement b, compute c_i and first-step d_i=1-c_i, and commit the highest c_i-d_i prefix large enough to satisfy |M|<=E_B(b); the output is the first deadline-feasible partial sequence. 3. Before each later call, update consecutive-evaluation d_i values for positions whose status did not change and enumerate commit prefix sizes, commit-plus-repair prefix pairs, and the single probe candidate from cached p_i; the output is a finite action table with post-call mask counts. 4. Remove every row violating |M_a|<=E_B(b-c(a)), compute Q_b(a) for the rest with measured call or latency cost, and select with the fixed tie rule; the output is one action family, prefix size, and any repair set. 5. For a commit action, run the ordinary denoiser on the current sequence, rerank masked positions with its fresh c_i-d_i values, reveal the selected argmax tokens, decrement b, and pass the resulting context to the next call. 6. For a repair action, remask the selected committed prefix, run the ordinary denoiser, reveal the selected masked prefix including any corrected positions, decrement b, and pass the corrected partial sequence downstream. 7. For a probe action, keep every mask and committed token fixed, run the frozen denoiser at the immediately adjacent more-corrupted schedule index, overwrite d_i with paired-time JS disagreement, decrement b, and let the changed d_i ranking determine the next generated-token transition. 8. When b reaches zero, assert M is empty and detokenize z; log Pass@1 or exact-match, NFE, wall-clock latency, action trace, and envelope slack so any downstream quality change is attributable to budget-conditioned action placement rather than hidden calls.",
+  "falsification_prediction": "Run LLaDA-8B on HumanEval with a hard 32-NFE cap, comparing this controller with matched-NFE Saber, ADAS, Fast-dLLM, and a mask-envelope-only ablation, and measure Pass@1, unfinished-mask rate, and wall-clock latency including probes. If the mechanism works, Pass@1 increases over the strongest matched-NFE baseline while unfinished-mask rate remains exactly zero, with the gain concentrated on traces where a certified-slack probe occurs. The one named load-bearing variable is paired-time instability d_i; as a negative control, independently permute d_i across token positions after every probe while leaving its marginal distribution, envelope, action counts, and all other scores unchanged. Under that intervention, downstream HumanEval Pass@1 should return to the mask-envelope-only baseline rather than merely changing d_i itself; failure to collapse falsifies the claim that paired-time instability makes discretionary calls useful.",
+  "compute_budget": "72 80GB-class GPU-days for two open 7B-8B DLMs across GSM8K, MATH500, HumanEval, MBPP, and LiveCodeBench at 8/16/32/64-NFE and matched-latency settings, including the 32-prompt hyperparameter split, three seeds, ablations, and two iteration rounds; $0 paid-API cost. This is tight but feasible within the stated approximately 150 GPU-day, five-month envelope and uses at most 8 concurrent GPUs.",
+  "differentiation_from_lit": [
+    {
+      "paper_id": "semanticscholar:4c95b1cef66cda6693fa6ab192698703dd3c070f",
+      "delta": "Saber derives per-step new-error and degradation bounds for a history-based unmasking threshold and a fixed rollback quota, whereas this candidate constructs a remaining-budget mask envelope and one certificate that decides commitment, correction, and no-commit probing while guaranteeing all masks are resolved by the deadline."
+    },
+    {
+      "paper_id": "semanticscholar:9ccbb820261b9141e46de121ed26ae3e3b16772b",
+      "delta": "MEDAL pays for full DLM rollouts to score information gain only during a fixed-length MCTS initialization and then reverts to confidence unmasking, whereas this candidate uses local paired-time disagreement without rollouts throughout the trajectory and charges every repair or probe against the same completion envelope."
+    },
+    {
+      "paper_id": "arxiv:2606.10829v2",
+      "delta": "ADAS constructs a dependency-aware reveal subset while deliberately leaving the base sampler's stopping rule unchanged, whereas this candidate makes remaining budget part of the state and can allocate an admissible call to reveal, repair, or a no-commit uncertainty probe."
+    }
+  ],
+  "almost_prior_paper_id": "semanticscholar:4c95b1cef66cda6693fa6ab192698703dd3c070f",
+  "what_step_was_missed": "Saber would have needed to replace its history-only threshold and per-step rollback quota with a remaining-budget mask-count invariant, then score unmasking, remasking, and an explicitly charged same-state probe through that invariant rather than tuning the three uses of compute separately.",
+  "signature_terms": [
+    "remaining-budget mask-flow certificate",
+    "paired-time instability decoding",
+    "deadline-feasible commit repair probe",
+    "training-free horizon action scoring"
+  ],
+  "alias_terms": [
+    "control barrier computation allocation",
+    "anytime metareasoning safe fallback",
+    "budget-feasible active sensing policy",
+    "receding-horizon resource shielding"
+  ]
+}

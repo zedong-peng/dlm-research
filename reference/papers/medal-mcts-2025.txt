@@ -1,0 +1,1162 @@
+                                              Diffusion Language Model Inference with Monte Carlo Tree Search
+
+                                                   Zheng Huang1,2 * Kiran Ramnath1,† Yueyan Chen1,† Aosong Feng1
+                                                      Sangmin Woo1 Balasubramaniam Srinivasan1 Zhichao Xu1
+                                                      Kang Zhou1 Shuai Wang1 Haibo Ding1 Lin Lee Cheong1
+                                                                    1
+                                                                      AWS AI Labs, 2 Dartmouth College
+
+
+
+
+                                                               Abstract                            This formulation enables parallel refinement, im-
+                                                                                                   proves global coherence, and offers flexible quality-
+                                             Diffusion language models (DLMs) have re-
+
+
+
+
+arXiv:2512.12168v2 [cs.CL] 30 Jan 2026
+                                             cently emerged as a compelling alternative to         latency trade-offs, thus challenging the dominance
+                                             autoregressive generation, offering parallel gen-     of AR paradigms (Li et al., 2025b).
+                                             eration and improved global coherence. Dur-              The inference process of DLMs can be natu-
+                                             ing inference, DLMs generate text by itera-           rally formulated as a search problem: starting from
+                                             tively denoising masked sequences in paral-           a corrupted sequence, the model iteratively de-
+                                             lel; however, determining which positions to          cides which positions to unmask and which to-
+                                             unmask and which tokens to commit forms a             kens to assign, navigating an exponential space
+                                             large combinatorial search problem. Existing
+                                                                                                   of possible trajectories. Existing inference-time
+                                             inference methods approximate this search us-
+                                             ing heuristics, which often yield suboptimal          methods approximate this search using confidence-
+                                             decoding paths; other approaches instead rely         driven heuristics, such as greedily unmasking the
+                                             on additional training to guide token selection.      highest-confidence tokens (Kim et al., 2025; Ben-
+                                             To introduce a principled search mechanism            Hamu et al., 2025; Luxembourg et al., 2025). Al-
+                                             for DLMs inference, we introduce MEDAL,               though effective in reducing short-term uncertainty,
+                                             an inference-time scaling framework that inte-        these strategies are inherently myopic: once high-
+                                             grates Monte Carlo Tree SEarch initialization
+                                                                                                   confidence tokens are fixed, subsequent steps are
+                                             for Diffusion LAnguage Model inference. We
+                                             employ Monte Carlo Tree Search at the initial-        forced to adapt around them, often leading to sub-
+                                             ization stage to explore promising unmasking          optimal trajectories. Another line of work adjusts
+                                             trajectories, providing a robust starting point       masking schedules dynamically (Peng et al., 2025;
+                                             for subsequent refinement. This design enables        Zhao et al., 2024), but such approaches typically
+                                             efficient inference-time scaling, allowing gen-       require training auxiliary samplers to determine
+                                             eration quality to improve as the search budget       token updates at each step, introducing additional
+                                             increases, without additional training. Across        complexity and limiting general applicability.
+                                             multiple benchmarks, MEDAL achieves up to
+                                                                                                      These limitations highlight the need for a prin-
+                                             22.0% improvement over existing inference
+                                             strategies, establishing a new paradigm for           cipled search mechanism that can explore alter-
+                                             search-based inference in DLMs.                       native unmasking trajectories without additional
+                                                                                                   training overhead. To this end, we propose
+                                         1   Introduction                                          MEDAL, a framework that integrates Monte Carlo
+                                         In recent years, diffusion language models (DLMs)         Tree SEarch initialization for Diffusion LAnguage
+                                         have emerged as a powerful alternative for gen-           Model inference. Unlike heuristic or schedule-
+                                         erative modeling over discrete sequences (Zhu             based methods, which either commit to tokens
+                                         et al., 2025; Ye et al., 2025). Unlike autoregres-        greedily or depend on auxiliary samplers, MEDAL
+                                         sive (AR) models (Achiam et al., 2023; Minaee             adopts a principled search-based approach, using
+                                         et al., 2024), which rely on a strictly left-to-right     Monte Carlo Tree Search (MCTS) (Yoon et al.,
+                                         factorization, DLMs learn to invert a stochastic cor-     2025; Browne et al., 2012) to balance exploitation
+                                         ruption process that independently masks tokens           of high-confidence tokens with exploration of al-
+                                         (Lou et al., 2023; Shi et al., 2024; Nie et al., 2025).   ternative unmasking trajectories relying on signals
+                                            * Work
+                                                                                                   obtained from the model’s own distribution. We
+                                                      done while interning at AWS AI
+                                         Labs.† Correspondence: zheng.huang.gr@dartmouth.edu,      propose two key innovations that enable MCTS
+                                         raxkiran@amazon.com, yyanc@amazon.com.                    to be applied effectively to DLM inference. First,
+we introduce a confidence-guided filtering mech-         token sequence of length L sampled from the data
+anism that focuses inference on the most promis-         distribution. The core idea is to define a forward
+ing tokens and positions. Second, we design an           noising process that progressively corrupts x0 into
+information-gain reward that guides MCTS by fa-          increasingly noisy sequences {xt }Tt=1 , and to train
+voring token choices that not only resolve the cur-      a neural model to learn the corresponding reverse
+rent position but also increase the model’s confi-       denoising process that reconstructs x0 from noise.
+dence in predicting the remaining tokens. Together,
+                                                         Forward process. In discrete DLMs, the forward
+these innovations make it possible to enable the
+                                                         process is typically defined by a time-dependent
+four stages of MCTS, Selection, Expansion, Simu-
+                                                         transition matrix Qt over the vocabulary (Li et al.,
+lation, and Backpropagation, within DLMs. Rather
+                                                         2025b). At each time t, the probability of a state
+than applying MCTS exhaustively, we employ it
+                                                         xt given an initial state x0 is given by a categorical
+strategically in the early stages of inference to con-
+                                                         distribution:
+struct a robust initialization, after which the pro-
+cess continues with efficient heuristics. To further                                               t
+                                                                                                   Y
+address complex prompts that induce high uncer-           q(xt | x0 ) = Cat(xt ; x0 Qt ),   Qt =         Qi . (1)
+tainty, we incorporate a task-decomposition mod-                                                   i=1
+ule that automatically splits the input into smaller     Reverse Process The reverse process learns to in-
+subtasks, thereby reducing ambiguity and provid-         vert the corruption by predicting the original token
+ing structured guidance for subsequent unmasking         distribution given a corrupted sequence:
+decisions. Our contributions are summarized as
+follows:
+                                                                                  Y
+                                                                pθ (xt−1 | xt ) =    pθ (xit−1 | xt , t). (2)
+                                                                                 i∈Ut
+    • Novel Formulation: We frame DLM in-
+      ference as a search problem and introduce          Here, pθ is parameterized by a transformer, trained
+      MEDAL, the first framework to integrate            to minimize a cross-entropy objective over masked
+      MCTS into DLM inference, enabling prin-            positions, and Ut denotes the set of positions un-
+      cipled exploration beyond greedy heuristics        masked at timestep t.
+      or schedule-based methods
+                                                         Generation. During inference, generation begins
+    • Novel Design: We design a new DLM in-              from a fully masked sequence:
+      ference approach that combines an MCTS-
+      guided initialization module with a task-                     xT = ([MASK], . . . , [MASK]).            (3)
+      decomposition module, enabling both effi-
+                                                         At each denoising step t, the model outputs a dis-
+      cient search and improved handling of com-
+                                                         tribution over the vocabulary for every position. A
+      plex tasks.
+                                                         subset of tokens with the highest confidence is se-
+    • Extensive Experiments: We conduct eval-            lected, unmasked, and fixed, while the remaining
+      uations on various benchmarks, demonstrat-         positions stay masked. The process then advances
+      ing that our method outperforms existing in-       to step t − 1, where the model re-predicts distribu-
+      ference strategies for DLMs by up to 22.0%         tions conditioned on both the fixed tokens and the
+      when restricting MCTS to initialization. We        still-masked positions (Zhu et al., 2025; Nie et al.,
+      show that generation quality continues to im-      2025). This iterative refinement continues until all
+      prove even further with diminishing gains as       positions are resolved, yielding the final sequence
+      the MCTS initialization budget increases, val-     x0 . The generation can be viewed as a sequence
+      idating the effectiveness of our search-based      of partially completed states, where the model pro-
+      approach.                                          gressively transitions from a fully masked input to
+                                                         a coherent, fully unmasked output.
+2     Preliminary
+                                                         2.2   Monte Carlo Tree Search
+2.1    Discrete Diffusion Language Models                MCTS is a general algorithm for decision-making
+DLMs adapt the diffusion paradigm from contin-           in large combinatorial search spaces, where ex-
+uous domains (e.g., image generation) to discrete        haustive enumeration of all trajectories is infea-
+text sequences. Let x0 = (x10 , . . . , xL
+                                         0 ) denote a    sible (Browne et al., 2012). The goal of MCTS
+                  Prompt                                          Confidence-Guided MCTS Initialization
+ Article: ….                                                                               𝑚      𝑚   … 𝑚
+ Given the article, what do the animals do?
+
+                                                      𝒙𝟏 𝑚       … 𝑚                        𝑚 𝒙𝟐      … 𝑚                      𝑚    𝑚     … 𝒙𝒍
+
+          Task Decomposition                  𝐅𝐨𝐮𝐫 𝐬𝐭𝐞𝐩𝐬 𝐨𝐟 𝐌𝐂𝐓𝐒
+                                                  Selection                   Expansion                     Simulation                  Back Prop.
+
+          Augmented Prompt
+                                                                             𝒙𝟏 𝑚         … 𝑚               𝒂𝟐𝟏    𝒂𝟓𝟒   𝒂𝟓𝟔        𝒙𝟏 𝑚     … 𝑚
+                                                  𝒙𝟏 𝑚    … 𝑚
+ Article: ….
+ Given the article, what do the animals do?
+                                                                             𝒂𝟐𝟏    𝒂𝟐𝟐     𝒂𝟐𝟑                    𝒙𝟏 𝒙𝟐 … 𝒙𝑳
+ Subtask 1:                                                                                                   𝒙𝟏    𝒙𝟐 … 𝒙𝑳
+ Understand the article
+                                                  𝑚 𝒙𝟐    … 𝑚
+ Subtask 2:
+                                                                              𝒂𝟓𝟒     𝒂𝟓𝟓       𝒂𝟓𝟔    𝒙𝟏     𝒙𝟐    … 𝒙𝑳       𝒙𝟏 𝒙𝟐 … 𝒙 𝑳
+ Understand the question                                               Confidence                                             𝒙𝟏 𝒙 𝟐 … 𝒙𝑳
+ Subtask 3:                                       𝑚   𝑚   … 𝒙𝒍         Score Filtr.                                                𝒙𝟏   𝒙𝟐   … 𝒙𝑳
+ Check the action of the two animals and
+ answer the question
+                                                                             𝒂𝟐𝟏     𝒂𝟓𝟒        𝒂𝟓𝟔
+                                                                                                       Info. Gain Reward
+                                              𝐍𝐞𝐰 𝐬𝐞𝐚𝐫𝐜𝐡 𝐭𝐫𝐞𝐞
+ DLM Denoising                                                                              𝑚     𝑚    … 𝑚
+      Confidence-Guided MCTS
+            Initialization                                                                                                     𝑚    𝑚     … 𝒙𝒍
+                                                      𝒙𝟏 𝑚       … 𝑚                        𝑚 𝒙𝟐      … 𝑚
+
+
+     Unmask Remaining Tokens                                                              𝒙𝟏 𝑚        … 𝒙𝒍
+                                              𝒙𝟏 𝒙𝟐   … 𝑚        𝒙𝟏 𝑚    … 𝒙𝒍
+
+
+Figure 1: Overview of the MEDAL framework. It consists of an MCTS-guided initialization module and a
+task-decomposition module, enabling both efficient search and improved handling of complex tasks. The root node
+represents the initial fully masked input, and leaf nodes correspond to partially unmasked sequences. The MCTS
+involves committing to a specific generation decision, expressed as an action aiv = (i, v), where i identifies the
+masked position to reveal and v denotes the token selected for that position.
+
+
+is to evaluate possible decision paths efficiently,                    promising candidates during the early stages of
+balancing the exploration of new options with the                      generation. Finally, we describe how task decom-
+refinement of promising ones. The search tree be-                      position via prompt guidance can further reduce
+gins at the root node, representing the initial state                  uncertainty and improve generation quality.
+of the problem, and grows toward leaf nodes, which
+correspond to unexplored frontier states. Each iter-                   Notation.             We use V for the vocabulary
+ation of MCTS consists of four steps: (i) Selection:                   (size |V|); L for target sequence length; x =
+choose the node from the root to a leaf according                      (x1 , . . . , xL ) for a (partially) formed sequence; xi
+to a selection policy, such as the upper confidence                    the token at position i; x\i the sequence with posi-
+bound (UCB); (ii) Expansion: add one or more                           tion i masked; t ∈ {0, . . . , T } the reverse denois-
+child nodes at the leaf; (iii) Simulation: evaluate                    ing step index with T total steps; Mt the set of
+the newly expanded node by performing rollouts                         masked positions at step t.
+or applying heuristic approximations; (iv) Back                        3.1         MCTS for DLMs Inference
+propagation: propagate the result upward to update
+statistics of visited nodes.                                           To bridge MCTS with DLMs, we construct the
+                                                                       search tree over unmasked sequences, where the
+3    Method                                                            root corresponds to the initial masked input, and
+                                                                       leaves as partially unmasked sequences.
+In this section, we present our framework MEDAL
+for enhancing DLM inference (Figure 1). We                             3.1.1        Confidence Score Filtering
+start with the notation used throughout the sec-                       The classical MCTS aims to balance exploitation
+tion. Second, we introduce our key contribu-                           and exploration, but in DLMs the search space
+tions: confidence score filtering (Section 3.1.1) and                  spans the full vocabulary at every masked position,
+information-gain reward (Section 3.1.2) that enable                    making naïve search intractable. To address this,
+MCTS to be effectively applied to DLMs. Building                       we introduce a confidence filtering strategy that
+on these foundations, we then introduce our MCTS-                      restricts the search space of masked positions and
+guided initialization strategy to efficiently explore                  tokens to a far smaller action set. We define the
+action as a position–token pair aiv = (i, v), where         Algorithm 1 Confidence-Guided MCTS for DLMs
+i is a masked position and v is the token-candidate         Inference (CGMCTS)
+chosen, and it represents a specific unmasking deci-        Require: Prompt tokens x1:|P | , target length L,
+sion of the search precess. Next, we describe how               MCTS init length Lc <L, action candidate to-
+to build the action set.                                        ken number K1 , the highest-scoring number
+   Given the model’s logits ℓi ∈ R|V| of an input               K2 , candidate size C, margin scale γ.
+sequence at a masked position i, we first convert ℓi         1: Initialize root← [x1:|P | ] ⊕ [[MASK]]L
+into probabilities                                           2: while (CollectCandidates(root, C, Lc )) do ▷
+                                                                Stop when collect C candidates with length Lc
+                    exp(ℓiv )
+      pi (v) = P              i
+                                ,          v i ∈ V.   (4)    3:     x ← NodeSelection(root)                ▷ UCB
+                   w∈V exp(ℓw )                                 selection
+  For a candidate token v at position i, we then             4:     Identify masked positions Mt in x
+define the confidence-adjusted score as:                     5:     for all i ∈ Mt do
+                                                             6:          Compute distribution pi (v)             =
+              siv = pi (v) · ϕient · ϕimar ,          (5)       softmax(ℓ ) i
+
+                                                             7:          Compute confidence factors: ϕient =
+  where ϕient and ϕimar are respectively the entropy            exp(−H i ), ϕimar = σ(γ∆i )
+penalty and top-2 margin, defined below:                     8:          Score tokens: siv = pi (v) · ϕient · ϕimar
+   • Entropy      Penalty.     We use H i =                  9:          Select candidates Ait ← Top−K1 (siv )
+                i          i
+     − v∈V p (v) log(p (v) + ε), with ϕient =
+        P                                                   10:     end for
+                                                                    Aggregate At = i Ait
+                                                                                      S
+                                                            11:
+     exp(−H i ) ∈ (0, 1], where ε is a small
+     constant ensuring numerical stability. Posi-           12:     Build A′t = arg Top-K2 {siv : aiv ∈ At }
+     tions with higher entropy (low confidence) are         13:     for all a ∈ A′t do
+     down-weighted.                                         14:          xa ← Apply action a to x
+                                                            15:          Node← ExpandNode(Xa )
+   • Top-2 Margin. Let pi(1) ≥ pi(2) be the top-            16:          Rollout to obtain rIG (a)
+     two probabilities. The margin ∆i = pi(1) −             17:          Backpropagate rIG (a)           ▷ Update
+     pi(2) is mapped to ϕimar = σ(γ∆i ) with γ is a             search tree
+     hyperparameter and σ is a sigmoid function.            18:     end for
+                                                            19: end while
+  For each masked position i ∈ Mt , we retain the           20: return C collected candidates with length Lc
+top-K1 candidate tokens ranked by the confidence-
+adjusted score siv , forming an action candidate set:
+                                                            the remaining masked positions. In other words, a
+                                                            good choice at position i should make the subse-
+           Ait = {aiv : v ∈ Top-K1 (siv )}            (6)   quent predictions for Mt \ {i} more confident.
+                  [                                            Our objective is therefore to design a reward
+           At =         Ait .                         (7)
+                                                            function that quantifies how much an action im-
+                 i∈Mt
+                                                            proves the model’s confidence in the unresolved
+  From the action candidate set At , we then select         positions. Formally, for an action aiv ∈ A′t , select-
+top-K2 actions with the highest score:                      ing token v to fill position i updates the masked
+                                                            set from Mt to M′t = Mt \ {i}. We define the
+        A′t = arg Top-K2 {siv : aiv ∈ At }            (8)   reward as the information-gain reward, which mea-
+                                                            sures the entropy reduction across the remaining
+  The best K2 -scoring actions are then applied to
+                                                            positions:
+the simulation of MCTS (Section 3.1.3).
+                                                                                         before (j) −          after
+                                                                               P                        P
+                                                                                   j∈Mt Hθ              j∈M′t Hθ (j)
+3.1.2 Information-Gain Reward                                 rIG (aiv )   =              P         before             ,
+                                                                                              j∈Mt Hθ      (j)
+Given the selected action set A′t , the next step is to                                                     (9)
+evaluate the impact of each candidate action. An ef-          where Hθ (j) denotes the predictive entropy at
+fective action should not only specify a token at one       position j. Position i is excluded from the second
+masked position, but also provide contextual infor-         summation: once it has been filled, its entropy is
+mation that improves the model’s confidence over            always zero regardless of the token chosen, and
+including it would contribute only a constant term.      Algorithm 2 Overview of MEDAL
+   Finally, each action in A′t is rolled out and as-     Require: Prompt tokens x1:|P | , target length L,
+signed a reward value, which serves as the feedback          total steps T , MCTS init length Lc <L, ac-
+signal to guide tree selection. This design ensures          tion candidate token number K1 , the highest-
+that the search prioritizes actions that not only fill       scoring number K2 , candidate size C, margin
+a mask but also help improve model confidence for            scale γ.
+future predictions.                                      Ensure: Completed sequence x
+                                                             (A) Task decomposition
+3.1.3    MCTS Steps
+                                                          1: P̂ ← TASK D ECOMPOSE (x1:|P | ) ▷ augment
+Building on the description above, we detail how             prompt with self-generated subtasks
+the four traditional steps of MCTS—Selection, Ex-         2: x ← [P̂ ] ⊕ [[MASK]]L
+pansion, Simulation, and Backpropagation—are
+adapted. The algorithm overview is in Algorithm 1,           (B) MCTS-based initialization
+and an example is shown in Section A.3.                   3: Candidates← CGMCTS(x, L, Lc , K1 , K2 , γ)
+                                                          4: x ← SelectCandidate(Candidates) ▷ Select the
+Selection. In this phase, we traverse the tree from
+                                                             one that has the highest info. gain reward
+the root to a leaf using UCB (Yoon et al., 2025;
+Kocsis and Szepesvári, 2006), selecting   the child
+                                 q                           (C) Confidence-guided unmasking for re-
+node that maximizes Q(x, a) + c ln      N (x)
+                                      N (x,a) , where        maining steps
+x represents the current partially masked sequence        5: for t = T to 1 do
+state, Q(x, a) is the mean reward of action a, N (x)      6:     Identify masked positions Mt in x; if
+is the visit count of node x, N (x, a) is the visit          Mt =∅ then break
+count of the child node, and c is the exploration         7:     for all i ∈ Mt do
+constant.                                                 8:         Compute distribution pi (v)             =
+                                                             softmax(ℓ ) i
+Expansion We build the action candidate set A′t
+                                                          9:         Compute confidence factors ϕient =
+using confidence score filtering (Section 3.1.1). We
+                                                             exp(−H i ), ϕimar = σ(γ∆i )
+then pass each action aiv ∈ A′t to the simulation
+                                                         10:         Score tokens siv = pi (v) · ϕient · ϕimar
+step to evaluate its reward.
+                                                         11:     end for
+Simulation. The simulation step evaluates the            12:     Sample action aiv ∝ Softmax(siv )
+impact of each action aiv ∈ A′t by rolling out the re-   13:     Apply action: x[i] ← v
+maining masked positions by DLMs. Specifically,          14: end for
+after applying action aiv to fill position i with to-    15: return x
+ken v, we let the DLM fill the remaining masked
+positions M′t = Mt \ {i} by sampling from the
+model’s predicted distribution. This yields a com-       repeated rollouts over T denoising steps incur ex-
+pleted sequence. The information-gain reward             ponential cost. This leads to full-sequence MCTS
+rIG (aiv ) is then computed based on the entropy         being impractical for large-scale DLM inference.
+reduction across the remaining masked positions,         To balance search quality with efficiency, we re-
+as described in Section 3.1.2.                           strict MCTS to the initialization phase. Specifi-
+                                                         cally, we terminate the MCTS once a candidate
+Backpropagation. After the simulation step, the          set of C partially unmasked sequences, each of
+reward obtained from evaluating the complete se-         length Lc , has been formed. Each candidate is
+quence is backpropagated through the tree to up-         then fully rolled out by the DLM to compute its
+date the value estimates of all parent nodes along       information-gain reward, and the sequence with
+the path to the root.                                    the highest reward is selected as the final resolved
+                                                         output. Once a partially resolved sequence is ob-
+3.2     Confidence-Guided MCTS Initialization            tained, the remaining tokens are filled without fur-
+While conceptually appealing, applying MCTS              ther tree search: at each step, we directly apply the
+throughout the entire generation is computation-         confidence-adjusted score to select high-confidence
+ally prohibitive: the branching factor scales with       tokens until no masks remain. This strategy en-
+vocabulary size |V| and sequence length L, and           ables test-time scaling during critical early decision
+stages through structured search over generation         4     Experiments
+trajectories, while maintaining tractable inference
+via confidence-guided decoding in later stages.          In this section, we conduct extensive experiments
+                                                         to evaluate MEDAL, guided by the following ques-
+3.3   Task Decomposition via Prompt Guidance             tions: RQ1: How does our proposed method per-
+                                                         form on various datasets compared to state-of-the-
+In this section, we present our method for decom-        art baselines? RQ2: What’s the contribution of
+posing complex tasks into simpler sub-tasks, im-         each component in our framework to the overall
+proving confidence, and providing guidance for the       performance? RQ3: How does the model’s perfor-
+DLM during reasoning.                                    mance vary with different hyperparameter settings?
+   Given an input prompt P , instead of asking the
+model to directly generate an answer, we guide           4.1    Experimental Setup
+the model to break down the problem into a series        We conduct experiments on six widely-used
+of manageable steps. Specifically, we provide the        datasets: GSM8K (Cobbe et al., 2021), ARC-C
+model with an augmented prompt P̂ including illus-       (Clark et al., 2018), HumanEval (Chen et al., 2021),
+trative two-shot examples showing how a complex          MMLU (Hendrycks et al., 2020), DROP (Dua et al.,
+question can be divided into a sequence of subtasks.     2019) and Countdown (Pan et al., 2025). Experi-
+Each subtask is framed with a distinct goal—such         ments are conducted on models with a similar scale
+as understanding the input, identifying relevant in-     (7B-8B parameters) to ensure a fair comparison.
+formation, or synthesizing the final response—so         We evaluate our method on three backbone DLMs,
+that guide the model to solve the problem in a struc-    LLaDA-8B-Instruct (Nie et al., 2025), LLaDA1.5-
+tured manner.                                            8B (Zhu et al., 2025), and Dream-7B (Ye et al.,
+   At inference time, the model is encouraged to         2025), and compare their performance against (i)
+produce its own decomposition for the given input,       the original models, (ii) the original models with a
+guided by the example provided in the prompt P̂ .        Best-of-5 decoding strategy (generating five sam-
+It then solves the subtasks sequentially, with inter-    ples and selecting the majority answer, bst5), and
+mediate outputs serving as context for subsequent        (iii) the original models with our method. We
+steps. In summary, the full algorithm of MEDAL           additionally report results for Llama-3 8B (Tou-
+is shown in Algorithm 2.                                 vron et al., 2023) as an autoregressive LLM base-
+                                                         line. We use accuracy for GSM8K, ARC-C, and
+3.4   Theoretical Guarantee                              MMLU; Exact Match for Countdown; pass@1 for
+In this section, we provide a theoretical guarantee      HumanEval; and F1 for DROP. For MCTS ini-
+for MEDAL. At each decoding step i, when re-             tialization on all datasets, we set the MCTS ini-
+vealing a set zi of tokens independently, the total      tialization candidate length Lc to 20, K1 = 3,
+error decomposes into a model term Q     and a joint-    K2 = 5, and the stability constant ε = 10−8 .
+dependence term KL(q(xzi | xz<i ) ∥ ℓ∈zi q(xℓ |          The generation length for DLMs is 256. For task-
+xz<i )). Following Ben-Hamu et al. (2025),               decomposition prompting, we set the number of
+this dependence error is upper-bounded        by the     subtasks to 3. We set the candidate size C = 3.
+                                                         All the experiments are conducted on 2 NVIDIA
+                                   P
+entropy-gap surrogate B(zi ) = ℓ∈zi H(pθ (xℓ |
+xz<i )) − maxℓ∈zi H(pθ (xℓ | xz<i                        A100 GPUs with 40GB memory, and the random
+                                   P )). Summing
+over K initialization steps yields K  i=1 DepErri ≤
+                                                         seed is set to 1. Detailed settings are provided
+PK
+                                                         in Appendix A.1, and computational costs in Ap-
+   i=1 B(zi ).   Our MCTS initialization explic-
+itly minimizes    the surrogate cost J(z1:K ) =          pendix A.2.
+PK
+   i=1 B(zi ) across candidate schedules, thus se-
+lecting a prefix that achieves the smallest avail-       4.2    Effectiveness of MEDAL
+able upper bound on cumulative dependence error          We evaluate our method on the five datasets using
+among explored options. This establishes that the        three different backbone DLMs. The results are
+proposed initialization is theoretically grounded:       shown in Table 1. We observe that our method
+although we cannot minimize the true dependence          consistently improves the performance of all back-
+error directly, MCTS optimizes a computable sur-         bone models across all datasets, with up to 18.2%
+rogate that provably controls it. A full derivation is   average and 8.1 absolute improvement, indicating
+in Appendix A.4.                                         the effectiveness and generality of our approach.
+ Model        GSM8K           ARC-C           HumanEval MMLU                  DROP            Countdown Ave. Imprv.
+ LLaDA        58.3            72.2            40.2            36.0            58.2            15.6              —
+                     ∆+8.4           ∆+9.9           ∆+7.3            ∆+7.0          ∆+12.8           ∆+3.3     ∆+8.1
+ + Ours       66.7 (14.4% ↑) 82.1 (13.7% ↑) 47.5 (18.2% ↑)    44.0 (19.4% ↑) 71.0 (22.0% ↑) 18.9 (21.2% ↑)    (18.2% ↑)
+                     ∆+5.9           ∆+5             ∆+3.2            ∆+3.0          ∆+6.1           ∆+1.3      ∆+4.1
+ + Bst5       64.2 (10.1% ↑) 77.2 (6.9% ↑)    43.4 (8.0% ↑)   39.0 (8.3% ↑)   64.3 (10.4% ↑) 16.9 (8.3% ↑)     (8.7% ↑)
+
+ LLaDA1.5 62.3                74.9            45.0            37.3            60.5            16.8              —
+                     ∆+6.7           ∆+7.9           ∆+6.0            ∆+7.2          ∆+10.6           ∆+2.4     ∆+6.8
+ + Ours       69.0 (10.6% ↑) 82.8 (10.5% ↑) 51.0 (13.3% ↑)    44.5 (19.3% ↑) 71.1 (17.5% ↑) 19.2 (14.3% ↑)    (14.3% ↑)
+                     ∆+2.2           ∆+2.7           ∆+3.2            ∆+2.3          ∆+4.5           ∆+0.9      ∆+2.6
+ + Bst5       64.5 (3.5% ↑)   77.6 (3.6% ↑)   48.2 (7.1% ↑)   39.6 (6.2% ↑)   65.0 (7.4% ↑)   17.7 (5.4% ↑)    (5.6% ↑)
+
+ Dream        60.6            78.0            40.0            35.2            55.4            13.1              —
+                     ∆+5.1           ∆+10.5          ∆+7.7            ∆+8.1          ∆+10.0           ∆+2.5     ∆+7.3
+ + Ours       65.7 (8.4% ↑)   88.5 (13.5% ↑) 47.7 (19.3% ↑)   43.3 (23.0% ↑) 65.4 (18.1% ↑) 15.6 (19.1% ↑)    (16.9% ↑)
+                     ∆+2.3           ∆+2.0           ∆+3.1            ∆+2.9          ∆+2.3           ∆+1.3      ∆+2.3
+ + Bst5       62.9 (3.8% ↑)   80.0 (2.6% ↑)   43.1 (7.8% ↑)   38.1 (8.2% ↑)   57.7 (4.2% ↑)   15.4 (9.1% ↑)    (6.1% ↑)
+
+ Llama        59.2            70.5            45.7            44.5            60.0            3.2               —
+
+Table 1: Results on using different backbone models across various benchmarks. For each setting, we report
+absolute improvements (∆) and percentage gains relative to the corresponding backbone. The best improvement is
+highlighted in Dark Green. The average improvement is shown in the last column.
+
+
+  Method          ARC-C         HumanEval            DROP       removing any component leads to a performance
+                                                                drop arcoss all datasets. Specifically, removing
+  Ours            82.1          47.5                 71.0
+                                                                or replacing the confidence-adjusted score results
+  W/o MCTS        81.0          44.3                 64.9
+                                                                in the largest performance drop, highlighting its
+  W/o T. Dcp.     77.3          43.4                 65.7
+                                                                critical role in selecting tokens to unmask. More-
+  W/o Cf.+t2      75.0          40.9                 60.1
+                                                                over, eliminating MCTS also causes a performance
+  Llada           72.2          40.2                 58.2
+                                                                drop, demonstrating its effectiveness in exploring
+Table 2: Ablation study results on ARC-C, HumanEval,            multiple generation paths and selecting the most
+and DROP using LLaDA as the backbone model.                     promising ones during initialization.
+                                                                4.4     Hyperparameter Analysis
+Notably, even a model that underperforms Llama
+(i.e., Llada, which lags behind Llama on 4 out of 5               Tasks No.          ARC-C          HumanEval     DROP
+baselines in Table 1) achieves comparable or supe-
+                                                                  1                  79.8           44.0          69.2
+rior results on most datasets when equipped with
+                                                                  3                  82.1           47.5          71.0
+our method. These results highlight the potential
+                                                                  5                  76.5           42.9          62.8
+of DLMs when guided with appropriate strategies.
+                                                                  10                 75.5           41.9          58.0
+The standard deviation is reported in Table 6.
+
+4.3   Ablation Study                                           Table 3: Performance with different numbers of decom-
+                                                               posed tasks on ARC-C, HumanEval, and DROP using
+To understand the contribution of each component               LLaDA as the backbone model.
+in our framework, we conduct ablation studies
+on ARC-C, HumanEval and DROP on backbone                           In this section, we analyze the impact of key
+model LLaDA. To evaluate the impact of MCTS,                    hyperparameters in our framework, including the
+we remove it from our framework and let the model               number of decomposed tasks, the number of candi-
+generate answers directly based on the decomposed               date tokens selected K2 during MCTS, and MCTS
+tasks (W/o MCTS). To assess the importance of                   initialization candidate length Lc . We vary the
+task decomposition, we eliminate this step and have             number of decomposed tasks and evaluate the per-
+the model generate answers directly from the origi-             formance on ARC-C, HumanEval, and DROP us-
+nal prompt using MCTS (W/o T. Dcp.). Addition-                  ing LLaDA as the backbone model. The results are
+ally, we remove the confidence-adjusted score and               shown in Table 3. We observe that decomposing
+using only use top-2 margin (W/o Cf.+t2) to select              the task into 3 subtasks yields the best performance.
+the candidate tokens during MCTS.                               Decomposing into too few (1) or too many (5 or 10)
+   The results are presented in Table 2. Overall,               subtasks leads to a performance drop, indicating
+  MCTS Cand.        ARC-C      HumanEval        DROP              Method              DROP     MMLU
+  1                 79.2       44.4             65.5              Ours + ADAS         73.0     46.5
+  3                 81.5       46.4             70.1              LLada + ADAS        71.2     41.0
+  5                 82.1       47.5             71.0              Llama + ADAS        65.2     45.2
+  10                82.9       46.6             70.5              LLada               58.2     36.0
+                                                                  Llama               60.0     44.5
+Table 4: Performance with different numbers of candi-
+date tokens K2 during MCTS on ARC-C, HumanEval,            Table 5: Results on DROP and MMLU using different
+and DROP using LLaDA as the backbone model.                methods in an agentic setting.
+
+
+that an optimal level of decomposition is crucial          results on DROP and MMLU are shown in Table
+for balancing complexity and guidance.                     5. We observe that integrating our method with
+   Then we vary the number of candidate tokens se-         ADAS leads to further performance improvement
+lected during MCTS and evaluate the performance            compared to using LLaDA and LLama, demon-
+on the same datasets. The results are shown in             strating our method’s ability to enhance the reason-
+Table 4. We find that selecting 5 candidate tokens         ing and planning capabilities of DLMs in complex
+during MCTS achieves the best performance across           agentic settings. These findings suggest that DLMs,
+all datasets. Selecting too few (1 or 3) candidate         when equipped with effective strategies like ours,
+tokens would made the exploration space too small,         can be powerful tools for building intelligent agents
+limiting the potential of finding better generation        capable of solving challenging tasks.
+paths. On the other hand, selecting too many (10)
+tokens would introduce too much noise, making it           5   Related works
+harder for the model to focus on the most promising
+                                                           Diffusion Language Models. Diffusion models
+paths. Therefore, we find that selecting 5 candidate
+                                                           are a powerful class of generative models (Podell
+tokens works well which is essential for effective
+                                                           et al., 2023; Rombach et al., 2022; Li et al., 2025b;
+exploration and exploitation during MCTS.
+                                                           Zhang et al., 2023; Li et al., 2025a). Building
+   Finally, we vary the number of MCTS initial-
+                                                           on their success, DLMs have emerged as promis-
+ization candidate length Lc and evaluate the per-
+                                                           ing alternatives for text generation. One line of
+formance on data, including ARC-C, HumanEval,
+                                                           work adapts continuous diffusion to discrete text
+DROP and Countdown, for generating sentences of
+                                                           via continuous relaxations (Li et al., 2022; Strudel
+length 256. The results are shown in Figure 2. We
+                                                           et al., 2022), while another operates directly in
+observe that increasing Lc can improve the perfor-
+                                                           the discrete token space, corrupting text by mask-
+mance, and the performance gain tends to saturate
+                                                           ing or token replacement (He et al., 2022; Austin
+after 20 steps. It indicates that using MCTS for ini-
+                                                           et al., 2021). Leveraging mature scaling techniques,
+tialization is sufficient, and it is a feasible approach
+                                                           large-scale DLMs have been developed (Nie et al.,
+for effective generation. This result suggests that
+                                                           2025; Gong et al., 2024; Nie et al., 2024), achiev-
+the most critical generation trajectory decisions oc-
+                                                           ing performance competitive with AR models (Tou-
+cur early, meaning that extended search beyond
+                                                           vron et al., 2023). Despite strong generative abil-
+this point yields diminishing returns relative to the
+                                                           ity, DLMs often struggle with controllability and
+computational cost.
+                                                           reasoning in deciding the token order to unmask to-
+4.4.1   Case Study: Agentic Workflows                      kens during inference. To address this, we propose
+                                                           a principled search-based framework with MCTS
+In this section, we present a case study exploring         to enhance DLM generation capabilities.
+the potential of using DLMs in an agentic setting.
+We integrate our method with the ADAS (Hu et al.,          Enhancing Reasoning Capabilities of Diffusion
+2024), which utilizes an LLM to automatically in-          Language Models. To improve the reasoning
+vent building blocks and design powerful agentic           performance of DLMs Kim et al. (2025) propose
+systems to solve given tasks. We replace the LLMs          incorporating model uncertainty into the diffusion
+in ADAS with our DLM (LLaDA with our method)               process to enhance generation quality. Entropy-
+and compare the performance with the original              based planning methods have been introduced
+ADAS using LLaDA and Llama as backbones. The               (Ben-Hamu et al., 2025; Ye et al., 2025) to bet-
+Figure 2: Performance of MEDAL (in red) with varying MCTS init length Lc on ARC-C, HumanEval, DROP and
+Countdown using LLaDA as the backbone model. The blue line denotes the performance of LLaDA without our
+method. The x-axis indicates the number of MCTS initialization steps, and the y-axis shows the accuracy.
+
+
+ter capture the model’s confidence. Planner-guided      ing gains of up to 22.0%.
+generation is studied in (Peng et al., 2025), en-
+abling token-level refinement during sampling.          7   Limitation
+More advanced reinforcement learning (RL) ap-           While our study demonstrates the effectiveness of
+proaches further boost performance (Zekri and           confidence-guided MCTS initialization for diffu-
+Boullé, 2025; Zhu et al., 2025; Gong et al., 2025).     sion language models, several limitations remain.
+Particularly, Diffu-GRPO (Zhao et al., 2025) ap-        First, we primarily evaluate unimodal text-based
+plies policy-gradient RL to DLMs via a mean-field       DLMs; extending our framework to multimodal
+approximation and prompt masking, while TraDo           DLMs (e.g., vision-language or audio-language
+(Wang et al., 2025) aligns DLM inference trajec-        models) would provide a more comprehensive as-
+tories with training objectives by optimizing the       sessment of its generality. Second, our current
+sampling process. Additionally, wd1 (Tang et al.,       experiments focus on standalone inference; inte-
+2025) reformulates the RL objective as a weighted       grating the method into agentic settings, where rea-
+likelihood to avoid biased policy ratios, improving     soning and decision-making unfold over multiple
+reasoning accuracy. While effective, these methods      steps and interactions, poses both challenges and
+rely on additional training that involves substantial   opportunities for future exploration.
+computational cost and engineering overhead. In
+contrast, we enhance DLM reasoning purely at in-        8   Potential Risks
+ference time, making our approach more efficient
+                                                        This work does not introduce additional ethical or
+and practical for real-world applications.
+                                                        societal risks beyond those associated with existing
+                                                        large language models. While our method utilizes
+6   Conclusion
+                                                        test-time scaling to enhance generation quality, it
+In this work, we introduced MEDAL, a frame-             operates by allocating compute to resolve uncer-
+work that casts diffusion language model inference      tainty within the fixed model distribution. Conse-
+as a structured search problem and integrates it        quently, it does not alter the model’s fundamental
+with MCTS. By applying MCTS during initializa-          objectives, training data, or safety alignment.
+tion, MEDAL explores promising unmasking tra-
+                                                        9   Acknowledgements
+jectories before refinement. Its confidence-guided
+filtering and information-gain reward enable effi-      We used generative AI tools to assist in language
+cient, targeted search and improve global certainty.    polishing and writing refinement. All conceptual,
+Across multiple benchmarks, MEDAL consistently          methodological, and experimental contributions are
+outperforms existing inference strategies, achiev-      solely those of the authors.
+References                                                Zhengfu He, Tianxiang Sun, Kuanning Wang, Xuan-
+                                                            jing Huang, and Xipeng Qiu. 2022. Diffusionbert:
+Josh Achiam, Steven Adler, Sandhini Agarwal, Lama           Improving generative masked language models with
+  Ahmad, Ilge Akkaya, Florencia Leoni Aleman,               diffusion models. arXiv preprint arXiv:2211.15029.
+  Diogo Almeida, Janko Altenschmidt, Sam Altman,
+  Shyamal Anadkat, and 1 others. 2023. Gpt-4 techni-      Dan Hendrycks, Collin Burns, Steven Basart, Andy Zou,
+  cal report. arXiv preprint arXiv:2303.08774.              Mantas Mazeika, Dawn Song, and Jacob Steinhardt.
+                                                            2020. Measuring massive multitask language under-
+Jacob Austin, Daniel D Johnson, Jonathan Ho, Daniel         standing. arXiv preprint arXiv:2009.03300.
+  Tarlow, and Rianne Van Den Berg. 2021. Structured
+   denoising diffusion models in discrete state-spaces.   Shengran Hu, Cong Lu, and Jeff Clune. 2024. Au-
+  Advances in neural information processing systems,        tomated design of agentic systems. arXiv preprint
+   34:17981–17993.                                          arXiv:2408.08435.
+Heli Ben-Hamu, Itai Gat, Daniel Severo, Niklas Nolte,     Jaeyeon Kim, Kulin Shah, Vasilis Kontonis, Sham
+  and Brian Karrer. 2025. Accelerated sampling from          Kakade, and Sitan Chen. 2025. Train for the
+  masked diffusion models via entropy bounded un-           worst, plan for the best: Understanding token
+  masking. arXiv preprint arXiv:2505.24857.                  ordering in masked diffusions. arXiv preprint
+                                                             arXiv:2502.06768.
+Cameron B Browne, Edward Powley, Daniel White-
+  house, Simon M Lucas, Peter I Cowling, Philipp          Levente Kocsis and Csaba Szepesvári. 2006. Bandit
+  Rohlfshagen, Stephen Tavener, Diego Perez, Spyri-         based monte-carlo planning. In European conference
+  don Samothrakis, and Simon Colton. 2012. A survey         on machine learning, pages 282–293. Springer.
+  of monte carlo tree search methods. IEEE Transac-
+  tions on Computational Intelligence and AI in games,    Pengxiang Li, Yefan Zhou, Dilxat Muhtar, Lu Yin,
+  4(1):1–43.                                                Shilin Yan, Li Shen, Yi Liang, Soroush Vosoughi,
+                                                            and Shiwei Liu. 2025a. Diffusion language models
+Mark Chen, Jerry Tworek, Heewoo Jun, Qiming Yuan,           know the answer before decoding. arXiv preprint
+ Henrique Ponde De Oliveira Pinto, Jared Kaplan,            arXiv:2508.19982.
+ Harri Edwards, Yuri Burda, Nicholas Joseph, Greg
+ Brockman, and 1 others. 2021. Evaluating large           Tianyi Li, Mingda Chen, Bowei Guo, and Zhiqiang
+ language models trained on code. arXiv preprint            Shen. 2025b. A survey on diffusion language models.
+ arXiv:2107.03374.                                          arXiv preprint arXiv:2508.10875.
+
+Peter Clark, Isaac Cowhey, Oren Etzioni, Tushar Khot,     Xiang Li, John Thickstun, Ishaan Gulrajani, Percy S
+  Ashish Sabharwal, Carissa Schoenick, and Oyvind           Liang, and Tatsunori B Hashimoto. 2022. Diffusion-
+  Tafjord. 2018. Think you have solved question an-         lm improves controllable text generation. Advances
+  swering? try arc, the ai2 reasoning challenge. arXiv      in neural information processing systems, 35:4328–
+  preprint arXiv:1803.05457.                                4343.
+
+Karl Cobbe, Vineet Kosaraju, Mohammad Bavarian,           Aaron Lou, Chenlin Meng, and Stefano Ermon.
+  Mark Chen, Heewoo Jun, Lukasz Kaiser, Matthias            2023. Discrete diffusion modeling by estimating
+  Plappert, Jerry Tworek, Jacob Hilton, Reiichiro           the ratios of the data distribution. arXiv preprint
+  Nakano, and 1 others. 2021. Training verifiers            arXiv:2310.16834.
+  to solve math word problems. arXiv preprint
+  arXiv:2110.14168.                                       Omer Luxembourg, Haim Permuter, and Eliya Nach-
+                                                           mani. 2025. Plan for speed–dilated scheduling for
+Dheeru Dua, Yizhong Wang, Pradeep Dasigi, Gabriel          masked diffusion language models. arXiv preprint
+  Stanovsky, Sameer Singh, and Matt Gardner. 2019.         arXiv:2506.19037.
+  Drop: A reading comprehension benchmark re-
+  quiring discrete reasoning over paragraphs. arXiv       Shervin Minaee, Tomas Mikolov, Narjes Nikzad,
+  preprint arXiv:1903.00161.                                Meysam Chenaghlu, Richard Socher, Xavier Am-
+                                                            atriain, and Jianfeng Gao. 2024. Large language
+Shansan Gong, Shivam Agarwal, Yizhe Zhang, Jiacheng         models: A survey. arXiv preprint arXiv:2402.06196.
+  Ye, Lin Zheng, Mukai Li, Chenxin An, Peilin Zhao,
+  Wei Bi, Jiawei Han, and 1 others. 2024. Scaling dif-    Shen Nie, Fengqi Zhu, Chao Du, Tianyu Pang, Qian
+  fusion language models via adaptation from autore-        Liu, Guangtao Zeng, Min Lin, and Chongxuan Li.
+  gressive models. arXiv preprint arXiv:2410.17891.         2024. Scaling up masked diffusion models on text.
+                                                            arXiv preprint arXiv:2410.18514.
+Shansan Gong, Ruixiang Zhang, Huangjie Zheng, Ji-
+  atao Gu, Navdeep Jaitly, Lingpeng Kong, and Yizhe       Shen Nie, Fengqi Zhu, Zebin You, Xiaolu Zhang,
+  Zhang. 2025. Diffucoder: Understanding and im-            Jingyang Ou, Jun Hu, Jun Zhou, Yankai Lin, Ji-Rong
+  proving masked diffusion models for code generation.      Wen, and Chongxuan Li. 2025. Large language dif-
+  arXiv preprint arXiv:2506.20639.                          fusion models. arXiv preprint arXiv:2502.09992.
+Jiayi Pan, Junjie Zhang, Xingyao Wang, Lifan Yuan,        Lvmin Zhang, Anyi Rao, and Maneesh Agrawala. 2023.
+   Hao Peng, and Alane Suhr. 2025.        Tinyzero.         Adding conditional control to text-to-image diffusion
+   https://github.com/Jiayi-Pan/TinyZero. Accessed:         models. In Proceedings of the IEEE/CVF interna-
+   2025-01-24.                                              tional conference on computer vision, pages 3836–
+                                                            3847.
+Fred Zhangzhi Peng, Zachary Bezemek, Sawan Patel,
+  Jarrid Rector-Brooks, Sherwood Yao, Avishek Joey        Siyan Zhao, Devaansh Gupta, Qinqing Zheng, and
+  Bose, Alexander Tong, and Pranam Chatterjee. 2025.        Aditya Grover. 2025. d1: Scaling reasoning in diffu-
+  Path planning for masked diffusion model sampling.        sion large language models via reinforcement learn-
+  arXiv preprint arXiv:2502.03540.                          ing. arXiv preprint arXiv:2504.12216.
+Dustin Podell, Zion English, Kyle Lacey, Andreas          Yixiu Zhao, Jiaxin Shi, Feng Chen, Shaul Druck-
+  Blattmann, Tim Dockhorn, Jonas Müller, Joe Penna,         mann, Lester Mackey, and Scott Linderman. 2024.
+  and Robin Rombach. 2023. Sdxl: Improving latent           Informed correctors for discrete diffusion models.
+  diffusion models for high-resolution image synthesis.     arXiv preprint arXiv:2407.21243.
+  arXiv preprint arXiv:2307.01952.
+                                                          Fengqi Zhu, Rongzhen Wang, Shen Nie, Xiaolu Zhang,
+Robin Rombach, Andreas Blattmann, Dominik Lorenz,           Chunwei Wu, Jun Hu, Jun Zhou, Jianfei Chen,
+  Patrick Esser, and Björn Ommer. 2022. High-               Yankai Lin, Ji-Rong Wen, and 1 others. 2025. Llada
+  resolution image synthesis with latent diffusion mod-     1.5: Variance-reduced preference optimization for
+  els. In Proceedings of the IEEE/CVF conference            large language diffusion models. arXiv preprint
+  on computer vision and pattern recognition, pages         arXiv:2505.19223.
+  10684–10695.
+Jiaxin Shi, Kehang Han, Zhe Wang, Arnaud Doucet,
+   and Michalis Titsias. 2024. Simplified and general-
+   ized masked diffusion for discrete data. Advances in
+   neural information processing systems, 37:103131–
+   103167.
+Robin Strudel, Corentin Tallec, Florent Altché, Yilun
+  Du, Yaroslav Ganin, Arthur Mensch, Will Grath-
+  wohl, Nikolay Savinov, Sander Dieleman, Laurent
+  Sifre, and 1 others. 2022. Self-conditioned embed-
+  ding diffusion for text generation. arXiv preprint
+  arXiv:2211.04236.
+Xiaohang Tang, Rares Dolga, Sangwoong Yoon, and
+  Ilija Bogunovic. 2025. wd1: Weighted policy opti-
+  mization for reasoning in diffusion language models.
+  arXiv preprint arXiv:2507.08838.
+Hugo Touvron, Thibaut Lavril, Gautier Izacard, Xavier
+  Martinet, Marie-Anne Lachaux, Timothée Lacroix,
+  Baptiste Rozière, Naman Goyal, Eric Hambro, Faisal
+  Azhar, and 1 others. 2023. Llama: Open and effi-
+  cient foundation language models. arXiv preprint
+  arXiv:2302.13971.
+Yinjie Wang, Ling Yang, Bowen Li, Ye Tian, Ke Shen,
+  and Mengdi Wang. 2025. Revolutionizing reinforce-
+  ment learning framework for diffusion large language
+  models. arXiv preprint arXiv:2509.06949.
+Jiacheng Ye, Zhihui Xie, Lin Zheng, Jiahui Gao, Zirui
+   Wu, Xin Jiang, Zhenguo Li, and Lingpeng Kong.
+   2025. Dream 7b: Diffusion large language models.
+   arXiv preprint arXiv:2508.15487.
+Jaesik Yoon, Hyeonseo Cho, Doojin Baek, Yoshua
+   Bengio, and Sungjin Ahn. 2025. Monte carlo tree
+   diffusion for system 2 planning. arXiv preprint
+   arXiv:2502.07202.
+Oussama Zekri and Nicolas Boullé. 2025. Fine-tuning
+  discrete diffusion models with policy gradient meth-
+  ods. arXiv preprint arXiv:2502.01384.
+A     Appendix                                                reduce this variance, leading to more stable
+                                                              and effective training.
+A.1    Experiment Setting
+                                                            • Dream-7B. Dream-7B is a diffusion large lan-
+In this section, we provide more details about
+                                                              guage model that generates text by iteratively
+the experimental settings. We use three differ-
+                                                              refining sequences in parallel rather than se-
+ent backbone models: LLaDA-8B-Instruct (Nie
+                                                              quentially like autoregressive models. It is
+et al., 2025), LLaDA1.5-8B (Zhu et al., 2025), and
+                                                              trained using two key techniques: initializ-
+Dream-7B (Ye et al., 2025), and compare the re-
+                                                              ing its weights from a pre-trained AR model
+sults with the original models without our method.
+                                                              and employing a context-adaptive token-level
+We also include Llama3-8B (Touvron et al., 2023)
+                                                              noise rescheduling mechanism. While achiev-
+as an AR LLM baseline for comparison. The de-
+                                                              ing performance competitive with leading AR
+tails of the models are as follows:
+                                                              models like Qwen2.5 7B on general, mathe-
+    • LLaDA-8B-Instruct. LLaDA is a large-scale               matical, and coding benchmarks, Dream 7B
+      diffusion language model (DLM) that replaces            demonstrates substantial abilities on complex
+      the traditional autoregressive next-token pre-          planning tasks such as Sudoku and trip plan-
+      diction paradigm with a masked diffusion pro-           ning.
+      cess. Instead of generating text sequentially         The data we used for evaluation includes six
+      from left to right, LLaDA learns to reconstruct    widely used datasets: GSM8K (Cobbe et al., 2021),
+      corrupted sequences by iteratively predicting      ARC-C (Clark et al., 2018), HumanEval (Chen
+      masked tokens. The model defines a forward         et al., 2021), MMLU (Hendrycks et al., 2020),
+      process that randomly masks tokens and a           DROP (Dua et al., 2019) and Countdown (Pan et al.,
+      reverse process—parameterized by a trans-          2025). The details of the datasets are as follows:
+      former without causal masking—that predicts
+      the original tokens, allowing bidirectional con-      • GSM8K. A dataset to evaluate the mathemat-
+      text modeling. Trained under a principled               ical and scientific reasoning capabilities of
+      likelihood bound, LLaDA achieves scalable               large language models. The dataset consists
+      probabilistic inference comparable to large             of high-quality, grade-school-level math word
+      autoregressive models such as Llama3. It sup-           problems that require multiple steps to solve.
+      ports parallel token refinement, enabling faster        These problems are designed to test a model’s
+      generation and better global coherence. After           ability to perform
+      pre-training on 2.3T tokens and fine-tuning on
+      4.5M instruction pairs, LLaDA demonstrates            • ARC-C. The ARC Challenge (ARC-C) is a
+      strong performance across reasoning, coding,            subset of the AI2 Reasoning Challenge (ARC)
+      and multilingual tasks, rivaling or surpassing          dataset, which is designed to evaluate the rea-
+      autoregressive LLMs of similar scale while              soning capabilities of AI systems. The ARC-
+      also addressing their limitations in efficiency,        C consists of multiple-choice questions, re-
+      reversibility, and bidirectional reasoning.             quiring deeper reasoning and understanding
+                                                              of scientific concepts. The questions cover
+    • LLaDA1.5-8B. LLaDA1.5 is an advanced                    a wide range of topics in science and are in-
+      version of LLaDA, specifically designed to              tended to test a model’s ability to apply knowl-
+      be better aligned with human preferences                edge rather than just recall facts.
+      through reinforcement learning. The key               • HumanEval. A benchmark dataset for eval-
+      innovation is a framework called Variance-              uating the programming capabilities of mod-
+      Reduced Preference Optimization (VRPO),                 els by presenting them with a series of cod-
+      which addresses the primary challenge of ap-            ing challenges. These challenges require the
+      plying direct preference optimization to dif-           model to generate functional code from natu-
+      fusion models: the high variance in their               ral language descriptions, often in a zero-shot
+      likelihood estimations. VRPO introduces                 setting where no examples are provided.
+      theoretically-grounded, unbiased techniques,
+      such as optimal Monte Carlo budget alloca-            • MMLU. The Massive Multitask Language
+      tion and antithetic sampling, to significantly          Understanding (MMLU) benchmark is de-
+      signed to measure the general knowledge, rea-     for all masked positions and construct the candi-
+      soning, and commonsense abilities of large        date action set A′t . For each candidate a ∈ A′t (e.g.,
+      language models. It consists of multiple-         inserting the token “quick” at position 1), we apply
+      choice questions, including humanities, social    the edit and create a new child node. (3) Simulation:
+      sciences, STEM fields, and more. The bench-       from each expanded node, we unmask the remain-
+      mark tests a model’s ability to understand and    ing tokens using the DLM to obtain a completed
+      generate text in various contexts, requiring      sequence. (4) Backpropagation: we compute the
+      both factual knowledge and reasoning skills.      information-gain reward (Equation (9)) for each
+                                                        simulation outcome and propagate it up the tree,
+   • DROP. A reading comprehension benchmark            updating value estimates for all parent nodes along
+     that requires discrete reasoning over para-        the path to the root.
+     graphs of text. The dataset consists of ques-
+     tions that necessitate operations such as ad-
+     dition, counting, and sorting to arrive at the     A.4   Formal Derivation of the MCTS
+     correct answer.                                          Initialization Guarantee
+   • Countdown. A benchmark that contains arith-
+     metic reasoning problems where the model is        Setup and notation. Let x = (x1 , . . . , xn ) be
+     given three or four numbers and must con-          a sequence of discrete tokens. We denote by q
+     struct an expression that uses each number         the (unknown) true data distribution and by pθ the
+     exactly once with basic operations (+, –, ×,       model distribution. Decoding proceeds in steps
+     ÷) to reach a target integer. Each example         i = 1, 2, . . .; at step i we reveal a (possibly multi-
+     includes a list of numbers and a target.           token) index set zi ⊆ {1, . . . , n}, and write xz<i
+                                                        for all tokens revealed before step i. Let U denote
+   The prompt we used for each dataset is shown         a set of indices of masked tokens. For such a set U
+in Figure 4, 5, 6 , 7, and 8.                           and context xz<i , we define the model conditional
+                                                        entropy as Hθ (xℓ | xz<i ) := H(pθ (xℓ | xz<i )), and
+A.2    Additional Experiments
+                                                        the entropy-gap surrogate
+In this section, we report the standard deviation and
+the computing overhead.
+   Standard Deviation. The standard deviation of
+all the methods across various datasets. The results                            X
+                                                              B(U | xz<i ) :=         Hθ (xℓ | xz<i )
+are shown in Table 6. Overall, the results show
+                                                                                ℓ∈U
+that incorporating our method generally stabilizes
+model performance by reducing variance across                               − max Hθ (xℓ | xz<i ).        (10)
+                                                                                ℓ∈U
+benchmarks, particularly on reasoning-intensive
+tasks such as HumanEval, MMLU, and DROP.
+   Computational Costs. We evaluate computa-            The term B(U | xz<i ) measures the total uncer-
+tional overhead by comparing a standard LLaDA           tainty of the tokens in U , penalized by subtracting
+run with LLaDA using Best-of-15 (Bst15) decod-          the largest single-token entropy. Intuitively, it is
+ing on GSM8K. The results are reported in Table 7.      small when one token in U dominates the uncer-
+As shown, MEDAL achieves comparable runtime             tainty and large when multiple tokens are simulta-
+to Bst15 while delivering better accuracy, indicat-     neously high-entropy, making it a useful surrogate
+ing that MEDAL allocates inference-time compute         for the dependence error incurred by unmasking
+more effectively under constrained resources.           them together. To simplify the notation, we write
+                                                        B(zi ) := B(zi | xz<i ) when the context is clear.
+A.3    MCTS for DLMs Inference Example
+We provide a single-step illustrative example of ap-
+plying MCTS to DLM inference in Figure 3. (1) Se-       Per-step decomposition When sampling xzi in-
+lection: among three partially unmasked sequence        dependently given xz<i , the per-step KL diver-
+nodes, we pick the one with the highest UCB score       gence decomposes into a token-wise model er-
+(Node 1). (2) Expansion: given the model logits         ror and a joint-dependence error(Ben-Hamu et al.,
+at Node 1, we compute confidence-adjusted scores        2025):
+                    Model          GSM8K ARC-C HumanEval MMLU DROP
+                    LLaDA          ±1.36         ±1.48     ±2.51            ±4.34       ±3.17
+                    + ours         ±2.37         ±2.03     ±2.98            ±3.67       ±3.25
+                    LLaDA1.5 ±3.05               ±2.00     ±3.22            ±4.00       ±2.12
+                    + ours   ±3.27               ±3.65     ±2.44            ±3.77       ±4.44
+                    Dream          ±3.32         ±2.09     ±3.04            ±2.27       ±3.38
+                    + ours         ±2.93         ±3.32     ±3.85            ±2.41       ±4.00
+                    Llama          ±3.05         ±3.31     ±4.22            ±3.02       ±2.03
+
+        Table 6: Results on standard deviation using different backbone models across various benchmarks.
+
+
+                    Running time       Accuracy             Our contribution is to show how the MCTS ini-
+                                                            tializer is designed to minimize the RHS (a com-
+         LLaDA      c=9.64s            58.3                 putable surrogate), thereby controlling the cumula-
+         +bst15     15c                65.3                 tive dependence error.
+         +ours      12.3c              66.7
+                                                            Cumulative bound.
+Table 7: Computational costs and accuracy on GSM8K
+using different backbone models, with accuracy re-
+                                                            Lemma 1 (Prefix dependence is bounded by cumu-
+ported in the leftmost column.                              lative entropy gaps). For any K ≥ 1,
+
+                                                                           K
+                                                                           X                   K
+                                                                                               X
+                                                                                 DepErri ≤           B(zi ).
+ X                                                                        i=1                 i=1
+        KL q(xℓ | xz<i ) ∥ pθ (xℓ | xz<i )
+ ℓ∈zi                                                       Proof. Apply Assumption 1 to each step and sum
+                                                            over i = 1, . . . , K.
+ |                    {z                     }
+                  model error
+                         Q                    
+     + KL q(xzi | xz<i )    ℓ∈zi q(xℓ | xz<i )   ,          Search space and surrogate objective. Fix K ≥
+       |                 {z                    }            1 and let SK be the set of feasible K-step schedules
+                   dependence error := DepErri
+                                                            z1:K = (z1 , . . . , zK ) (e.g., obeying any architec-
+                                                    (11)
+                                                            tural or mask constraints). Define the surrogate
+where the first term, model error, sums the KL di-          cost of a schedule by
+vergence for each l ∈ zi , quantifying the per-token
+                                                                                           K
+discrepancy between the model’s conditional dis-                                           X
+tribution and the true conditional given the current                        J(z1:K ) :=           B(zi ).
+                                                                                            i=1
+context, and the joint-dependence error quantifies
+the penalty from sampling all tokens in zi indepen-         (Optionally, one may add a tokenwise uncertainty
+dently, measuring how far the true joint conditional        term; see Remark 1 below.)
+distribution q(xzi | xz<i ) is from the product of
+its marginals. It captures the correlations among           MCTS estimator and selection rule. Given a
+tokens in zi that are ignored when they are sampled         budget of N simulations, MCTS constructs an em-
+independently, rather than jointly conditioned on           pirical estimate JbN (z1:K ) for candidate schedules
+one another. Our analysis focuses on the depen-             and returns
+dence term DepErri .                                                (N )
+                                                                   z1:K ∈ arg            min           JbN (z1:K ).
+Standing assumption.                                                               z1:K ∈SK explored
+
+Assumption 1 (Entropy-gap upper bound). For              We adopt the UCT tree policy (Kocsis and
+every step i and context xz<i ,                       Szepesvári, 2006), which is asymptotically consis-
+                                                      tent: under standard assumptions (bounded costs
+                               Q                   
+DepErri = KL q(xzi | xz<i )       ℓ∈zi q(xℓ | xz<i ) and unbiased rollout estimates), the empirical es-
+
+          ≤ B(zi ).                           (12) timates JbN (z1:K ) converge to the true surrogate
+                                                 One Step of Confidence-Guided MCTS
+1. Selection
+Partial Masked Sequences Node 1            The          [MASK]     [MASK]      jumps          over         the        [MASK]           dog
+
+
+Partial Masked Sequences Node 2            The          [MASK]       fox       jumps          over         the        [MASK]      [MASK]
+
+
+Partial Masked Sequences Node 3            The          [MASK]     [MASK]      [MASK]         over         the         sleep           dog
+
+
+2. Expansion
+                              The      [MASK]             [MASK]     jumps        over        the         [MASK]          dog
+
+                        Position 1,                        Position 2,                                           Position 6,
+                        quick: 0.85                          fox: 0.6                                             lazy: 0.80
+                          Fly: 0.7                           dog: 0.5                                             sleep: 0.75
+                         fish: 0.3                          bird: 0.39                                           happy: 0.25
+
+
+
+                                             Position 1,            Position 6,            Position 6,
+                                             quick: 0.85             lazy: 0.80             sleep: 0.75
+
+
+3. Simulation
+
+ The     quick      [MASK]         jumps         over       the      [MASK]          dog
+
+
+
+                             The      [MASK]            [MASK]     jumps       over         the           lazy          dog
+
+
+                                                                   The      [MASK]         [MASK]     jumps            over       the        sleep   dog
+
+                  DLM rollout                              DLM rollout                         DLM rollout
+
+ 4. Back propagation
+
+
+   Reward 1 & back                         Reward 2 & back                     Reward 3 & back
+    propagation                              propagation                         propagation
+
+
+
+                   Figure 3: A single-step illustrative example of applying MCTS to DLM inference
+
+                                                                                  PK
+cost J(z1:K ) as N → ∞. Consequently, the ini-                                        i=1 DepErri ≤ J(z1:K ). By the assumed con-
+tialization schedule returned by MCTS converges                                   sistency of MCTS, JbN → J pointwise on ex-
+almost surely to the minimizer of J(z1:K ) within                                 plored nodes and the selection rule is asymptot-
+the feasible search space.                                                                                                  ⋆
+                                                                                  ically optimal: every accumulation point z1:K min-
+Theorem 1 (Bounded dependence minimized by                                        imizes J over SK . P Evaluating the bound at such
+MCTS initialization). Under Assumption 1 and                                      a minimizer yields K                        ⋆
+                                                                                                         i=1 DepErri ≤ J(z1:K ) =
+the consistency conditions above, every limit point                               minz1:K ∈SK J(z1:K ), which is the tightest bound
+ ⋆
+z1:K
+           (N )
+     of {z1:K }N ≥1 satisfies                                                     attainable within SK .
+                                                                                  Corollary 1 (Comparison to any baseline prefix).
+  ⋆
+ z1:K ∈ arg min J(z1:K ), and hence                                               Let ze1:K ∈ SK be any baseline schedule (e.g., ran-
+                 z1:K ∈SK                                                         dom or greedy). Then, under the conditions of
+ K
+ X                                                                                Theorem 1, for large enough N ,
+                    ⋆
+       DepErri ≤ J(z1:K ) =                       min J(z1:K ).
+                                             z1:K ∈SK                                      K
+ i=1
+                                                                                                                                (N )
+                                                                                           X
+                                                                     (13)                         DepErri ≤ J(z1:K ) ≤ J(e
+                                                                                                                         z1:K ).
+                                                                                           i=1
+   In particular, among all feasible K-step pre-
+fixes, the selected initialization attains the smallest                           Thus the MCTS-chosen prefix achieves a (weakly)
+achievable upper bound on cumulative dependence                                   smaller upper bound on cumulative dependence
+error.                                                                            than the baseline.
+Proof. By Lemma 1, any schedule z1:K satisfies                                    Remarks and extensions.
+Remark 1 (Adding model-error proxies). If one
+augments the surrogate with a token-wise model-
+error proxy proxℓ (e.g., entropy, 1−confidence, top-
+2 margin),
+                K h
+                X                          X           i
+ Jλ (z1:K ) =         λdep B(zi ) + λmod          proxℓ ,
+                i=1                        ℓ∈zi
+                                                      (14)
+
+where λdep , λmod > 0, then minimization
+                               P           of Jλ
+with λdep > 0 still minimizes i B(zi ) subject
+to the chosen trade-off. The dependence part of
+Theorem 1 carriesPthrough unchanged, yielding the
+same bound on i DepErri with J replaced by
+the dependence component of Jλ .
+Remark 2 (On computability and calibration). All
+terms in B(zi ) are computed from pθ (· | xz<i )
+(model logits), so J is observable at inference time.
+The tightness of the bound depends on how well
+the model entropies reflect the coupling structure
+under q; improving calibration mayPfurther tighten
+the practical gap between J and i DepErri .
+Remark 3 (Feasibility constraints). The set SK
+can encode architectural or policy constraints (e.g.,
+block sizes, mask connectivity). Theorem 1 is rel-
+ative to SK : MCTS finds the tightest upper bound
+within the feasible class.
+Prompt for GSM8K
+Decompose the question into different steps and solve the math problem follow the examples. Show your final answer
+after ####.
+
+Example:
+Problem: Janet's ducks lay 16 eggs per day. She eats 3 for breakfast every morning and bakes 4 into muffins for her friends
+every day. She sells the remainder at the farmers' market for $2 per fresh duck egg. How much money does she make
+every day at the farmers' market?
+
+1. Understand how many eggs Janet’s ducks lay.
+2. Calculate how many eggs Janet eat, bake, and how many to sell.
+3. Calculate the money she make.
+
+#### 18
+
+Problem: A robe takes 2 bolts of blue fiber and half that much white fiber. How many bolts of fiber does it take?
+
+1. Identify how many bolts of blue fiber are needed.
+2. Calculate how many bolts of white fiber are needed.
+3. Calculate the total number of bolts needed.
+
+#### 3
+
+
+
+
+                                           Figure 4: Prompt used for GSM8K
+
+
+Prompt for ARC-C
+
+Answer the following multiple-choice questions. For each question, decompose it following the example and select the
+most appropriate answer. Provide your final answer after ####.
+
+Question: What is the main difference between an animal cell and a plant cell?
+(A) Animal cells have a cell wall, while plant cells do not.
+(B) Plant cells have chloroplasts, while animal cells do not.
+(C) Animal cells have mitochondria, while plant cells do not.
+(D) Plant cells have a nucleus, while animal cells do not.
+
+1. Identify the main difference between animal and plant cells.
+2. Recall relevant facts: Animal cells do not have cell walls, but plant cells do have rigid cell walls made of cellulose.
+Plant cells have chloroplasts which contain chlorophyll for photosynthesis, while animal cells do not have chloroplasts.
+Both animal and plant cells have mitochondria for cellular respiration.
+Both animal and plant cells have a nucleus containing genetic material.
+3. Select the option.
+#### B
+
+Question: Which of the following is NOT a renewable energy source?
+(A) Solar power
+(B) Wind power
+(C) Natural gas
+(D) Hydroelectric power
+
+1. Identify which energy source is NOT renewable.
+2. Recall relevant facts: Solar power comes from the sun, which is essentially unlimited, so it's renewable.
+Wind power harnesses the energy of moving air, which is constantly replenished, so it's renewable.
+Natural gas is a fossil fuel formed over millions of years and exists in finite quantities, so it's not renewable.
+Hydroelectric power uses the energy of flowing water, which is replenished through the water cycle, so it's renewable.
+3. Select the option.
+#### C
+
+Now answer this question:
+Question: {question}
+
+
+                                           Figure 5: Prompt used for ARC-C
+Prompt for HumanEval
+Decompose the given function following the examples and solve it based on the docstring requirements.
+
+### Example 1:
+1. Understand the description of the function.
+2. Understand the goal and what the function will return.
+3. Write valid Python code
+
+def add(a, b):
+ """Add two numbers a and b.
+ >>> add(1, 2)
+ 3
+ >>> add(5, 7)
+ 12
+ """
+ return a + b
+
+
+### Example 2:
+1. Understand the description of the function.
+2. Understand the goal and what the function will return.
+3. Write valid Python code
+
+def has_close_elements(numbers: List[float], threshold: float) -> bool:
+ """ Check if in given list of numbers, are any two numbers closer to each other than
+ given threshold.
+ >>> has_close_elements([1.0, 2.0, 3.0], 0.5)
+ False
+ >>> has_close_elements([1.0, 2.8, 3.0, 4.0, 5.0, 2.0], 0.3)
+ True
+ """
+ for i in range(len(numbers)):
+    for j in range(i + 1, len(numbers)):
+      if abs(numbers[i] - numbers[j]) < threshold:
+         return True
+ return False
+
+Now complete the following function:
+
+
+
+
+                                        Figure 6: Prompt used for HumanEval
+Prompt for MMLU
+
+Split the question into different steps and solve the multiple-choice problem. Show your final answer letter after ####.
+
+Example:
+Question: What is the capital of France?
+(A) London
+(B) Berlin
+(C) Paris
+(D) Madrid
+
+1. Understand what we're looking for: the capital city of France.
+2. Recall relevant facts about each option: London→UK, Berlin→Germany, Paris→France, Madrid→Spain.
+3. Evaluate each option and select the option.
+
+#### C
+
+Question: Which of the following is a noble gas?
+(A) Oxygen
+(B) Chlorine
+(C) Nitrogen
+(D) Helium
+
+1. Understand what we're looking for: identify a noble gas (Group 18).
+2. Recall group memberships: Oxygen→Group 16, Chlorine→Group 17 (halogen), Nitrogen→Group 15, Helium→Group 18
+(noble gas).
+3. Eliminate options that are not in Group 18 and select the option.
+
+#### D
+
+
+
+
+                                           Figure 7: Prompt used for MMLU
+Prompt for DROP
+Decompose and answer the question based on the given passage, following the examples.
+
+Passage: The Vikings were a seafaring people from Scandinavia who raided and traded across wide areas of Europe from
+the late 8th to the late 11th century. The Vikings employed wooden longships with wide, shallow-draft hulls, allowing
+navigation in rough seas or in shallow river waters.
+
+Question: How long did the Viking Age last?
+1. Understand the passage.
+2. Recall relevant contents in the passage about Viking Age.
+3. Provide the answer.
+
+Answer: 3 centuries
+
+Passage: The Battle of Gettysburg was fought July 1–3, 1863, in and around the town of Gettysburg, Pennsylvania, by
+Union and Confederate forces during the American Civil War. Between 46,000 and 51,000 soldiers from both armies
+were casualties in the three-day battle, the most costly in US history.
+
+Question: How many days did the Battle of Gettysburg last?
+1. Understand the passage.
+2. Recall relevant contents in the passage about the Battle of Gettysburg .
+3. Provide the answer
+
+Answer: 3 days
+
+Now answer this question:
+
+Passage: {passage}
+
+Question: {question}
+Answer:
+
+
+
+                                           Figure 8: Prompt used for DROP
+

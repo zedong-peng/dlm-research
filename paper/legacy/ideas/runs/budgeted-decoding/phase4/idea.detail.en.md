@@ -1,0 +1,88 @@
+# Deadline Paths for Training-Free Masked Diffusion Decoding
+
+**Method.** Deadline Path Projection (DPP)
+
+## Motivation
+**Problem framing.** A hard inference budget couples decisions that current masked diffusion language model decoders treat separately. Each denoiser call can reveal new masked positions, reconsider earlier commitments, or reduce uncertainty for a later action, yet the decoder must still finish the entire canvas before the last allowed call. A locally cautious reveal or repeated repair can therefore be sensible in isolation and still leave masks unresolved at the deadline. Phase 1 identifies the missing object as a common horizon-aware rule for comparing those uses of computation under one end-to-end call or latency cap.
+
+The closest systems expose the fragmentation. Saber (semanticscholar:4c95b1cef66cda6693fa6ab192698703dd3c070f) combines adaptive unmasking with quota-controlled rollback, but neither control is derived from calls remaining. MEDAL (semanticscholar:9ccbb820261b9141e46de121ed26ae3e3b16772b) searches over initial commitments and then falls back to ordinary confidence-guided decoding because trajectory-wide search is too costly. ADAS (arxiv:2606.10829v2) improves the compatibility of each newly revealed subset while deliberately inheriting stopping and remasking from the base sampler. The structural gap is therefore not another confidence score; it is a feasible mask-state path that makes progress and repair share the same cardinality constraint at every call.
+
+**Why now.** The gap is timely because recent work has exposed all of its ingredients without yet composing them: Saber (semanticscholar:4c95b1cef66cda6693fa6ab192698703dd3c070f, 2025-10) shows that training-free rollback can repair evolving commitments, Predict-then-Diffuse (semanticscholar:81f6858d2554b87fc3e639cdbef402a6e4656abb, 2026-05) makes compute budgeting explicit through response-length selection, and ADAS (arxiv:2606.10829v2, 2026-06) demonstrates stronger within-step subset selection. Open LLaDA-8B and Dream-7B checkpoints expose the per-position probabilities needed for a cross-status ranking, while modern GPU sorting and mask-update kernels make the projection cheap relative to a denoiser forward. These conditions make it practical to test whether remaining budget can control the canvas trajectory online, without retraining the model or introducing an auxiliary scorer.
+
+**Why prior work stopped.**
+- `semanticscholar:4c95b1cef66cda6693fa6ab192698703dd3c070f` (arXiv 2025-10): Saber coupled history-adaptive unmasking with confidence-drop backtracking to accelerate decoding while repairing weak earlier commitments.
+  - _Did not do_: It did not derive both the next committed-set size and the amount of repair from one calls-remaining constraint that guarantees a fully committed canvas after exactly B forwards.
+  - _Structural reason_: Its design retained two independent control surfaces, a historical confidence threshold and a per-step rollback quota, rather than representing the deadline as a prescribed cardinality path.
+- `semanticscholar:9ccbb820261b9141e46de121ed26ae3e3b16772b` (Conference of the European Chapter of the Association for Computational Linguistics 2025): MEDAL used Monte Carlo tree search with confidence filtering and information-gain rewards to choose a higher-quality initialization before diffusion decoding.
+  - _Did not do_: It did not allocate search or repair decisions across the full remaining trajectory, nor did it permit later commitments to re-enter the masked set under a hard global budget.
+  - _Structural reason_: Full-trajectory tree search has prohibitive rollout and branching cost, so the method limits search to initialization and returns to a confidence heuristic afterward.
+- `arxiv:2606.10829v2` (arXiv 2026-06): ADAS discounted confidence by attention dependencies to greedily construct a more compatible subset of currently masked positions for each reveal step.
+  - _Did not do_: It did not rank committed and masked positions together, remask weak commitments, or make subset cardinality a function of the remaining deadline.
+  - _Structural reason_: Its scope is a one-step admissible-set improvement layered onto an existing sampler, so stopping, remasking, and horizon allocation remain outside the mechanism.
+
+**What changes when the gap closes.** Closing the gap yields an explicit feasibility statement: for any valid length L and positive call budget B, the decoder has exactly zero masks after B forwards even when it repairs earlier commitments. It also makes terminal quality under a matched call cap a property of one transition rule rather than separately tuned progress and rollback schedules, allowing Saber and ADAS to be compared or replaced at identical B. Predict-then-Diffuse could likewise use the projection after choosing a canvas length, turning its one-time budget decision into an online deadline-conditioned decoding path.
+
+## Method
+**Pipeline.** DPP first converts a direct call cap, or a profiled wall-clock target, into a positive integer budget B and initializes an all-mask canvas of length L. Before each frozen-denoiser forward, calls remaining determine the exact committed-set size required afterward. The forward scores both new proposals at masked positions and retained tokens at committed positions; a deterministic top-K projection then commits, retains, or remasks positions in one update. Repeating this transition follows the prescribed mask-count path to a fully committed output, while logging exchanges and terminal metrics to distinguish repair value from guaranteed completion.
+
+### Background
+
+1. **Resolve the decoding budget** (`S1`)
+   - Represent each run by immutable metadata containing the checkpoint, tokenizer, target length L, maximum supported length $L_{max},$ call horizon B, and optional time target T. Parse a direct B as a positive integer. When T is supplied, hold the deployment stack, batch size of one, and input length L fixed; perform five unrecorded warm-up iterations, synchronize the device immediately before and after each measured forward-plus-sort operation on 32 held-out prompts, take the maximum observed duration as $\tau _{max},$ and derive B with the stated floor rule. Validate $B \ge  1$ and $1 \le  L \le  L_{max}.$ The rule that assigns L to a prompt and interprets an early End of Sequence (EOS) token must be fixed before decoding. 【author decision: choose a reference-free L policy and decide whether the suffix after EOS is retained, padded, or ignored only at detokenization】 Initialize $token_{ids}$ as an L-element array filled with $\mathit{mask\_token\_id},$ committed as an L-element false array, $U_{B}$ as the empty set, $x_{B}$ as their canvas view, and b as B.
+   - _Why:_ It turns either a model-call cap or a profiled latency target into the finite horizon required by every later transition, while refusing infeasible B<1 cases.
+2. **Run one frozen denoiser forward** (`S3`)
+   - Materialize $x_{b}$ as a batch-one $input_{ids}$ tensor: committed positions contain their current token identifiers and every other position contains $\mathit{mask\_token\_id}$; mark all L positions as valid in the attention mask. Put the selected LLaDA-8B or Dream-7B checkpoint in evaluation mode, disable gradients, and leave its parameters unchanged. Use the checkpoint's reference inference wrapper for any required special-token or diffusion-time arguments; if a time or noise argument is mandatory, take the reference sampler's value for the canvas's current mask fraction and never inject B or b separately. Execute exactly one forward call and require a finite logits tensor of shape [1, L, V], where V is vocabulary size. Convert each position's logits to a float32 normalized vocabulary distribution $p_{i}$ and expose that single result to S4 without another model invocation.
+   - _Why:_ All commit and repair evidence must come from the same allowed model call, with no auxiliary network, oracle, or extra probe.
+3. **Measure completion and exchange value** (`S8`)
+   - For each prespecified tuple of prompt, checkpoint, L policy, and B, run Deadline Path Projection (DPP), its pinned no-exchange control, and the official Saber, Attention-Discounted Adaptive Sampler (ADAS), Fast-dLLM, and Top-k implementations with the same tokenizer, checkpoint weights, initial canvas, and maximum of B forwards. Implement the pinned control by carrying every member of $U_{b}$ into $U_{b-1}$ and filling only the required cardinality increase with the highest-supported masked proposals, using the same tie rule; this forces $r_{b}=0$ without altering the path. Use LLaDA-8B on HumanEval with B in {16, 32, 64} as the primary grid. Apply each baseline's published default settings except for the shared B and L policy, stop it after B forwards, and count any remaining mask as an incomplete failure rather than granting extra calls. For every trace, store method, checkpoint, $prompt_{id},$ B, L, per-step $r_{b},$ terminal mask count, decoded tokens, correctness, and synchronized latency from the initialized canvas through detokenization. Compute HumanEval Pass@1 with its official execution harness; use exact match for tasks whose official metric is exact match. Report completion rate, quality, and latency per method and B, with paired prompt-level bootstrap confidence intervals using 10,000 resamples.
+   - _Why:_ Matched B and latency test the terminal claim, while forcing $r_{b}=0$ distinguishes quality due to budget-neutral repair from quality due only to the completion path.
+
+### M1: Deadline path
+*Convert calls remaining into an exact committed-set cardinality and preserve the zero-mask terminal invariant.*
+
+4. **Set the next path cardinality** (`S2`)
+   - At the start of an iteration, require b to be an integer in [1, B] and evaluate the linked ceiling definition of the next mask count with exact integer arithmetic, avoiding floating-point rounding. Derive the complementary committed count $K_{b-1},$ then check $0 \le  m_{b-1} \le $ L, $0 \le  K_{b-1} \le $ L, and that $K_{b-1}$ is no smaller than the current committed count. Store a transition target record with source index b, destination index b-1, $m_{b-1},$ and $K_{b-1}$; later steps must consume this record rather than recomputing a threshold from confidence values.
+
+*The deadline path fixes the required mask and commitment counts after the current forward.*
+$$ m_{b-1}=\left\lceil \frac{L(b-1)}{B} \right\rceil,\qquad K_{b-1}=L-m_{b-1} \tag{1} $$
+
+   - _Why:_ The deterministic cardinality path reserves enough net progress to reach zero masks under any sequence of budget-neutral exchanges.
+5. **Advance along the deadline path** (`S7`)
+   - After S6 succeeds, replace the loop state with $x_{b-1}$ and $U_{b-1},$ then decrement b exactly once. If the new b is positive, enter S2 with that state; if it is zero, require $U_{0}$ to contain all L indices, require $token_{ids}$ to contain no $\mathit{mask\_token\_id},$ and require the accumulated trace to contain exactly B forward events. Detokenize $token_{ids}$ with the same checkpoint tokenizer, applying the length and EOS interpretation fixed in S1, and return both the full token sequence and recovered text together with the trace. Any failed invariant stops the run rather than silently filling or dropping positions.
+
+*Maintaining the path invariant yields a fully committed canvas at the deadline.*
+$$ |\{i:x_{b-1,i}=\mathtt{[MASK]}\}|=m_{b-1},\qquad m_0=0 \tag{2} $$
+
+   - _Why:_ Induction over the invariant from S2 and S6 provides exact terminal completion without restricting how many exchanges the ranking induces at intermediate calls.
+
+### M2: Cross-status projection
+*Score new proposals and old commitments together, then perform quota-free commit-repair exchanges inside the required set size.*
+
+6. **Score proposals and retained tokens together** (`S4`)
+   - From the single distribution table produced by S3, create exactly one candidate record for every position. For a masked position, choose $v_{i}$ by maximum probability, resolving an equal-probability vocabulary tie with the smaller token identifier, and set $s_{i}$ to its float32 log probability. For a committed position, keep its current token $z_{i}$ and set $s_{i}$ to that token's float32 log probability from the same forward. Each record has the schema $\{position_{index}, prior_{status}, \mathit{proposed\_token\_id},$ support}: $\mathit{proposed\_token\_id}$ is $v_{i}$ for a masked position and $z_{i}$ for a committed position; $prior_{status}$ is one of masked or committed. Permit negative infinity for a zero probability but reject any other non-finite support. This table, ordered by increasing position index, is the sole input to the cross-status selection.
+
+*One forward supplies comparable support for a masked proposal or the token already committed at each position.*
+$$ s_i=\begin{cases}\log p_i(v_i), & i\notin U_b,\ v_i=\arg\max_v p_i(v),\\ \log p_i(z_i), & i\in U_b.\end{cases} \tag{3} $$
+
+   - _Why:_ A common support scale is the interface that lets progress and repair compete inside one fixed-cardinality decision.
+7. **Project to the required committed set** (`S5`)
+   - Apply one stable lexicographic ordering to all L records: descending $s_{i}$ first and ascending position index second. Select the first $K_{b-1}$ records, including the defined edge cases of an empty selection when $K_{b-1}=0$ and all positions when $K_{b-1}=L.$ Define $U_{b-1}$ as their position-index set and also materialize an L-element Boolean selected mask for the update kernel. Assert that $U_{b-1}$ has exactly $K_{b-1}$ distinct indices. No status-specific quota, confidence threshold, or second ranking pass may modify membership after this selection.
+
+*The next committed set is the fixed-cardinality top-K selection across both statuses.*
+$$ U_{b-1}=\operatorname{TopK}_{i\in\{1,\ldots,L\}}(s_i;K_{b-1}) \tag{4} $$
+
+   - _Why:_ Fixed cardinality removes Saber's separate unmask threshold and rollback quota while leaving membership responsive to the current denoising observation.
+8. **Apply one commit-repair update** (`S6`)
+   - Construct $x_{b-1}$ atomically in a fresh L-position buffer initialized to $\mathit{mask\_token\_id}.$ For every index in $U_{b-1},$ copy $z_{i}$ from $x_{b}$ if the position was previously committed; otherwise write that masked position's proposal $v_{i}$ from S4. Positions outside $U_{b-1}$ remain masked, so a previous commitment outside the set is explicitly removed. Compute $r_{b}$ as the number of previously committed indices absent from $U_{b-1}$; also log the removed-index list, newly committed-index list, retained-index list, and net committed-count increase. Before publishing the state, assert that selected positions contain no mask token, unselected positions all contain $\mathit{mask\_token\_id},$ the committed Boolean array equals membership in $U_{b-1},$ its true count is $K_{b-1},$ and the mask count is exactly $m_{b-1}.$ Emit $x_{b-1}, U_{b-1}, r_{b},$ and the checked transition trace as one transaction.
+
+*Each discarded commitment is exchanged for one extra masked proposal in addition to mandatory net progress.*
+$$ r_b=|U_b\setminus U_{b-1}|,\qquad |U_{b-1}\setminus U_b|=r_b+(K_{b-1}-K_b) \tag{5} $$
+
+   - _Why:_ Combining all status changes in one kernel makes each repair an exchange within mandatory progress and exposes $r_{b}$ as the load-bearing intervention variable.
+
+## Reviewer concerns
+- **Concern [non_blocking]:** Paper-pointed threat: semanticscholar:4c95b1cef66cda6693fa6ab192698703dd3c070f $(lit_{table}).$ Saber is the closest retrieved competitor because it already combines adaptive unmasking with backtracking-enhanced remasking to repair irreversible early commitments in a training-free diffusion-language-model sampler. The candidate's contribution therefore stands or falls on whether one fixed-cardinality cross-status projection, at identical denoiser-call and measured-latency budgets, achieves better terminal Pass@1 and guaranteed zero masks than Saber's separately controlled unmask threshold and rollback quota; the retrieved description does not itself disclose that exact unified projection.
+  - **Response:** The defense is anchored in $core_{mechanism},$ which fixes $U_{b-1}$ with one calls-remaining cardinality across both masked and committed positions, and in $falsification_{prediction},$ which requires matched B, measured latency, zero unfinished masks, and a Pass@1 gain over Saber. The Phase $3.2 verdict_{rationale}$ treated this as non-blocking because the no-exchange control and matched-call baselines isolate the unified projection; failure to beat Saber on terminal quality would nevertheless falsify the claimed advantage.
+- **Concern [non_blocking]:** Un-retrieved mechanism family flagged by the audit (parametric knowledge, not in the retrieved pool): Mask-Predict/MaskGIT-style confidence-based iterative refinement and low-confidence token remasking; a scoop-check should query "iterative mask-predict low-confidence remasking" and "MaskGIT confidence schedule token remasking" before investing. — novelty vs this family is UNVERIFIED; run a targeted scoop-check on that vocabulary before investing.
+  - **Response:** A targeted scoop-check must establish that Mask-Predict/MaskGIT-style methods do not already rank masked proposals and existing commitments in one remaining-budget cardinality projection that permits remasking while guaranteeing zero masks at exactly B calls. If that exact combination is already disclosed, the proposed mechanism-level delta does not survive merely by using different deadline vocabulary.
+

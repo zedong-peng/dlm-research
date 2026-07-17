@@ -1,0 +1,18 @@
+.DS_Store
+
+# LaTeX intermediate files
+*.aux
+*.blg
+*.fdb_latexmk
+*.fls
+*.lof
+*.log
+*.lot
+*.out
+*.run.xml
+*.synctex.gz
+*.toc
+
+# Editor-local state
+.idea/
+.vscode/

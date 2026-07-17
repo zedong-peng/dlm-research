@@ -1,0 +1,316 @@
+{
+  "intake": {
+    "domain": "Training-free inference-time control for masked diffusion language models under hard model-call or latency budgets",
+    "venue": "ICLR, ICML, or NeurIPS",
+    "time": "approximately five months for a first full falsification campaign",
+    "data": [
+      "GSM8K",
+      "MATH500",
+      "HumanEval",
+      "MBPP",
+      "LiveCodeBench",
+      "open pretrained masked diffusion language models such as LLaDA-8B and Dream-7B"
+    ],
+    "compute": "80GB-class GPUs (A100/H100), up to 8 concurrent (one node), ≈150 GPU-days over 5 months, plus ~$10k inference/API budget for the full falsification campaign",
+    "expertise": "masked-diffusion decoding, inference systems, combinatorial optimization, and empirical quality-latency evaluation",
+    "preference": "both",
+    "baseline": "training-free Top-k, Fast-dLLM, and EB-Sampler decoding, plus Saber, MEDAL, and ADAS as the closest adaptive or search-based methods",
+    "limitation": "Existing inference controllers choose token positions using local confidence, dependency, or backtracking heuristics while the number and placement of denoising evaluations are controlled separately, so they cannot allocate a fixed end-to-end call or latency budget jointly across commitment, correction, and further inference.",
+    "contribution_type": "method",
+    "_inferred_fields": [
+      "venue",
+      "time",
+      "data",
+      "compute",
+      "expertise",
+      "preference",
+      "baseline",
+      "contribution_type"
+    ]
+  },
+  "bottleneck_statement": "Under a hard model-call or latency cap, current training-free masked-diffusion decoders cannot compare the terminal-quality value of competing uses of the next unit of computation: committing a set of masked positions, revisiting earlier commitments, or spending additional evaluations to reduce uncertainty before acting. Saber dynamically chooses an unmasking set and a rollback set, but its history-based confidence threshold and per-step rollback quota are not conditioned on the remaining end-to-end budget (semanticscholar:4c95b1cef66cda6693fa6ab192698703dd3c070f); MEDAL assigns search effort to MCTS initialization and then falls back to confidence heuristics because full-trajectory search is prohibitive (semanticscholar:9ccbb820261b9141e46de121ed26ae3e3b16772b); and ADAS improves within-step subset ranking while explicitly leaving the base sampler's stopping rule unchanged (arxiv:2606.10829v2). Consequently, locally sensible actions can exhaust calls on easy commitments, initialization rollouts, or repeated recovery and leave structurally decisive positions unresolved when the deadline arrives, so the reported quality-speed points remain products of separately tuned schedules rather than prompt-adaptive decisions under one shared budget.",
+  "closest_adjacent": [
+    {
+      "paper_id": "semanticscholar:4c95b1cef66cda6693fa6ab192698703dd3c070f",
+      "is_anchor": true,
+      "summary_and_residue": "Saber combines Adaptive Acceleration via Dynamic Unmasking, whose threshold follows the historical confidence of unmasked tokens, with Backtracking-Enhanced Remasking, which rolls back a per-step quota of tokens having the largest confidence drops. It does not choose the unmasking set size, rollback quota, or any extra denoising effort against a shared remaining NFE or latency horizon, so calibration shifts and repeated backtracking can change cost without an end-to-end terminal-quality allocation rule."
+    },
+    {
+      "paper_id": "semanticscholar:9ccbb820261b9141e46de121ed26ae3e3b16772b",
+      "is_anchor": false,
+      "summary_and_residue": "MEDAL formulates position-token commitments as MCTS actions, uses confidence filtering and information-gain rewards, and spends a tunable rollout budget to select an initialization before ordinary diffusion decoding. Because full-trajectory MCTS is computationally prohibitive, the search stops after a fixed initialization length and the remaining positions are handled by confidence-guided unmasking, without remasking or allocation of search effort across the remaining trajectory."
+    },
+    {
+      "paper_id": "arxiv:2606.10829v2",
+      "is_anchor": false,
+      "summary_and_residue": "ADAS casts each parallel reveal as dependency-aware subset construction, greedily discounting candidates that attend to uncertain selected positions while retaining Top-k, Fast-dLLM, or EB-Sampler admissibility. Its utility is a one-step surrogate with no approximation guarantee, and the method deliberately leaves stopping, remasking, and horizon-wide denoising effort to the base sampler."
+    }
+  ],
+  "what_phase_0_did_not_address": [
+    "Under a hard deadline, no retrieved frontier leaf ensures that unanticipated conservative steps or recovery steps do not consume the calls needed to finish the remaining masked positions with the best attainable terminal sequence quality.",
+    "No retrieved frontier leaf supplies a common horizon-aware value for the competing uses of one additional unit of latency: resolving currently masked positions, reconsidering an earlier commitment, or reducing uncertainty before acting.",
+    "No retrieved frontier leaf tests whether the remaining global inference budget must stay an external stopping parameter rather than become part of the state used by every token-action decision."
+  ],
+  "method_lineage": {
+    "line": "Inference control for iterative masked-token refinement and masked-diffusion decoding",
+    "nodes": [
+      {
+        "node_id": "n0",
+        "method": "Mask-Predict iterative conditional masked decoding",
+        "move": "Introduced parallel iterative refinement by repeatedly predicting masked positions and re-masking low-confidence tentative tokens.",
+        "parent": null,
+        "provenance": "parametric",
+        "age_band": "4-8y",
+        "confidence": "high",
+        "residual_problem": "The procedure was a heuristic conditional-refinement decoder rather than a probabilistic discrete-diffusion generative process.",
+        "is_frontier_leaf": false,
+        "is_collateral": false
+      },
+      {
+        "node_id": "n1",
+        "method": "Absorbing-state discrete diffusion (D3PM-style masking)",
+        "move": "Embedded masking and denoising in a discrete Markov corruption/reverse-process formulation.",
+        "parent": "n0",
+        "provenance": "parametric",
+        "age_band": "4-8y",
+        "confidence": "high",
+        "residual_problem": "The general formulation left language-scale parameterization and practical masked-language-model sampling inefficient and schedule-sensitive.",
+        "is_frontier_leaf": false,
+        "is_collateral": false
+      },
+      {
+        "node_id": "n2",
+        "method": "Likelihood-based masked diffusion language modeling with iterative parallel decoding",
+        "move": "Simplified absorbing diffusion into scalable masked-token prediction and made pretrained language-scale parallel denoising practical.",
+        "parent": "n1",
+        "provenance": "parametric",
+        "age_band": "2-4y",
+        "confidence": "medium",
+        "residual_problem": "Inference still exposed a speed-quality trade-off governed by externally chosen iteration schedules and local token statistics rather than terminal utility under a remaining budget.",
+        "is_frontier_leaf": false,
+        "is_collateral": false
+      },
+      {
+        "node_id": "n3",
+        "method": "FreeCache plus AR Guided Diffusion",
+        "move": "Reused temporally stable KV projections and accepted parallel diffusion proposals when they agreed with a frozen autoregressive guide.",
+        "parent": "n2",
+        "provenance": "retrieved:semanticscholar:d116105534980a0e5619c98a66a3b101ea48ed2a",
+        "age_band": "0-2y",
+        "confidence": "high",
+        "residual_problem": "An extra guide call and approximate cache have prompt-dependent cost and error, while commitments are not remasked or selected against a shared remaining latency budget.",
+        "is_frontier_leaf": true,
+        "is_collateral": false
+      },
+      {
+        "node_id": "n4",
+        "method": "Saber adaptive unmasking and backtracking-enhanced remasking",
+        "move": "Adapted the number of commitments to evolving confidence and reversed prior commitments whose confidence degraded with new context.",
+        "parent": "n2",
+        "provenance": "retrieved:semanticscholar:4c95b1cef66cda6693fa6ab192698703dd3c070f",
+        "age_band": "0-2y",
+        "confidence": "high",
+        "residual_problem": "Under a hard deadline, history-based thresholds and per-step rollback quotas can consume unpredictable calls and leave remaining masks unfinished because neither is tied to the remaining horizon.",
+        "is_frontier_leaf": true,
+        "is_collateral": false
+      },
+      {
+        "node_id": "n5",
+        "method": "MEDAL confidence-guided MCTS initialization",
+        "move": "Reframed early position-token commitments as tree-search actions rewarded by information gain, trading more initialization rollouts for quality without retraining.",
+        "parent": "n2",
+        "provenance": "retrieved:semanticscholar:9ccbb820261b9141e46de121ed26ae3e3b16772b",
+        "age_band": "0-2y",
+        "confidence": "high",
+        "residual_problem": "The rollout budget is spent only at initialization; full-trajectory search is prohibitive and later actions ignore the marginal terminal value of remaining calls.",
+        "is_frontier_leaf": true,
+        "is_collateral": false
+      },
+      {
+        "node_id": "n6",
+        "method": "ADAS dependency-aware greedy reveal selection",
+        "move": "Replaced independent confidence ranking with an attention-discounted marginal utility for the jointly revealed subset.",
+        "parent": "n2",
+        "provenance": "retrieved:arxiv:2606.10829v2",
+        "age_band": "0-2y",
+        "confidence": "high",
+        "residual_problem": "Subset ranking remains a one-step greedy decision while the base sampler separately owns stopping, remasking, and the amount of effort spent before the deadline.",
+        "is_frontier_leaf": true,
+        "is_collateral": false
+      },
+      {
+        "node_id": "n7",
+        "method": "Masked diffusion decoding as x-prediction flow",
+        "move": "Replaced binary per-step commitments with revisable continuous embedding progress and an asynchronous token-wise update policy.",
+        "parent": "n2",
+        "provenance": "retrieved:arxiv:2606.29066v1",
+        "age_band": "0-2y",
+        "confidence": "high",
+        "residual_problem": "The learned step-size policy requires alignment and reinforcement learning, and its progress decisions are not constrained by an explicit hard model-call or latency budget.",
+        "is_frontier_leaf": true,
+        "is_collateral": false
+      },
+      {
+        "node_id": "c0",
+        "method": "Finite-horizon constrained Markov decision processes and stochastic dynamic programming",
+        "move": "Made remaining resources part of the state and optimized sequential actions for terminal reward under a global constraint.",
+        "parent": null,
+        "provenance": "parametric",
+        "age_band": ">16y",
+        "confidence": "high",
+        "residual_problem": "Exact value functions are intractable when states are full token distributions and actions are combinatorial reveal/remask sets.",
+        "is_frontier_leaf": false,
+        "is_collateral": true
+      },
+      {
+        "node_id": "c1",
+        "method": "Submodular maximization under cardinality or knapsack constraints",
+        "move": "Turned interacting item selection into marginal-gain set construction with explicit resource limits and, under structural assumptions, approximation guarantees.",
+        "parent": null,
+        "provenance": "parametric",
+        "age_band": ">16y",
+        "confidence": "high",
+        "residual_problem": "The classical object is a static set decision and does not by itself cover revisable actions whose utilities change after denoising observations.",
+        "is_frontier_leaf": false,
+        "is_collateral": true
+      },
+      {
+        "node_id": "c2",
+        "method": "UCT-style Monte Carlo tree search",
+        "move": "Allocated a simulation budget adaptively across trajectories by balancing exploitation and exploration.",
+        "parent": null,
+        "provenance": "parametric",
+        "age_band": ">16y",
+        "confidence": "high",
+        "residual_problem": "Repeated full-model rollouts make horizon-wide application too expensive at diffusion-language-model scale, as the MEDAL frontier leaf also observes.",
+        "is_frontier_leaf": false,
+        "is_collateral": true
+      },
+      {
+        "node_id": "c3",
+        "method": "Adaptive computation time and conditional halting",
+        "move": "Learned when an input or recurrent state had received enough computation instead of assigning a fixed number of updates.",
+        "parent": null,
+        "provenance": "parametric",
+        "age_band": "8-16y",
+        "confidence": "high",
+        "residual_problem": "Classical halting controls compute depth but does not jointly choose interacting token commitments and reversals without retraining.",
+        "is_frontier_leaf": false,
+        "is_collateral": true
+      },
+      {
+        "node_id": "c4",
+        "method": "Value-of-computation metareasoning",
+        "move": "Compared optional computations by expected improvement in downstream decision utility net of computation cost.",
+        "parent": null,
+        "provenance": "parametric",
+        "age_band": ">16y",
+        "confidence": "high",
+        "residual_problem": "It requires calibrated, cheap estimates of computation value that are not directly available from masked-diffusion token confidence.",
+        "is_frontier_leaf": false,
+        "is_collateral": true
+      }
+    ],
+    "notes": "Retrieved nodes are grounded recent-frontier evidence; parametric nodes are awareness-only ancestry or collateral families and are not prior-art citations. The lineage is shallow because iterative masked decoding is young: Mask-Predict, absorbing discrete diffusion, and scalable masked diffusion are included only where the move is known. Older families checked for regression were constrained dynamic programming, budgeted set selection, tree search, adaptive halting, and value-of-computation metareasoning; no distinct pre-window masked-token controller jointly covering commitment, reversal, and hard global inference budgets was known. Collateral nodes are not gap sites or shared ancestors."
+  },
+  "domain_pattern_distribution": {
+    "n_total": 41,
+    "n_on_topic": 29,
+    "patterns": [
+      {
+        "pattern_id": "assumption_audit_and_pivot",
+        "count": 4,
+        "share": 0.14,
+        "saturation_band": "mid_frequency"
+      },
+      {
+        "pattern_id": "architectural_operator_substitution",
+        "count": 8,
+        "share": 0.28,
+        "saturation_band": "mid_frequency"
+      },
+      {
+        "pattern_id": "generative_process_redesign",
+        "count": 8,
+        "share": 0.28,
+        "saturation_band": "mid_frequency"
+      },
+      {
+        "pattern_id": "controlled_diagnostic_design",
+        "count": 2,
+        "share": 0.07,
+        "saturation_band": "mid_frequency"
+      },
+      {
+        "pattern_id": "unify_into_shared_representation",
+        "count": 2,
+        "share": 0.07,
+        "saturation_band": "mid_frequency"
+      },
+      {
+        "pattern_id": "reframe_as_solvable_object",
+        "count": 3,
+        "share": 0.1,
+        "saturation_band": "mid_frequency"
+      },
+      {
+        "pattern_id": "self_supervised_signal_engineering",
+        "count": 0,
+        "share": 0.0,
+        "saturation_band": "untested"
+      },
+      {
+        "pattern_id": "structural_prior_encoding",
+        "count": 4,
+        "share": 0.14,
+        "saturation_band": "mid_frequency"
+      },
+      {
+        "pattern_id": "algebraic_equivalence_unification",
+        "count": 0,
+        "share": 0.0,
+        "saturation_band": "untested"
+      },
+      {
+        "pattern_id": "heterogeneous_decomposition",
+        "count": 5,
+        "share": 0.17,
+        "saturation_band": "mid_frequency"
+      },
+      {
+        "pattern_id": "decompose_and_delegate",
+        "count": 2,
+        "share": 0.07,
+        "saturation_band": "mid_frequency"
+      },
+      {
+        "pattern_id": "relax_discrete_search_to_continuous",
+        "count": 1,
+        "share": 0.03,
+        "saturation_band": "untested"
+      },
+      {
+        "pattern_id": "adapt_via_conditioning",
+        "count": 1,
+        "share": 0.03,
+        "saturation_band": "untested"
+      },
+      {
+        "pattern_id": "characterize_limit_then_surpass",
+        "count": 0,
+        "share": 0.0,
+        "saturation_band": "untested"
+      },
+      {
+        "pattern_id": "targeted_self_supervised_objective",
+        "count": 0,
+        "share": 0.0,
+        "saturation_band": "untested"
+      }
+    ],
+    "saturation_threshold_saturated": 0.5,
+    "saturation_threshold_untested_count": 1,
+    "notes": "architectural_operator_substitution and generative_process_redesign tie as the most-used patterns, while the closest adaptive-redesign papers still stop at local thresholds, fixed quotas, or isolated search phases rather than a shared horizon-wide budget."
+  },
+  "state": "proceed"
+}

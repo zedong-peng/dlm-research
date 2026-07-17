@@ -1,0 +1,35 @@
+{
+  "selected_gaps": [
+    {
+      "gap": "Under a hard deadline, no retrieved frontier leaf ensures that unanticipated conservative steps or recovery steps do not consume the calls needed to finish the remaining masked positions with the best attainable terminal sequence quality.",
+      "chosen_pattern_id": "generative_process_redesign",
+      "anchor_alternates": [],
+      "companion_pattern": null,
+      "companion_rationale": "",
+      "selection_rationale": "This method-shaped gap is the most load-bearing because a decoder that can miss the deadline cannot make a credible quality claim under a hard call or latency budget. Generative process redesign closes it by making the native mask-state conditioning path a function of calls remaining, so commitment and repair share every mandatory denoiser evaluation instead of consuming separately scheduled recovery calls; unlike the occupied constrained-DP, static-knapsack, MCTS, adaptive-halting, and value-of-computation nodes, the artifact is a frozen-DLM mask transition rather than a generic resource allocator."
+    },
+    {
+      "gap": "No retrieved frontier leaf tests whether the remaining global inference budget must stay an external stopping parameter rather than become part of the state used by every token-action decision.",
+      "chosen_pattern_id": "generative_process_redesign",
+      "anchor_alternates": [],
+      "companion_pattern": null,
+      "companion_rationale": "",
+      "selection_rationale": "This is a coherent sibling under a shared-object thread because the same budget-indexed mask state that guarantees completion is also the interface through which every retain, commit, and remask decision reads the remaining horizon. Generative process redesign directly promotes that inherited external schedule into a first-class conditioning variable while keeping the pretrained denoiser fixed."
+    }
+  ],
+  "coherence_thread_type": "shared_object",
+  "deliverable_coverage": "method - anchor gap -> generative_process_redesign yields a runnable training-free mask-state transition that completes in exactly the allowed denoiser calls while permitting budget-neutral repair.",
+  "pattern_saturation": {
+    "generative_process_redesign": {
+      "share": 0.28,
+      "saturation_band": "mid_frequency",
+      "selection_note": ""
+    }
+  },
+  "deferred_gaps": [
+    {
+      "gap": "No retrieved frontier leaf supplies a common horizon-aware value for the competing uses of one additional unit of latency: resolving currently masked positions, reconsidering an earlier commitment, or reducing uncertainty before acting.",
+      "reason": "Deferred because this candidate removes separate recovery and probe calls through one coupled mask transition; a calibrated value for optional extra computation would require a distinct paper and would recreate the rejected heuristic-selector risk."
+    }
+  ]
+}

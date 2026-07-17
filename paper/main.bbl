@@ -1,0 +1,215 @@
+\begin{thebibliography}{32}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Amin et~al.(2025)Amin, Gruver, and Wilson]{amin2025scud}
+Amin, A.~N., Gruver, N., and Wilson, A.~G.
+\newblock Why masking diffusion works: Condition on the jump schedule for
+  improved discrete diffusion.
+\newblock In \emph{Advances in Neural Information Processing Systems}, 2025.
+
+\bibitem[Arriola et~al.(2025)Arriola, Gokaslan, Chiu, Yang, Qi, Han, Sahoo, and
+  Kuleshov]{arriola2025block}
+Arriola, M., Gokaslan, A., Chiu, J.~T., Yang, Z., Qi, Z., Han, J., Sahoo,
+  S.~S., and Kuleshov, V.
+\newblock Block diffusion: Interpolating between autoregressive and diffusion
+  language models.
+\newblock In \emph{International Conference on Learning Representations}, 2025.
+
+\bibitem[Austin et~al.(2021)Austin, Johnson, Ho, Tarlow, and van~den
+  Berg]{austin2021d3pm}
+Austin, J., Johnson, D.~D., Ho, J., Tarlow, D., and van~den Berg, R.
+\newblock Structured denoising diffusion models in discrete state-spaces.
+\newblock In \emph{Advances in Neural Information Processing Systems}, 2021.
+
+\bibitem[Campbell et~al.(2022)Campbell, Benton, De~Bortoli, Rainforth,
+  Deligiannidis, and Doucet]{campbell2022continuous}
+Campbell, A., Benton, J., De~Bortoli, V., Rainforth, T., Deligiannidis, G., and
+  Doucet, A.
+\newblock A continuous time framework for discrete denoising models.
+\newblock \emph{arXiv preprint arXiv:2205.14987}, 2022.
+
+\bibitem[Chang et~al.(2022)Chang, Zhang, Jiang, Liu, and
+  Freeman]{chang2022maskgit}
+Chang, H., Zhang, H., Jiang, L., Liu, C., and Freeman, W.~T.
+\newblock Maskgit: Masked generative image transformer.
+\newblock In \emph{Proceedings of the IEEE/CVF Conference on Computer Vision
+  and Pattern Recognition}, 2022.
+
+\bibitem[Cheng et~al.(2026)Cheng, Jia, Li, Yang, Guo, and Hu]{cheng2026length}
+Cheng, Z., Jia, R., Li, J., Yang, G.-W., Guo, M.-H., and Hu, S.-M.
+\newblock Improving variable-length generation in diffusion language models via
+  length regularization.
+\newblock \emph{arXiv preprint arXiv:2602.07546}, 2026.
+
+\bibitem[Dao \& Gu(2024)Dao and Gu]{dao2024mamba2}
+Dao, T. and Gu, A.
+\newblock Transformers are {SSM}s: Generalized models and efficient algorithms
+  through structured state space duality.
+\newblock In \emph{Proceedings of the 41st International Conference on Machine
+  Learning}, 2024.
+
+\bibitem[Davis et~al.(2024)Davis, Kessler, Petrache, Ceylan, Bronstein, and
+  Bose]{davis2024fisher}
+Davis, O., Kessler, S., Petrache, M., Ceylan, I.~I., Bronstein, M., and Bose,
+  A.~J.
+\newblock Fisher flow matching for generative modeling over discrete data.
+\newblock In \emph{Advances in Neural Information Processing Systems}, 2024.
+
+\bibitem[Feng et~al.(2025)Feng, Geng, Guan, Wu, Wang, and He]{feng2025theory}
+Feng, G., Geng, Y., Guan, J., Wu, W., Wang, L., and He, D.
+\newblock Theoretical benefit and limitation of diffusion language model.
+\newblock \emph{arXiv preprint arXiv:2502.09622}, 2025.
+
+\bibitem[Gat et~al.(2024)Gat, Remez, Shaul, Kreuk, Chen, Synnaeve, Adi, and
+  Lipman]{gat2024dfm}
+Gat, I., Remez, T., Shaul, N., Kreuk, F., Chen, R. T.~Q., Synnaeve, G., Adi,
+  Y., and Lipman, Y.
+\newblock Discrete flow matching.
+\newblock In \emph{Advances in Neural Information Processing Systems}, 2024.
+
+\bibitem[Ghazvininejad et~al.(2019)Ghazvininejad, Levy, Liu, and
+  Zettlemoyer]{ghazvininejad2019maskpredict}
+Ghazvininejad, M., Levy, O., Liu, Y., and Zettlemoyer, L.
+\newblock Mask-predict: Parallel decoding of conditional masked language
+  models.
+\newblock In \emph{Proceedings of EMNLP-IJCNLP}, 2019.
+
+\bibitem[Gong et~al.(2023)Gong, Li, Feng, Wu, and Kong]{gong2023diffuseq}
+Gong, S., Li, M., Feng, J., Wu, Z., and Kong, L.
+\newblock Diffuseq: Sequence to sequence text generation with diffusion models.
+\newblock In \emph{International Conference on Learning Representations}, 2023.
+
+\bibitem[Gu \& Dao(2024)Gu and Dao]{gu2024mamba}
+Gu, A. and Dao, T.
+\newblock Mamba: Linear-time sequence modeling with selective state spaces.
+\newblock In \emph{Conference on Language Modeling}, 2024.
+
+\bibitem[Gwak et~al.(2026)]{gwak2026acceleration}
+Gwak, D. et~al.
+\newblock Accelerating masked diffusion large language models: A survey of
+  efficient inference techniques.
+\newblock \emph{arXiv preprint arXiv:2607.12829}, 2026.
+
+\bibitem[Han et~al.(2023)Han, Kumar, and Tsvetkov]{han2023ssdlm}
+Han, X., Kumar, S., and Tsvetkov, Y.
+\newblock {SSD-LM}: Semi-autoregressive simplex-based diffusion language model
+  for text generation and modular control.
+\newblock In \emph{Proceedings of the 61st Annual Meeting of the Association
+  for Computational Linguistics}, 2023.
+
+\bibitem[He et~al.(2025)He, Renz, Cao, and Geiger]{he2025mdpo}
+He, H., Renz, K., Cao, Y., and Geiger, A.
+\newblock Mdpo: Overcoming the training-inference divide of masked diffusion
+  language models.
+\newblock \emph{arXiv preprint arXiv:2508.13148}, 2025.
+
+\bibitem[He et~al.(2023)He, Sun, Wang, Huang, and Qiu]{he2023diffusionbert}
+He, Z., Sun, T., Wang, K., Huang, X., and Qiu, X.
+\newblock Diffusionbert: Improving generative masked language models with
+  diffusion models.
+\newblock In \emph{Proceedings of the 61st Annual Meeting of the Association
+  for Computational Linguistics}, 2023.
+
+\bibitem[Ho et~al.(2020)Ho, Jain, and Abbeel]{ho2020ddpm}
+Ho, J., Jain, A., and Abbeel, P.
+\newblock Denoising diffusion probabilistic models.
+\newblock In \emph{Advances in Neural Information Processing Systems}, 2020.
+
+\bibitem[Li et~al.(2022)Li, Thickstun, Gulrajani, Liang, and
+  Hashimoto]{li2022diffusionlm}
+Li, X.~L., Thickstun, J., Gulrajani, I., Liang, P., and Hashimoto, T.~B.
+\newblock Diffusion-lm improves controllable text generation.
+\newblock In \emph{Advances in Neural Information Processing Systems}, 2022.
+
+\bibitem[Lipman et~al.(2023)Lipman, Chen, Ben-Hamu, Nickel, and
+  Le]{lipman2023flow}
+Lipman, Y., Chen, R. T.~Q., Ben-Hamu, H., Nickel, M., and Le, M.
+\newblock Flow matching for generative modeling.
+\newblock In \emph{International Conference on Learning Representations}, 2023.
+
+\bibitem[Lou et~al.(2024)Lou, Meng, and Ermon]{lou2024sedd}
+Lou, A., Meng, C., and Ermon, S.
+\newblock Discrete diffusion modeling by estimating the ratios of the data
+  distribution.
+\newblock In \emph{Proceedings of the 41st International Conference on Machine
+  Learning}, 2024.
+
+\bibitem[Lu et~al.(2022)Lu, Zhou, Bao, Chen, Li, and Zhu]{lu2022dpmsolver}
+Lu, C., Zhou, Y., Bao, F., Chen, J., Li, C., and Zhu, J.
+\newblock Dpm-solver: A fast ode solver for diffusion probabilistic model
+  sampling in around 10 steps.
+\newblock In \emph{Advances in Neural Information Processing Systems}, 2022.
+
+\bibitem[Nie et~al.(2025)Nie, Zhu, You, Zhang, Ou, Hu, Zhou, Lin, Wen, and
+  Li]{nie2025llada}
+Nie, S., Zhu, F., You, Z., Zhang, X., Ou, J., Hu, J., Zhou, J., Lin, Y., Wen,
+  J.-R., and Li, C.
+\newblock Large language diffusion models.
+\newblock \emph{arXiv preprint arXiv:2502.09992}, 2025.
+
+\bibitem[Nie et~al.(2026)Nie, Min, Xu, Huang, Song, Shan, Lin, Zhao, Li, and
+  Wen]{nie2026illada}
+Nie, S., Min, Q., Xu, S., Huang, Z., Song, Y., Shan, Y., Lin, Y., Zhao, W.~X.,
+  Li, C., and Wen, J.-R.
+\newblock Improved large language diffusion models.
+\newblock \emph{arXiv preprint arXiv:2606.25331}, 2026.
+
+\bibitem[Ren et~al.(2025)Ren, Chen, Zhu, Guo, Chen, Rotskoff, Tao, and
+  Ying]{ren2025fastsolvers}
+Ren, Y., Chen, H., Zhu, Y., Guo, W., Chen, Y., Rotskoff, G.~M., Tao, M., and
+  Ying, L.
+\newblock Fast solvers for discrete diffusion models: Theory and applications
+  of high-order algorithms.
+\newblock In \emph{Advances in Neural Information Processing Systems}, 2025.
+
+\bibitem[Sahoo et~al.(2024)Sahoo, Arriola, Schiff, Gokaslan, Marroquin, Chiu,
+  Rush, and Kuleshov]{sahoo2024mdlm}
+Sahoo, S.~S., Arriola, M., Schiff, Y., Gokaslan, A., Marroquin, E., Chiu,
+  J.~T., Rush, A.~M., and Kuleshov, V.
+\newblock Simple and effective masked diffusion language models.
+\newblock In \emph{Advances in Neural Information Processing Systems}, 2024.
+
+\bibitem[Sahoo et~al.(2026)Sahoo, Lemercier, Yang, Deschenaux, Liu, Thickstun,
+  and Jukic]{sahoo2026scaling}
+Sahoo, S.~S., Lemercier, J.-M., Yang, Z., Deschenaux, J., Liu, J., Thickstun,
+  J., and Jukic, A.
+\newblock Scaling beyond masked diffusion language models.
+\newblock \emph{arXiv preprint arXiv:2602.15014}, 2026.
+
+\bibitem[Shaul et~al.(2024)Shaul, Gat, Havasi, Severo, Sriram, Holderrieth,
+  Karrer, Lipman, and Chen]{shaul2024generalpaths}
+Shaul, N., Gat, I., Havasi, M., Severo, D., Sriram, A., Holderrieth, P.,
+  Karrer, B., Lipman, Y., and Chen, R. T.~Q.
+\newblock Flow matching with general discrete paths: A kinetic-optimal
+  perspective.
+\newblock \emph{arXiv preprint arXiv:2412.03487}, 2024.
+
+\bibitem[Stark et~al.(2024)Stark, Jing, Wang, Corso, Berger, Barzilay, and
+  Jaakkola]{stark2024dirichlet}
+Stark, H., Jing, B., Wang, C., Corso, G., Berger, B., Barzilay, R., and
+  Jaakkola, T.
+\newblock Dirichlet flow matching with applications to {DNA} sequence design.
+\newblock In \emph{Proceedings of the 41st International Conference on Machine
+  Learning}, 2024.
+
+\bibitem[Ye et~al.(2025)Ye, Xie, Zheng, Gao, Wu, Jiang, Li, and
+  Kong]{ye2025dream}
+Ye, J., Xie, Z., Zheng, L., Gao, J., Wu, Z., Jiang, X., Li, Z., and Kong, L.
+\newblock Dream 7b: Diffusion large language models.
+\newblock \emph{arXiv preprint arXiv:2508.15487}, 2025.
+
+\bibitem[Yu et~al.(2025)Yu, Li, and Wang]{yu2025survey}
+Yu, R., Li, Q., and Wang, X.
+\newblock Discrete diffusion in large language and multimodal models: A survey.
+\newblock \emph{arXiv preprint arXiv:2506.13759}, 2025.
+
+\bibitem[Zheng et~al.(2024)Zheng, Yuan, Yu, and Kong]{zheng2024rdm}
+Zheng, L., Yuan, J., Yu, L., and Kong, L.
+\newblock A reparameterized discrete diffusion model for text generation.
+\newblock In \emph{Conference on Language Modeling}, 2024.
+
+\end{thebibliography}

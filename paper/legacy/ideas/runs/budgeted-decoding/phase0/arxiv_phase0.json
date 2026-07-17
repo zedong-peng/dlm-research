@@ -1,0 +1,200 @@
+[
+ {
+  "title": "Improving Variable-Length Generation in Diffusion Language Models via Length Regularization",
+  "title_norm": "improving variable length generation in diffusion language models via length reg",
+  "abstract": "Diffusion Large Language Models (DLLMs) are inherently ill-suited for variable-length generation, as their inference is defined on a fixed-length canvas and implicitly assumes a known target length. When the length is unknown, as in realistic completion and infilling, naively comparing confidence across mask lengths becomes systematically biased, leading to under-generation or redundant continuations. In this paper, we show that this failure arises from an intrinsic lengthinduced bias in generation confidence estimates, leaving existing DLLMs without a robust way to determine generation length and making variablelength inference unreliable. To address this issue, we propose LR-DLLM, a length-regularized inference framework for DLLMs that treats generation length as an explicit variable and achieves reliable length determination at inference time. It decouples semantic compatibility from lengthinduced uncertainty through an explicit length regularization that corrects biased confidence estimates. Based on this, LR-DLLM enables dynamic expansion or contraction of the generation span without modifying the underlying DLLM or its training procedure. Experiments show that LRDLLM achieves 51.3% Pass@1 on HumanEvalInfilling under fully unknown lengths (+13.4% vs. DreamOn) and 51.5% average Pass@1 on four-language McEval (+14.3% vs. DreamOn).",
+  "year": 2026,
+  "venue": "arXiv",
+  "authors": [
+   "Zicong Cheng",
+   "Ruixuan Jia",
+   "Jia Li",
+   "Guo-Wei Yang",
+   "Meng-Hao Guo",
+   "Shi-Min Hu"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2602.07546v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2602.07546v1",
+  "published_iso": "2026-02-07T13:48:19Z"
+ },
+ {
+  "title": "Attention-Discounted Adaptive Sampler for Masked Diffusion Language Models",
+  "title_norm": "attention discounted adaptive sampler for masked diffusion language models",
+  "abstract": "Masked diffusion language models can reduce inference steps by revealing multiple tokens per denoising iteration, but this parallelism is fragile: positions that are individually confident may be unsafe to commit together when their predictions are coupled. Existing training-free samplers such as Top-\\(k\\), Fast-dLLM, and EB-Sampler mainly control how many tokens to reveal, while often ranking candidates by token-wise scores that ignore interactions within the selected set. We propose ADAS, a training-free reranking rule for parallel masked diffusion decoding. ADAS leaves the base sampler's stopping rule unchanged and modifies only subset construction: it greedily discounts a candidate when it attends strongly to already selected positions whose predictions remain uncertain. Unlike graph-constrained methods that turn attention into hard compatibility constraints, ADAS keeps attention continuous and uses it as a soft marginal penalty. Across LLaDA-8B-Base and Dream-7B-Base on GSM8K, MATH500, HumanEval, and MBPP, plugging ADAS into Top-\\(k\\), Fast-dLLM, and EB-Sampler improves low-NFE performance at matched denoiser evaluations by \\(9.11\\) and \\(10.46\\) percentage points on average, respectively, with \\(3.1\\%\\) per-forward runtime overhead. These results show that soft attention-discounted reranking is a simple and modular way to improve quality in highly parallel decoding for masked diffusion language models.",
+  "year": 2026,
+  "venue": "arXiv",
+  "authors": [
+   "Yusuf Sahin",
+   "Ahmed Rockey Saikia",
+   "Volkan Cevher",
+   "Paolo Favaro"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2606.10829v2",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2606.10829v2",
+  "published_iso": "2026-06-09T13:17:27Z"
+ },
+ {
+  "title": "Masked Diffusion Decoding as $x$-Prediction Flow",
+  "title_norm": "masked diffusion decoding as x prediction flow",
+  "abstract": "Masked diffusion language models (MDLMs) generate text by iteratively unmasking tokens, but their standard decoder reduces each step to a binary action: a position is either committed to a single token or left fully masked, with no representation of partial belief in between. This all-or-nothing regime discards rich predictive information and forces premature, irrevocable commitments, leading to poor performance under a limited decoding budget. In this paper, we reinterpret mask prediction as clean-state prediction ($x$-prediction) and show that it can be used to induce a continuous flow in input embedding space. Building on this view, we propose a continuous decoding framework for MDLMs where tokens can accumulate partial progress at each diffusion step and remain revisable. To match the uneven contextual constraints across positions in language, we replace the globally synchronous schedule in image diffusion with a confidence-based asynchronous update in which the diffusion progress is token-wise accumulated. Additionally, we introduce a lightweight policy network and formulate its training as a reinforcement learning problem. Applied to pretrained LLaDA, our continuous decoder reaches 97% of its performance on the HumanEval dataset with 25% of decoding budget.",
+  "year": 2026,
+  "venue": "arXiv",
+  "authors": [
+   "Weitian Wang",
+   "Lianlei Shan",
+   "Shubham Rai",
+   "Cecilia De La Parra",
+   "Akash Kumar"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2606.29066v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2606.29066v1",
+  "published_iso": "2026-06-27T19:51:35Z"
+ },
+ {
+  "title": "CosmicFish-HRM: Adaptive Reasoning via Hierarchical Recurrent Mechanisms in Compact Language Models",
+  "title_norm": "cosmicfish hrm adaptive reasoning via hierarchical recurrent mechanisms in compa",
+  "abstract": "Large language models have achieved strong reasoning capabilities, though often at the cost of massive parameter counts and expensive inference. In this work, we explore a different direction: adaptive reasoning depth in compact language models. We present CosmicFish-HRM, a compact language model built around a Hierarchical Reasoning Module (HRM) that dynamically allocates computational effort during inference. Instead of applying fixed computation to every input, the model iterates through high-level and low-level reasoning cycles and learns when to halt based on input complexity. CosmicFish-HRM combines this adaptive reasoning core with modern transformer components including Grouped Query Attention, RoPE, and SwiGLU activations. While the additional reasoning infrastructure introduces overhead at small scale, we hypothesize that this tradeoff becomes increasingly favorable as model size grows and the relative cost of the HRM core diminishes. Our results show that the model learns non-uniform reasoning behavior, allocating different numbers of reasoning steps across tasks and inputs. These findings suggest that adaptive reasoning depth may offer a promising alternative to relying solely on parameter scale for reasoning capability.",
+  "year": 2026,
+  "venue": "arXiv",
+  "authors": [
+   "Venkat Akhil Lakkapragada"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2605.28919v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2605.28919v1",
+  "published_iso": "2026-05-27T17:59:14Z"
+ },
+ {
+  "title": "Diffutron: A Masked Diffusion Language Model for Turkish Language",
+  "title_norm": "diffutron a masked diffusion language model for turkish language",
+  "abstract": "Masked Diffusion Language Models (MDLMs) have emerged as a compelling non-autoregressive alternative to standard large language models; however, their application to morphologically rich languages remains limited. In this paper, we introduce $\\textit{Diffutron}$, a masked diffusion language model specifically designed for Turkish. Our approach leverages a resource-efficient training pipeline, starting with LoRA-based continual pre-training of a multilingual encoder on a large-scale corpus. To enable generative capabilities, we employ a progressive instruction-tuning strategy, sequentially adapting the model on general and task-specific instruction sets. Experimental results across comprehensive benchmarks demonstrate that, despite its compact size, our model achieves competitive performance compared to existing multi-billion-parameter baselines. These findings validate the effectiveness of masked diffusion modeling combined with multi-stage tuning for non-autoregressive text generation in Turkish.",
+  "year": 2026,
+  "venue": "arXiv",
+  "authors": [
+   "Şuayp Talha Kocabay",
+   "Talha Rüzgar Akkuş"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2603.20466v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2603.20466v1",
+  "published_iso": "2026-03-20T19:52:37Z"
+ },
+ {
+  "title": "Reversible Diffusion Decoding for Diffusion Language Models",
+  "title_norm": "reversible diffusion decoding for diffusion language models",
+  "abstract": "Diffusion language models enable parallel token generation through block-wise decoding, but their irreversible commitments can lead to stagnation, where the reverse diffusion process fails to make further progress under a suboptimal context.We propose Reversible Diffusion Decoding (RDD), a decoding framework that introduces reversibility into block-wise diffusion generation. RDD detects stagnation as a state-dependent failure of the reverse process and enables efficient backtracking to earlier blocks without recomputation via cached model states. To avoid repeated failure trajectories, RDD applies confidence-guided re-masking to selectively reinitialize uncertain tokens while preserving reliable context.This reversible formulation allows decoding to recover from early commitment errors while maintaining the parallel efficiency of diffusion-based generation. Experiments show that RDD improves generation robustness and quality over baselines with minimal computational overhead.",
+  "year": 2026,
+  "venue": "arXiv",
+  "authors": [
+   "Xinyun Wang",
+   "Min Zhang",
+   "Sen Cui",
+   "Zhikang Chen",
+   "Bo Jiang",
+   "Kun Kuang",
+   "Mingbao Lin"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2602.00150v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2602.00150v1",
+  "published_iso": "2026-01-29T12:52:33Z"
+ },
+ {
+  "title": "Scaling Beyond Masked Diffusion Language Models",
+  "title_norm": "scaling beyond masked diffusion language models",
+  "abstract": "Diffusion language models are a promising alternative to autoregressive models due to their potential for faster generation. Among discrete diffusion approaches, Masked diffusion currently dominates, largely driven by strong perplexity on language modeling benchmarks. In this work, we present the first scaling law study of uniform-state and interpolating discrete diffusion methods. We also show that Masked diffusion models can be made approximately 12% more FLOPs-efficient when trained with a simple cross-entropy objective. We find that perplexity is informative within a diffusion family but can be misleading across families, where models with worse likelihood scaling may be preferable due to faster and more practical sampling, as reflected by the speed-quality Pareto frontier. These results challenge the view that Masked diffusion is categorically the future of diffusion language modeling and that perplexity alone suffices for cross-algorithm comparison. Scaling all methods to 1.7B parameters, we show that uniform-state diffusion remains competitive on likelihood-based benchmarks and outperforms autoregressive and Masked diffusion models on GSM8K, despite worse validation perplexity. We provide the code, model checkpoints, and video tutorials on the project page: http://s-sahoo.github.io/scaling-dllms",
+  "year": 2026,
+  "venue": "arXiv",
+  "authors": [
+   "Subham Sekhar Sahoo",
+   "Jean-Marie Lemercier",
+   "Zhihan Yang",
+   "Justin Deschenaux",
+   "Jingyu Liu",
+   "John Thickstun",
+   "Ante Jukic"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2602.15014v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2602.15014v1",
+  "published_iso": "2026-02-16T18:54:47Z"
+ },
+ {
+  "title": "Cluster-Level Attention-Guided Parallel Decoding for Masked Diffusion Language Models",
+  "title_norm": "cluster level attention guided parallel decoding for masked diffusion language m",
+  "abstract": "Masked diffusion language models (MDLMs) enable parallel decoding by predicting all masked positions at each denoising step, yet existing training-free samplers usually decide which positions to commit at token-level granularity. We revisit this granularity and observe that reliable predictions often emerge as contiguous high-confidence spans, suggesting that the unit of parallel commitment can be larger than a single token. We first group adjacent high-confidence candidates into confidence-induced clusters (CICs) as span-level update units. We then use self-attention maps from the same forward pass to estimate inter-cluster dependencies, enabling conflict-aware selection of mutually compatible CICs for parallel commitment. This yields CLAD (Cluster-Level Attention-Guided Decoding), a training-free cluster-level decoder for MDLMs. Experiments on LLaDA and Dream model families across four reasoning and code-generation benchmarks show that CLAD achieves 1.77x--8.47x speedups over Vanilla decoding while maintaining broadly comparable task accuracy in most settings.",
+  "year": 2026,
+  "venue": "arXiv",
+  "authors": [
+   "Heqiang Qi",
+   "Wei Huang",
+   "Mingyuan Bai",
+   "Xiangming Meng"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2605.29607v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2605.29607v1",
+  "published_iso": "2026-05-28T08:42:39Z"
+ },
+ {
+  "title": "Machine Unlearning for Masked Diffusion Language Models",
+  "title_norm": "machine unlearning for masked diffusion language models",
+  "abstract": "Recent masked diffusion language models (MDLMs), such as LLaDA and Dream, have achieved performance comparable to autoregressive large language models. Unlike autoregressive models, which generate text sequentially, MDLMs generate text by iteratively denoising masked positions in parallel. During fine-tuning, MDLMs learn to recover responses from masked response states conditioned on a prompt, thereby shifting their predictions from a prompt-masked unconditional distribution toward a prompt-conditional distribution. Despite this distinct generative and fine-tuning mechanism, machine unlearning for MDLMs remains largely unexplored. In this paper, we propose Masked Diffusion Unlearning (MDU), the first unlearning framework for MDLMs, by revisiting the process of learning specific knowledge in terms of diffusion. Specifically, MDU minimizes a forward KL divergence from the prompt-conditional prediction to a prompt-masked unconditional anchor at every masked response position, with a temperature scaling parameter to control the privacy-utility trade-off. Our empirical results on standard benchmarks and MDLM backbones show that MDU achieves high unlearning performance compared to existing LLM unlearning methods. Code is available at https://github.com/leegeoru/MDU.",
+  "year": 2026,
+  "venue": "arXiv",
+  "authors": [
+   "Georu Lee",
+   "Seungwon Jeong",
+   "Hoki Kim",
+   "Jinseong Park",
+   "Woojin Lee"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2605.18253v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2605.18253v1",
+  "published_iso": "2026-05-18T11:54:11Z"
+ },
+ {
+  "title": "Supportive Token Revealing for Fast Diffusion Language Model Decoding",
+  "title_norm": "supportive token revealing for fast diffusion language model decoding",
+  "abstract": "Discrete diffusion language models can generate text efficiently by updating multiple masked positions in parallel, but this parallelism introduces a quality-latency trade-off. Aggressive decoding may commit mutually dependent tokens too early, while conservative decoding requires many denoising steps. Existing methods address this tension by deciding which tokens are safe to reveal using confidence or dependency criteria. However, avoiding unsafe commits does not necessarily make the remaining masked sequence easy to decode, since uncertain tokens may depend on masked tokens, creating a bottleneck for denoising steps. We propose AXON, a training-free module that can be added on top of existing parallel decoding strategies for diffusion language models. Rather than replacing the base decoder, AXON monitors the remaining uncertain masked tokens and intervenes only when their current state suggests that additional context is needed. It then shifts the criterion from which tokens are safest to reveal to which confident reveals would best support later denoising. AXON selects anchors, confident masked tokens that uncertain positions attend to, using attention, uncertainty, and confidence signals. Experiments on reasoning and code-generation benchmarks across multiple diffusion language models show that AXON improves the quality-latency trade-off of existing parallel decoders, often reducing the number of function evaluations while maintaining or improving accuracy.",
+  "year": 2026,
+  "venue": "arXiv",
+  "authors": [
+   "Giries Abu Ayoub",
+   "Mario Barbara",
+   "Lluís Pastor-Pérez",
+   "Tanja Bien",
+   "Aneesh Barthakur",
+   "Alaa Maalouf",
+   "Loay Mualem"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2606.04236v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2606.04236v1",
+  "published_iso": "2026-06-02T21:35:54Z"
+ }
+]

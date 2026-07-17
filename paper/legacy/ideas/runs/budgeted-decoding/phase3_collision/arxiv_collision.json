@@ -1,0 +1,844 @@
+[
+ {
+  "title": "When to Repair a Graph ANN Index: A Matched-Budget Negative Result, and the Interpolated-Baseline Trap That Hid It",
+  "title_norm": "when to repair a graph ann index a matched budget negative result and the interp",
+  "abstract": "Graph approximate-nearest-neighbor (ANN) indexes (HNSW, DiskANN/Vamana) lose recall under insert/delete churn, because deletions orphan the greedy-search paths that route through removed nodes. Production systems restore navigability by repairing the graph on a fixed schedule (consolidate every X operations). We asked whether triggering local edge repair on a measured navigability-degradation signal, rather than a blind clock, spends a fixed repair budget better. At matched repair budget, it does not. On two real ANN datasets (SIFT-128 and Fashion-MNIST-784) under a bursty churn stream, compared against a fixed-cadence baseline actually run at the triggered policy's realized consolidation count, the tail-recall advantage is indistinguishable from zero at every operating point, graph degree, and index scale; at several points the clock is better. We trace our earlier positive result to an interpolated baseline: recall is sharply concave in repair budget -- one consolidation captures over half of all achievable gain -- so reading the baseline off a straight line between zero and four passes understates it by more than the effect claimed. Evaluated by the statistic we pre-registered -- correlation with the subsequent recall drop rather than with the concurrent recall level -- the probe signal is also not a leading indicator. What remains is useful: an exact live-set recall oracle, a reproducible churn harness, a drift-severity regime map, and a budget-parity protocol that makes this error detectable. We report the negative result and the trap, because the trap generalizes: any \"at matched budget X\" comparison whose baseline is read off an interpolated curve, at the scarce end of a concave response, will manufacture an effect favouring the proposal.",
+  "year": 2026,
+  "venue": "arXiv",
+  "authors": [
+   "Madhulatha Mandarapu",
+   "Sandeep Kunkunuru"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2607.00728v2",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2607.00728v2",
+  "published_iso": "2026-07-01T10:13:20Z"
+ },
+ {
+  "title": "Variational Analysis of Metric Projections onto Isotone Projection Cones via Coderivatives",
+  "title_norm": "variational analysis of metric projections onto isotone projection cones via cod",
+  "abstract": "In this paper, we study variational properties of the metric projection mapping onto isotone projection cones in finite-dimensional Euclidean spaces. We derive explicit formulas for both the Fréchet coderivative and the Mordukhovich coderivative of the projection operator. The analysis is based on a local description of the projection mapping via an associated generating system in a neighborhood of a reference point, which leads to computable coderivative characterizations. As an application, we compute the covering constant of the projection mapping, providing a quantitative description of its local regularity. Furthermore, we establish verifiable sufficient conditions for the Aubin property of the solution mapping associated with parametric nonlinear complementarity problems associated with isotone projection cones.\n  The obtained results contribute to the variational analysis of metric projections in a general cone setting where orthogonality arguments are not available, and to the stability theory of complementarity systems in finite dimensions.",
+  "year": 2026,
+  "venue": "arXiv",
+  "authors": [
+   "Le Van Hien"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2606.08386v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2606.08386v1",
+  "published_iso": "2026-06-07T00:46:51Z"
+ },
+ {
+  "title": "Select or Project? Evaluating Lower-dimensional Vectors for LLM Training Data Explanations",
+  "title_norm": "select or project evaluating lower dimensional vectors for llm training data exp",
+  "abstract": "Gradient-based methods for instance-based explanation for large language models (LLMs) are hindered by the immense dimensionality of model gradients. In practice, influence estimation is restricted to a subset of model parameters to make computation tractable, but this subset is often chosen ad hoc and rarely justified by systematic evaluation. This paper investigates if it is better to create low-dimensional representations by selecting a small, architecturally informed subset of model components or by projecting the full gradients into a lower-dimensional space. Using a novel benchmark, we show that a greedily selected subset of components captures the information about training data influence needed for a retrieval task more effectively than either the full gradient or random projection. We further find that this approach is more computationally efficient than random projection, demonstrating that targeted component selection is a practical strategy for making instance-based explanations of large models more computationally feasible.",
+  "year": 2026,
+  "venue": "arXiv",
+  "authors": [
+   "Lukas Hinterleitner",
+   "Loris Schoenegger",
+   "Benjamin Roth"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2601.16651v2",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2601.16651v2",
+  "published_iso": "2026-01-23T11:15:20Z"
+ },
+ {
+  "title": "Stable Triangle Projections for Variable-Degree Tetrahedral Spaces and Uniform IPDG Preconditioning",
+  "title_norm": "stable triangle projections for variable degree tetrahedral spaces and uniform i",
+  "abstract": "The main ingredient of this paper is an edge-local variable-degree projection on a triangle that is uniformly stable in both L2 and H1. We use this two-dimensional operator in two tetrahedral constructions. First, on a reference tetrahedron, we build an H1-stable projection from a high order polynomial space onto a variable-degree space whose degrees are prescribed independently on edges, faces, and in the volume. Since the tetrahedral projection is local and trace-compatible, it also gives an h- and p-uniform stable decomposition, in the weighted energy norm, for conforming hp spaces, and hence a uniform additive Schwarz preconditioner for the conforming Laplace operator. Second, on a uniformly regular mapped tetrahedral mesh with elementwise variable polynomial degrees, the same triangular projection gives the finite-layer edge truncation needed in a p-uniform stable DG-to-CG decomposition for the symmetric IPDG norm. The DG-to-CG decomposition, combined with the conforming splitting, gives the IPDG preconditioner. The constants depend only on reference shapes, the local degree-spread bound within each tetrahedron, the neighbor-degree bound across mesh faces, uniform map-regularity, patch cardinalities, and the coefficient path constants; they are independent of h, of the local polynomial degrees, and of the coefficient contrast.",
+  "year": 2026,
+  "venue": "arXiv",
+  "authors": [
+   "Situan Li",
+   "Weiying Zheng"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2606.08516v2",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2606.08516v2",
+  "published_iso": "2026-06-07T08:55:15Z"
+ },
+ {
+  "title": "Neural Index Policies for Restless Multi-Action Bandits with Heterogeneous Budgets",
+  "title_norm": "neural index policies for restless multi action bandits with heterogeneous budge",
+  "abstract": "Restless multi-armed bandits (RMABs) provide a scalable framework for sequential decision-making under uncertainty, but classical formulations assume binary actions and a single global budget. Real-world settings, such as healthcare, often involve multiple interventions with heterogeneous costs and constraints, where such assumptions break down. We introduce a Neural Index Policy (NIP) for multi-action RMABs with heterogeneous budget constraints. Our approach learns to assign budget-aware indices to arm--action pairs using a neural network, and converts them into feasible allocations via a differentiable knapsack layer formulated as an entropy-regularized optimal transport (OT) problem. The resulting model unifies index prediction and constrained optimization in a single end-to-end differentiable framework, enabling gradient-based training directly on decision quality. The network is optimized to align its induced occupancy measure with the theoretical upper bound from a linear programming relaxation, bridging asymptotic RMAB theory with practical learning. Empirically, NIP achieves near-optimal performance within 5% of the oracle occupancy-measure policy while strictly enforcing heterogeneous budgets and scaling to hundreds of arms. This work establishes a general, theoretically grounded, and scalable framework for learning index-based policies in complex resource-constrained environments.",
+  "year": 2025,
+  "venue": "arXiv",
+  "authors": [
+   "Himadri S. Pandey",
+   "Kai Wang",
+   "Gian-Gabriel P. Garcia"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2510.22069v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2510.22069v1",
+  "published_iso": "2025-10-24T23:08:36Z"
+ },
+ {
+  "title": "Residual-Entropy Accounting for Routed Atom-Budgeted Learned Indexes",
+  "title_norm": "residual entropy accounting for routed atom budgeted learned indexes",
+  "abstract": "We study exact predecessor and rank search in a routed, atom-budgeted, certified-repair learned-index architecture. An ordered directory routes each query to a contiguous interval, a counted local predictor returns a certified rank window, and exact repair resolves the remaining uncertainty by comparisons. The result is scoped to this architecture and does not claim guarantees for arbitrary learned-index designs such as unconstrained RMI dispatch, hash routing, neural routing, or exact-payload indexes without additional accounting.\n  The main parameter is conditional residual answer entropy: the entropy of the exact answer after the leaf, predictor output, certificate, and charged pre-repair information are observed. We prove a two-sided accounting theorem showing that this functional gives the query-time scale under the stated architecture and local predictor-atom budget. Directory space, sorted-array storage, and transcript-indexed repair-program space are treated as separate system costs, so the theorem is not a byte-level space lower bound or a compact implementation recipe.\n  We also give a rank-spread specialization in which the radius term log(1 + Delta) is valid only when many residual ranks remain likely after the predictor transcript is known. For counted piecewise-linear segments, we make the profile term non-oracular, derive a shadow-price allocation rule, compute finite-instance RGapM and GapM values on real SOSD and Zenodo samples, and report benchmarks against PGM-index, RadixSpline, and binary search. The benchmarks expose overheads and bottlenecks rather than claiming speed for the shadow prototype.",
+  "year": 2026,
+  "venue": "arXiv",
+  "authors": [
+   "Faruk Alpay",
+   "Levent Sarioglu"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2605.29061v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2605.29061v1",
+  "published_iso": "2026-05-27T20:08:51Z"
+ },
+ {
+  "title": "Elastic Spectral State Space Models for Budgeted Inference",
+  "title_norm": "elastic spectral state space models for budgeted inference",
+  "abstract": "Foundation models are typically trained at a fixed computational capacity, while real-world applications require deployment across platforms with different resource constraints. Current approaches usually rely on training families of model variants or model distillation, which requires additional training and supports only a pre-selected set of sizes rather than fine-grained adaptation at runtime. In this paper, we propose Elastic Spectral State Space Models (ES-SSM), which require only one-time training at full capacity, but can be directly truncated into arbitrary scales for budgeted, runtime inference without retraining. Our ES-SSM builds on Hankel spectral filtering over a state space model (SSM), coupled with a lightweight input-adaptive gate trained under randomized spectral budgets. Using a shared masked normalization rule over the ordered spectral channels, we encourage predictive capability to concentrate in low-index components, while higher-index components act primarily as refinement. We test our algorithm across long-sequence benchmarks spanning text, logic, retrieval, vision, and audio. We demonstrate that a single ES-SSM model trained once can be truncated to provide competitive performance compared with modern Transformer and SSM baselines at similar parameter scales. Furthermore, by testing under various runtime budgets, we observe smooth and stable budget-performance curves over a wide range of truncation levels.",
+  "year": 2026,
+  "venue": "arXiv",
+  "authors": [
+   "Dachuan Song",
+   "Xuan Wang"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2601.22488v2",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2601.22488v2",
+  "published_iso": "2026-01-30T02:58:19Z"
+ },
+ {
+  "title": "Exchange, obligation, accountability: Moral orders of technology repair in Kampala, Uganda",
+  "title_norm": "exchange obligation accountability moral orders of technology repair in kampala ",
+  "abstract": "This chapter develops the concept of moral orders of repair, defined as the specific norms, rules, values, and expectations that structure and support joint work and exchange in repair worlds and other spheres of collaborative practice. Drawing on ethnographic fieldwork in mobile phone and computing repair markets in Kampala, Uganda, we identify three key dimensions of moral orders: fair exchange, collaboration across hierarchy, and relational accountability. We show how moral orders provide a detailed specification of informal rules gestured as implicit in moral economies, and how these rules inform the practical and ethical work of repair.",
+  "year": 2026,
+  "venue": "arXiv",
+  "authors": [
+   "Daniel Mwesigwa",
+   "Steven J. Jackson"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2604.10279v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2604.10279v1",
+  "published_iso": "2026-04-11T16:46:27Z"
+ },
+ {
+  "title": "Guarded Repair for Harm-Aware Post-hoc Replacement of LLM Mathematical Reasoning",
+  "title_norm": "guarded repair for harm aware post hoc replacement of llm mathematical reasoning",
+  "abstract": "Post-hoc repair of LLM mathematical reasoning introduces an asymmetric risk: fixing an incorrect reasoning trace is useful, but replacing a trace that was already correct can be harmful. We study this problem under a selective replacement setting, where a system must decide whether a repaired candidate is safer than preserving the original cached trace. We present GuardedRepair, a guarded best-of-N repair framework that diagnoses cached reasoning traces, selectively triggers repair, and accepts answer-changing candidates only when deterministic verification guards support replacement. The framework combines lightweight symbolic checks, surface semantic-risk diagnostics, bounded candidate generation, and conservative acceptance policies. On the full GSM8K test set, where the initial reasoner already achieves 95.60% accuracy, GuardedRepair improves final accuracy to 96.89%, fixing 17 of 58 remaining errors without measured broken-correct cases in the main run. On a weak-reasoner ASDiv setting, accuracy improves from 78.40% to 87.60%. Direct regeneration baselines show that this gain is not explained by stronger-model re-solving alone: re-solving all GSM8K examples lowers accuracy to 93.03% and breaks 47 initially correct answers. Additional analyses show that guarded repair substantially improves the fixed/broken tradeoff, while also revealing that replacement risk is reduced rather than eliminated. These results support viewing post-hoc repair as harm-aware selective replacement rather than unconstrained re-solving.",
+  "year": 2026,
+  "venue": "arXiv",
+  "authors": [
+   "Haizhou Xia"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2605.24613v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2605.24613v1",
+  "published_iso": "2026-05-23T14:51:13Z"
+ },
+ {
+  "title": "Conductance-Repair Evidence Graphs for Prospective Security Retrieval",
+  "title_norm": "conductance repair evidence graphs for prospective security retrieval",
+  "abstract": "Security retrieval is often evaluated as ranking over complete evidence, but operational triage is prospective: CVE descriptions, weakness metadata, fix commits, EPSS scores, KEV membership, validation-vector metadata, and side-channel benchmark routes arrive through separate channels, and many are missing, delayed, poisoned, or visible only after the decision time. We introduce conductance-repair evidence graphs, a timestamped framework in which retrieval is performed over a temporal admissibility mask and missing channels are widened by a deterministic graph-flow recurrence rather than by a learned predictor. The method emits a repair certificate recording source probes, decision time, withheld edges, repaired channels, forbidden post-decision edges, backend availability, numerical deviation, and verifier results. The theoretical layer gives an adaptive \\(\\lceil\\log_2 N\\rceil\\) lower bound for missing-channel identification, an NP-hardness result for minimum harmful repair, and a fixed-parameter certified search bound for \\(q\\) questionable channels. The current artifact materializes 30 deduplicated public security records, 57 terms, and 58 withheld admissible document-term edges. Under random edge withholding, conductance repair changes recall@\\(k\\) from 0.017 to 0.069 and average precision from 0.062 to 0.060, while a synthetic security fixture improves recall@\\(k\\) from 0.055 to 0.099; the public AP drop exposes a limit of broad admissible repair under random edge corruption. The implementation benchmarks the same flow/SVD/einsum kernel under NumPy, PyTorch, JAX, and TensorFlow when available, recording unavailable backends rather than silently substituting them. BBBC019 and LIVECell metadata are retained only as structural controls for sparse evolving source channels, with no clinical or biological performance claim.",
+  "year": 2026,
+  "venue": "arXiv",
+  "authors": [
+   "Faruk Alpay",
+   "Taylan Alpay"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2607.04070v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2607.04070v1",
+  "published_iso": "2026-07-05T01:03:15Z"
+ },
+ {
+  "title": "citecheck: An MCP Server for Automated Bibliographic Verification and Repair in Scholarly Manuscripts",
+  "title_norm": "citecheck an mcp server for automated bibliographic verification and repair in s",
+  "abstract": "Reference lists in scholarly manuscripts frequently contain errors, including incorrect identifiers, incomplete metadata, misattributed authors, and mismatches between preprint and published versions. These problems are tedious to repair manually and have become more visible in workflows that rely on large language models, which can fabricate or corrupt citations. We present citecheck, a TypeScript system and MCP server for automated bibliographic verification and repair in paper-like project folders. Given a manuscript file or workspace, citecheck selects the most likely paper artifact, extracts references from .bib, .tex, .md, .txt, or .docx, validates entries against PubMed, Crossref, arXiv, and Semantic Scholar, and returns structured correction proposals together with replacement-safety diagnostics. The current repository provides a working research prototype with multi-pass retrieval, manifestation-aware matching, policy-gated rewrite planning, and 47 passing tests covering repair behavior, malformed payload handling, transport failures, and MCP exposure. We position citecheck as infrastructure for agentic scholarly editing and as a practical guardrail against both traditional reference errors and LLM-induced citation hallucinations.",
+  "year": 2026,
+  "venue": "arXiv",
+  "authors": [
+   "Junhyeok Lee"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2603.17339v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2603.17339v1",
+  "published_iso": "2026-03-18T04:10:31Z"
+ },
+ {
+  "title": "Group Commit Self-Clocks: Why Tuning Is Unnecessary Above a Device-Set Load Threshold",
+  "title_norm": "group commit self clocks why tuning is unnecessary above a device set load thres",
+  "abstract": "Group commit amortizes the fixed cost of a durable log flush across many committing transactions; the release rule - a timer, a batch size, or an adaptive policy - is a classic tuning knob. The textbook theory is open-loop: for Poisson arrivals the optimal timer is the EOQ square-root rule, and the wait-or-flush decision is ski-rental 2-competitive. We ask when that tuning is worth its machinery, and show that in closed-loop OLTP it usually is not. Real commit arrivals are closed-loop: a client issues its next transaction only after its last commits, so the arrival rate is induced by the policy's own latency. Modeling this as a closed queueing network, the parameter-free greedy-pipelined policy (flush the instant the device is free) self-clocks to a computable fixed point and is within about 0.1% of the best oracle-tuned timer at every load. The square-root rule prescribes waiting $T^\\star=\\sqrt{2F_0/λ}$, but $T^\\star<F_0$ exactly when $λ>λ^\\star=2/F_0$; above this device-set load threshold the timer collapses onto greedy and tuning is vacuous. The clean theory only bites below $λ^\\star$ and in the open-loop world, where a parameter-free ski policy still beats a fixed tuned timer under rate shifts. We instantiate $λ^\\star$ with measured fsync distributions on two AWS storage classes (EBS gp3 versus instance NVMe, a $25\\times$ range), and confirm on PostgreSQL that commit_delay=0 is competitive with any tuned value. The contribution is a characterization that explains deployed practice; we add no new logger.",
+  "year": 2026,
+  "venue": "arXiv",
+  "authors": [
+   "Madhulatha Mandarapu",
+   "Sandeep Kunkunuru"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2606.18187v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2606.18187v1",
+  "published_iso": "2026-06-16T17:19:06Z"
+ },
+ {
+  "title": "SiblingRepair: Sibling-Based Multi-Hunk Repair with Large Language Models",
+  "title_norm": "siblingrepair sibling based multi hunk repair with large language models",
+  "abstract": "Developers often make similar mistakes across code locations implementing related functionalities. These locations, called siblings, share similar issues and require similar fixes. Accurately identifying siblings and consistently repairing them are crucial for automated program repair. Hercules is a SOTA technique designed for sibling repair. However, it is limited by strong assumptions about sibling locations and commit-history availability, rigid AST-based sibling matching, and inflexible template-based patch generation. To address these limitations, we present SiblingRepair, a new LLM-based multi-hunk APR technique specialized for sibling repair. Starting from a suspicious location identified by spectrum-based fault localization, SiblingRepair searches for semantically related sibling candidates using token- and embedding-based code matching, without restricting discovery to failing-test coverage or commit history. It then uses an LLM to identify failure-relevant siblings and generate consistent patches through two complementary strategies: simultaneous repair, which jointly repairs siblings, and iterative repair, which progressively analyzes candidates for patch construction. SiblingRepair further preserves promising patches generated from earlier suspicious locations and combines them into generalized multi-hunk patches. We evaluate SiblingRepair on the Defects4J and GHRB benchmarks. The results show that SiblingRepair substantially outperforms SOTA multi-hunk repair techniques including Hercules. Our evaluation further demonstrates its repair efficiency, the effectiveness of its sibling detection and repair components, and limited impact of the LLM data leakage on the results. Overall, SiblingRepair advances automated sibling and general multi-hunk repair.",
+  "year": 2026,
+  "venue": "arXiv",
+  "authors": [
+   "Xinyu Liu",
+   "Jiayu Ren",
+   "Yusen Wang",
+   "Qi Xin",
+   "Xiaoyuan Xie",
+   "Jifeng Xuan"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2605.06209v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2605.06209v1",
+  "published_iso": "2026-05-07T13:14:36Z"
+ },
+ {
+  "title": "On the Use of Commit Messages for Corrective Software Maintenance: A Systematic Mapping Study",
+  "title_norm": "on the use of commit messages for corrective software maintenance a systematic m",
+  "abstract": "Corrective maintenance is crucial to ensure the quality of software, thereby improving reliability and user experience. In a version control system (VCS), developers write commit messages to document their changes and support later maintenance. Still, to this day, no secondary study has mapped the research landscape of how commit messages have been used in corrective software maintenance. We present a systematic mapping study of 97 primary sources published between 2004 and May 2025, where we examine the goals, potential utilization of source code artifacts along with commit messages, methodologies, stakeholders, and the key findings about their influence on corrective maintenance. Our analysis reveals a growing interest in the usage of commit messages to perform corrective maintenance tasks, in particular for bug analysis and bug fix identification goals. Surprisingly few studies address other themes such as automated program repair, security development practices, etc. We find that the software artifacts most used in combination with commit messages are commit \"diffs\" and that repository mining, together with natural language processing (NLP) and artificial intelligence/machine learning (AI/ML) are the methodological foundations of studies in this field. Among stakeholders considered in previous studies, developers play the most important role in shaping corrective maintenance practices. Key findings in previous studies about commit messages establish their significant role in corrective maintenance, due to the fact that they carry crucial information helpful for stakeholders to understand and improve the code base through the software evolution process. Often, though, commit messages lack important information and are not enough to convey the intent of code changes to future readers.",
+  "year": 2026,
+  "venue": "arXiv",
+  "authors": [
+   "Syful Islam",
+   "Stefano Zacchiroli"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2604.16404v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2604.16404v1",
+  "published_iso": "2026-03-31T14:16:43Z"
+ },
+ {
+  "title": "Unrestrained Simplex Denoising for Discrete Data. A Non-Markovian Approach Applied to Graph Generation",
+  "title_norm": "unrestrained simplex denoising for discrete data a non markovian approach applie",
+  "abstract": "Denoising models such as Diffusion or Flow Matching have recently advanced generative modeling for discrete structures, yet most approaches either operate directly in the discrete state space, causing abrupt state changes. We introduce simplex denoising, a simple yet effective generative framework that operates on the probability simplex. The key idea is a non-Markovian noising scheme in which, for a given clean data point, noisy representations at different times are conditionally independent. While preserving the theoretical guarantees of denoising-based generative models, our method removes unnecessary constraints, thereby improving performance and simplifying the formulation. Empirically, \\emph{unrestrained simplex denoising} surpasses strong discrete diffusion and flow-matching baselines across synthetic and real-world graph benchmarks. These results highlight the probability simplex as an effective framework for discrete generative modeling.",
+  "year": 2026,
+  "venue": "arXiv",
+  "authors": [
+   "Yoann Boget",
+   "Alexandros Kalousis"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2603.28572v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2603.28572v1",
+  "published_iso": "2026-03-30T15:26:56Z"
+ },
+ {
+  "title": "Enhancing rice leaf images: An overview of image denoising techniques",
+  "title_norm": "enhancing rice leaf images an overview of image denoising techniques",
+  "abstract": "Digital image processing involves the systematic handling of images using advanced computer algorithms, and has gained significant attention in both academic and practical fields. Image enhancement is a crucial preprocessing stage in the image-processing chain, improving image quality and emphasizing features. This makes subsequent tasks (segmentation, feature extraction, classification) more reliable. Image enhancement is essential for rice leaf analysis, aiding in disease detection, nutrient deficiency evaluation, and growth analysis. Denoising followed by contrast enhancement are the primary steps. Image filters, generally employed for denoising, transform or enhance visual characteristics like brightness, contrast, and sharpness, playing a crucial role in improving overall image quality and enabling the extraction of useful information. This work provides an extensive comparative study of well-known image-denoising methods combined with CLAHE (Contrast Limited Adaptive Histogram Equalization) for efficient denoising of rice leaf images. The experiments were performed on a rice leaf image dataset to ensure the data is relevant and representative. Results were examined using various metrics to comprehensively test enhancement methods. This approach provides a strong basis for assessing the effectiveness of methodologies in digital image processing and reveals insights useful for future adaptation in agricultural research and other domains.",
+  "year": 2025,
+  "venue": "arXiv",
+  "authors": [
+   "Rupjyoti Chutia",
+   "Dibya Jyoti Bora"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2511.00046v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2511.00046v1",
+  "published_iso": "2025-10-28T08:50:17Z"
+ },
+ {
+  "title": "Training-free Spatially Grounded Geometric Shape Encoding (Technical Report)",
+  "title_norm": "training free spatially grounded geometric shape encoding technical report",
+  "abstract": "Positional encoding has become the de facto standard for grounding deep neural networks on discrete point-wise positions, and it has achieved remarkable success in tasks where the input can be represented as a one-dimensional sequence. However, extending this concept to 2D spatial geometric shapes demands carefully designed encoding strategies that account not only for shape geometry and pose, but also for compatibility with neural network learning. In this work, we address these challenges by introducing a training-free, general-purpose encoding strategy, dubbed XShapeEnc, that encodes an arbitrary spatially grounded 2D geometric shape into a compact representation exhibiting five favorable properties, including invertibility, adaptivity, and frequency richness. Specifically, a 2D spatially grounded geometric shape is decomposed into its normalized geometry within the unit disk and its pose vector, where the pose is further transformed into a harmonic pose field that also lies within the unit disk. A set of orthogonal Zernike bases is constructed to encode shape geometry and pose either independently or jointly, followed by a frequency-propagation operation to introduce high-frequency content into the encoding. We demonstrate the theoretical validity, efficiency, discriminability, and applicability of XShapeEnc via extensive analysis and experiments across a wide range of shape-aware tasks and our self-curated XShapeCorpus. We envision XShapeEnc as a foundational tool for research that goes beyond one-dimensional sequential data toward frontier 2D spatial intelligence.",
+  "year": 2026,
+  "venue": "arXiv",
+  "authors": [
+   "Yuhang He"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2604.07522v2",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2604.07522v2",
+  "published_iso": "2026-04-08T18:53:42Z"
+ },
+ {
+  "title": "A scalable and real-time neural decoder for topological quantum codes",
+  "title_norm": "a scalable and real time neural decoder for topological quantum codes",
+  "abstract": "Fault-tolerant quantum computing will require error rates far below those achievable with physical qubits. Quantum error correction (QEC) bridges this gap, but depends on decoders being simultaneously fast, accurate, and scalable. This combination of requirements remains unmet by a machine-learning decoder, nor by any decoder for promising resource-efficient codes such as the color code. Here we introduce AlphaQubit 2, a neural-network decoder that achieves near-optimal logical error rates for both surface and color codes at scale under realistic noise. For the color code, it is orders of magnitude faster than other high-accuracy decoders. We demonstrate real-time decoding faster than 1μs per cycle on commercial accelerators: for the surface code to distance 11, with better accuracy than leading real-time decoders; and the first real-time decoding of the color code to distance 9. These results support the practical application of a wider class of promising QEC codes, and establish a credible path towards high-accuracy, real-time neural decoding at the scales required for fault-tolerant quantum computation.",
+  "year": 2025,
+  "venue": "arXiv",
+  "authors": [
+   "Andrew W. Senior",
+   "Thomas Edlich",
+   "Francisco J. H. Heras",
+   "Lei M. Zhang",
+   "Oscar Higgott",
+   "James S. Spencer",
+   "Taylor Applebaum",
+   "Sam Blackwell",
+   "Justin Ledford",
+   "Akvilė Žemgulytė",
+   "Augustin Žídek",
+   "Noah Shutty",
+   "Andrew Cowie",
+   "Yin Li",
+   "George Holland",
+   "Peter Brooks",
+   "Charlie Beattie",
+   "Michael Newman",
+   "Alex Davies",
+   "Cody Jones",
+   "Sergio Boixo",
+   "Hartmut Neven",
+   "Pushmeet Kohli",
+   "Johannes Bausch"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2512.07737v2",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2512.07737v2",
+  "published_iso": "2025-12-08T17:24:59Z"
+ },
+ {
+  "title": "A Practical Investigation of Training-free Relaxed Speculative Decoding",
+  "title_norm": "a practical investigation of training free relaxed speculative decoding",
+  "abstract": "Speculative decoding accelerates sampling from an autoregressive LLM by using a faster auxiliary model to draft tokens which are then verified in parallel by the LLM. Standard speculative decoding is lossless: its rejection and resampling steps exactly preserve the LLM's sampling distribution. Recent work argues that relaxing this strict guarantee can yield further speed-ups, controlled capability-speed trade-offs, or even capability gains. We practically investigate training-free relaxed speculative decoding techniques, unify existing approaches within a shared framework, benchmark them on contemporary settings, and distil takeaways and empirical findings for practitioners. Important takeaways include: relaxation can require considerable capability evaluation unlike lossless speculative decoding, and many relaxed approaches rely on a drafter that is a good language model, making them unsuited for lightweight dedicated multi-token-prediction drafters.",
+  "year": 2026,
+  "venue": "arXiv",
+  "authors": [
+   "Guoxuan Xia",
+   "Luka Ribar",
+   "Paul Balanca"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2607.08690v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2607.08690v1",
+  "published_iso": "2026-07-09T16:50:41Z"
+ },
+ {
+  "title": "SAGE: Training-Free Semantic Evidence Composition for Edge-Cloud Inference under Hard Uplink Budgets",
+  "title_norm": "sage training free semantic evidence composition for edge cloud inference under ",
+  "abstract": "Edge-cloud hybrid inference offloads difficult inputs to a powerful remote model, but the uplink channel imposes hard per-request constraints on the number of bits that can be transmitted. We show that selecting transmitted content based solely on attention-based importance, the standard approach in collaborative inference, is inherently limited under hard budgets. Two findings support this claim. First, replacing high-importance units with low-importance but complementary ones improves server accuracy. This shows that what matters is not individual importance but how well the transmitted set covers diverse aspects of the input. Second, spatially uniform selection without any content information achieves competitive accuracy at moderate budgets. This confirms that spatial coverage alone carries independent value. Based on this analysis, we propose SAGE (Semantic Attention-Guided Evidence), a principled, training-free method that combines importance filtering with embedding-diversity sampling. SAGE achieves 93% of the server ceiling in offloaded accuracy while transmitting fewer than half of the available evidence units on ImageNet-1K, substantially outperforming importance-only composition.",
+  "year": 2026,
+  "venue": "arXiv",
+  "authors": [
+   "Inhyeok Choi",
+   "Hyuncheol Park"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2604.19623v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2604.19623v1",
+  "published_iso": "2026-04-21T16:11:56Z"
+ },
+ {
+  "title": "Training-free Dropout Sampling for Semantic Token Acceptance in Speculative Decoding",
+  "title_norm": "training free dropout sampling for semantic token acceptance in speculative deco",
+  "abstract": "Speculative decoding accelerates large language model inference by proposing tokens with a lightweight draft model and selectively accepting them using a target model. This work introduces DropMatch, a novel approach that matches draft tokens to the predictive distribution of the target model via Monte Carlo dropout applied exclusively to the LM head, enabling sampling-based acceptance decisions. By generating multiple decoding paths, our method forms an empirical token distribution against which draft tokens are evaluated for consistency. This acceptance mechanism enables the model to adaptively control the size of decoding paths under an appropriate dropout probability, preventing substantial distortion of the target model predictive distribution. The proposed method operates in a training-free, data-free, and calibration-free manner, requires no architectural modification to pretrained models, and can be orthogonally integrated with a wide range of existing speculative decoding and inference acceleration techniques. Experiments across multiple benchmarks demonstrate that our approach increases acceptance length while maintaining competitive task performance, yielding inference speedups ranging from 1.09x to 1.33x over the standard baseline, and up to an additional 1.09x speedup when applied on top of EAGLE3.",
+  "year": 2026,
+  "venue": "arXiv",
+  "authors": [
+   "Jeongtae Lee",
+   "Minjung Jo",
+   "Hyunjoon Jeong",
+   "Gunho Park",
+   "Sunghyeon Woo",
+   "Joonghoon Kim",
+   "Se Jung Kwon",
+   "Dongsoo Lee"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2603.03333v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2603.03333v1",
+  "published_iso": "2026-02-11T04:53:33Z"
+ },
+ {
+  "title": "FSampler: Training Free Acceleration of Diffusion Sampling via Epsilon Extrapolation",
+  "title_norm": "fsampler training free acceleration of diffusion sampling via epsilon extrapolat",
+  "abstract": "FSampler is a training free, sampler agnostic execution layer that accelerates diffusion sampling by reducing the number of function evaluations (NFE). FSampler maintains a short history of denoising signals (epsilon) from recent real model calls and extrapolates the next epsilon using finite difference predictors at second order, third order, or fourth order, falling back to lower order when history is insufficient. On selected steps the predicted epsilon substitutes the model call while keeping each sampler's update rule unchanged. Predicted epsilons are validated for finiteness and magnitude; a learning stabilizer rescales predictions on skipped steps to correct drift, and an optional gradient estimation stabilizer compensates local curvature. Protected windows, periodic anchors, and a cap on consecutive skips bound deviation over the trajectory. Operating at the sampler level, FSampler integrates with Euler/DDIM, DPM++ 2M/2S, LMS/AB2, and RES family exponential multistep methods and drops into standard workflows. FLUX.1 dev, Qwen Image, and Wan 2.2, FSampler reduces time by 8 to 22% and model calls by 15 to 25% at high fidelity (Structural Similarity Index (SSIM) 0.95 to 0.99), without altering sampler formulas. With an aggressive adaptive gate, reductions can reach 45 to 50% fewer model calls at lower fidelity (SSIM 0.73 to 0.74).",
+  "year": 2025,
+  "venue": "arXiv",
+  "authors": [
+   "Michael A. Vladimir"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2511.09180v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2511.09180v1",
+  "published_iso": "2025-11-12T10:21:25Z"
+ },
+ {
+  "title": "Stabilizer-Assisted Inactivation Decoding of Quantum Error-Correcting Codes with Erasures",
+  "title_norm": "stabilizer assisted inactivation decoding of quantum error correcting codes with",
+  "abstract": "In this work, we develop a reduced complexity maximum likelihood (ML) decoder for quantum low-density parity-check (QLDPC) codes over erasures. Our decoder combines classical inactivation decoding, which integrates peeling with symbolic guessing, with a new dual peeling procedure. In the dual peeling stage, we perform row operations on the stabilizer matrix to efficiently reveal stabilizer generators and their linear combinations whose support lies entirely on the erased set. Each such stabilizer identified allows us to freely fix a bit in its support without affecting the logical state of the decoded result. This removes one degree of freedom that would otherwise require a symbolic guess, reducing the number of inactivated variables and decreasing the size of the final linear system that must be solved. We further show that dual peeling combined with standard peeling alone, without inactivation, is sufficient to achieve ML for erasure decoding of surface codes. Simulations across several QLDPC code families confirm that our decoder matches ML logical failure performance while significantly reducing the complexity of inactivation decoding, including more than a 20% reduction in symbolic guesses for the B1 lifted product code at high erasure rates.",
+  "year": 2026,
+  "venue": "arXiv",
+  "authors": [
+   "Giulio Pech",
+   "Mert Gökduman",
+   "Hanwen Yao",
+   "Henry D. Pfister"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2601.14236v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2601.14236v1",
+  "published_iso": "2026-01-20T18:47:11Z"
+ },
+ {
+  "title": "SCOPE: Deterministic and Training-Free 3D UAV Deployment via Perimeter-based Heuristics",
+  "title_norm": "scope deterministic and training free 3d uav deployment via perimeter based heur",
+  "abstract": "Unmanned Aerial Vehicle (UAV) mounted Base Stations (UAV-BSs) provide flexible coverage for temporary hotspot scenarios; however, efficiently optimizing 3D deployment to satisfy heterogeneous user distributions remains a significant challenge. While Deep Reinforcement Learning (DRL) approaches have shown promise, they often suffer from prohibitive training overhead and poor generalization in cold-start scenarios where the user topology is unknown a priori. To address these limitations, this paper proposes Satisfaction-driven Coverage Optimization via Perimeter Extraction (SCOPE), which is a deterministic and training-free 3D deployment framework. Unlike existing heuristics that rely on fixed-altitude assumptions, SCOPE integrates a perimeter-based peeling strategy with the Welzl Smallest Enclosing Circle (SEC) algorithm to dynamically optimize 3D positions. Theoretically, we provide a rigorous convergence proof and derive a polynomial time complexity of $O(N^2 \\log N)$, ensuring predictable execution for real-time applications. Experimentally, we evaluate SCOPE in unpredictable hotspot environments against both traditional heuristics and state-of-the-art DRL baselines under a matched hardware budget. Simulation results demonstrate that SCOPE maintains a high user satisfaction rate between 82% and 88% while generating solutions within millisecond-level latency on commodity hardware. Furthermore, SCOPE demonstrates exceptional resilience by maintaining an approximate 40% functional coverage rate at a minimum altitude constraint of 60 m; in this challenging regime, baseline methods suffer a significant performance degradation, dropping to approximately 20% due to altitude-induced path loss. These findings validate SCOPE as a robust and agile solution for establishing instantaneous digital lifelines in zero-day disaster response missions.",
+  "year": 2026,
+  "venue": "arXiv",
+  "authors": [
+   "Chuan-Chi Lai"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2602.09971v2",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2602.09971v2",
+  "published_iso": "2026-02-10T16:59:20Z"
+ },
+ {
+  "title": "Steering Multimodal Large Language Models Decoding for Context-Aware Safety",
+  "title_norm": "steering multimodal large language models decoding for context aware safety",
+  "abstract": "Multimodal Large Language Models (MLLMs) are increasingly deployed in real-world applications, yet their ability to make context-aware safety decisions remains limited. Existing methods often fail to balance oversensitivity (unjustified refusals of benign queries) and undersensitivity (missed detection of visually grounded risks), leaving a persistent gap in safety alignment. To address this issue, we introduce Safety-aware Contrastive Decoding (SafeCoDe), a lightweight and model-agnostic decoding framework that dynamically adjusts token generation based on multimodal context. SafeCoDe operates in two stages: (1) a contrastive decoding mechanism that highlights tokens sensitive to visual context by contrasting real and Gaussian-noised images, and (2) a global-aware token modulation strategy that integrates scene-level reasoning with token-level adjustment to adapt refusals according to the predicted safety verdict. Extensive experiments across diverse MLLM architectures and safety benchmarks, covering undersensitivity, oversensitivity, and general safety evaluations, show that SafeCoDe consistently improves context-sensitive refusal behaviors while preserving model helpfulness.",
+  "year": 2025,
+  "venue": "arXiv",
+  "authors": [
+   "Zheyuan Liu",
+   "Zhangchen Xu",
+   "Guangyao Dou",
+   "Xiangchi Yuan",
+   "Zhaoxuan Tan",
+   "Radha Poovendran",
+   "Meng Jiang"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2509.19212v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2509.19212v1",
+  "published_iso": "2025-09-23T16:32:25Z"
+ },
+ {
+  "title": "SDFP: Speculative Decoding with FIT-Pruned Models for Training-Free and Plug-and-Play LLM Acceleration",
+  "title_norm": "sdfp speculative decoding with fit pruned models for training free and plug and ",
+  "abstract": "Large language models (LLMs) underpin interactive multimedia applications such as captioning, retrieval, recommendation, and creative content generation, yet their autoregressive decoding incurs substantial latency. Speculative decoding reduces latency using a lightweight draft model, but deployment is often limited by the cost and complexity of acquiring, tuning, and maintaining an effective draft model. Recent approaches usually require auxiliary training or specialization, and even training-free methods incur costly search or optimization. We propose SDFP, a fully training-free and plug-and-play framework that builds the draft model via Fisher Information Trace (FIT)-based layer pruning of a given LLM. Using layer sensitivity as a proxy for output perturbation, SDFP removes low-impact layers to obtain a compact draft while preserving compatibility with the original model for standard speculative verification. SDFP needs no additional training, hyperparameter tuning, or separately maintained drafts, enabling rapid, deployment-friendly draft construction. Across benchmarks, SDFP delivers 1.32x-1.5x decoding speedup without altering the target model's output distribution, supporting low-latency multimedia applications.",
+  "year": 2026,
+  "venue": "arXiv",
+  "authors": [
+   "Hanyu Wei",
+   "Zunhai Su",
+   "Peng Lu",
+   "Chao Li",
+   "Spandan Tiwari",
+   "Ashish Sirasao",
+   "Yuhan Dong"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2602.05499v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2602.05499v1",
+  "published_iso": "2026-02-05T10:02:00Z"
+ },
+ {
+  "title": "Revisiting Judge Decoding from First Principles via Training-Free Distributional Divergence",
+  "title_norm": "revisiting judge decoding from first principles via training free distributional",
+  "abstract": "Judge Decoding accelerates LLM inference by relaxing the strict verification of Speculative Decoding, yet it typically relies on expensive and noisy supervision. In this work, we revisit this paradigm from first principles, revealing that the ``criticality'' scores learned via costly supervision are intrinsically encoded in the draft-target distributional divergence. We theoretically prove a structural correspondence between learned linear judges and Kullback-Leibler (KL) divergence, demonstrating they rely on the same underlying logit primitives. Guided by this, we propose a simple, training-free verification mechanism based on KL divergence. Extensive experiments across reasoning and coding benchmarks show that our method matches or outperforms complex trained judges (e.g., AutoJudge), offering superior robustness to domain shifts and eliminating the supervision bottleneck entirely.",
+  "year": 2026,
+  "venue": "arXiv",
+  "authors": [
+   "Shengyin Sun",
+   "Yiming Li",
+   "Renxi Liu",
+   "Weizhe Lin",
+   "Hui-Ling Zhen",
+   "Xianzhi Yu",
+   "Mingxuan Yuan",
+   "Chen Ma"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2601.04766v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2601.04766v1",
+  "published_iso": "2026-01-08T09:34:54Z"
+ },
+ {
+  "title": "Component-Aware Self-Speculative Decoding in Hybrid Language Models",
+  "title_norm": "component aware self speculative decoding in hybrid language models",
+  "abstract": "Speculative decoding accelerates autoregressive inference by drafting candidate tokens with a fast model and verifying them in parallel with the target. Self-speculative methods avoid the need for an external drafter but have been studied exclusively in homogeneous Transformer architectures. We introduce component-aware self-speculative decoding, the first method to exploit the internal architectural heterogeneity of hybrid language models, isolating the SSM/linear-attention subgraph as a zero-cost internal draft. We evaluate this on two architecturally distinct hybrid families: Falcon-H1 (parallel: Mamba-2 + attention per layer) and Qwen3.5 (sequential: interleaved linear and attention layers), with a pure Transformer control (Qwen2.5). Parallel hybrids achieve acceptance rates of alpha = 0.68 at draft length k=2 under greedy decoding, while sequential hybrids yield only alpha = 0.038 -- an 18x gap attributable to how each architecture integrates its components. The property is scale-invariant: Falcon-H1 at 3B reproduces the rates observed at 0.5B. We further show that perplexity degradation from a companion ablation study predicts speculative viability without running speculative decoding: a 3.15x ratio (Falcon) maps to alpha = 0.37 at k=4, while 81.96x (Qwen) maps to alpha = 0.019. For sequential hybrids, generic LayerSkip achieves 12x higher acceptance rates than the component-aware strategy. The composition pattern of hybrid models -- not merely the presence of alternative components -- determines whether component-level self-speculation is viable.",
+  "year": 2026,
+  "venue": "arXiv",
+  "authors": [
+   "Hector Borobia",
+   "Elies Seguí-Mas",
+   "Guillermina Tormo-Carbó"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2605.01106v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2605.01106v1",
+  "published_iso": "2026-05-01T21:25:25Z"
+ },
+ {
+  "title": "The Geometry of Harmful Intent: Training-Free Anomaly Detection via Angular Deviation in LLM Residual Streams",
+  "title_norm": "the geometry of harmful intent training free anomaly detection via angular devia",
+  "abstract": "We present LatentBiopsy, a training-free method for detecting harmful prompts by analysing the geometry of residual-stream activations in large language models. Given 200 safe normative prompts, LatentBiopsy computes the leading principal component of their activations at a target layer and characterises new prompts by their radial deviation angle $θ$ from this reference direction. The anomaly score is the negative log-likelihood of $θ$ under a Gaussian fit to the normative distribution, flagging deviations symmetrically regardless of orientation. No harmful examples are required for training.\n  We evaluate two complete model triplets from the Qwen3.5-0.8B and Qwen2.5-0.5B families: base, instruction-tuned, and \\emph{abliterated} (refusal direction surgically removed via orthogonalisation). Across all six variants, LatentBiopsy achieves AUROC $\\geq$0.937 for harmful-vs-normative detection and AUROC = 1.000 for discriminating harmful from benign-aggressive prompts (XSTest), with sub-millisecond per-query overhead.\n  Three empirical findings emerge. First, geometry survives refusal ablation: both abliterated variants achieve AUROC at most 0.015 below their instruction-tuned counterparts, establishing a geometric dissociation between harmful-intent representation and the downstream generative refusal mechanism. Second, harmful prompts exhibit a near-degenerate angular distribution ($σ_θ\\approx 0.03$ rad), an order of magnitude tighter than the normative distribution ($σ_θ\\approx 0.27$ rad), preserved across all alignment stages including abliteration. Third, the two families exhibit opposite ring orientations at the same depth: harmful prompts occupy the outer ring in Qwen3.5-0.8B but the inner ring in Qwen2.5-0.5B, directly motivating the direction-agnostic scoring rule.",
+  "year": 2026,
+  "venue": "arXiv",
+  "authors": [
+   "Isaac Llorente-Saguer"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2603.27412v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2603.27412v1",
+  "published_iso": "2026-03-28T21:19:58Z"
+ },
+ {
+  "title": "S2D2: Fast Decoding for Diffusion LLMs via Training-Free Self-Speculation",
+  "title_norm": "s2d2 fast decoding for diffusion llms via training free self speculation",
+  "abstract": "Block-diffusion language models offer a promising path toward faster-than-autoregressive generation by combining block-wise autoregressive decoding with within-block parallel denoising. However, in the few-step regime needed for practical acceleration, standard confidence-thresholded decoding is often brittle: aggressive thresholds hurt quality, while conservative thresholds require unnecessary denoising steps. Existing approaches that address this issue either require additional training or incur extra test-time compute. We present S2D2, a training-free self-speculative decoding framework for block-diffusion language models. Our key observation is that a block-diffusion model becomes autoregressive when the block size is reduced to one, allowing the same pretrained model to act as both drafter and verifier. S2D2 inserts a speculative verification step into standard block-diffusion decoding and uses lightweight routing policies to decide when verification is worth its cost. This yields a hybrid decoding trajectory in which diffusion proposes tokens in parallel, while the autoregressive mode acts as a local sequence-level critic. Across three mainstream block-diffusion families, S2D2 consistently improves the accuracy-speed tradeoff over strong confidence-thresholding baselines. On SDAR, we observe up to $4.7\\times$ speedup over autoregressive decoding, and up to $1.57\\times$ over a tuned dynamic decoding baseline while improving accuracy by up to $4.5$ points. On LLaDA2.1-Mini, S2D2 remains complementary to built-in self-correction, including a conservative setting where it is $4.4\\times$ faster than the static baseline with slightly higher accuracy.",
+  "year": 2026,
+  "venue": "arXiv",
+  "authors": [
+   "Ligong Han",
+   "Hao Wang",
+   "Han Gao",
+   "Kai Xu",
+   "Akash Srivastava"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2603.25702v2",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2603.25702v2",
+  "published_iso": "2026-03-26T17:48:50Z"
+ },
+ {
+  "title": "Anchored Decoding: Provably Reducing Copyright Risk for Any Language Model",
+  "title_norm": "anchored decoding provably reducing copyright risk for any language model",
+  "abstract": "Language models (LMs) tend to memorize portions of their training data and emit verbatim spans. When the underlying sources are sensitive or copyright-protected, such reproduction raises issues of consent and compensation for creators and compliance risks for developers. We propose Anchored Decoding, a plug-and-play inference-time method for suppressing verbatim copying: it enables decoding from any risky LM trained on mixed-license data by keeping generation in bounded proximity to a permissively trained safe LM. Anchored Decoding adaptively allocates a user-chosen information budget over the generation trajectory and enforces per-step constraints that yield a sequence-level guarantee, enabling a tunable risk-utility trade-off. To make Anchored Decoding practically useful, we introduce a new permissively trained safe model (TinyComma 1.8B), as well as Anchored$_{\\mathrm{Byte}}$ Decoding, a byte-level variant of our method that enables cross-vocabulary fusion via the ByteSampler framework (Hayase et al., 2025). Across six model pairs on long-form metrics for copying risk and utility, Anchored and Anchored$_{\\mathrm{Byte}}$ Decoding define a new Pareto frontier, preserving near-original fluency and factuality while closing up to 75% of the measurable copying gap between the risky baseline and a safe reference, at a modest inference overhead.",
+  "year": 2026,
+  "venue": "arXiv",
+  "authors": [
+   "Jacqueline He",
+   "Jonathan Hayase",
+   "Wen-tau Yih",
+   "Sewoong Oh",
+   "Luke Zettlemoyer",
+   "Pang Wei Koh"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2602.07120v2",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2602.07120v2",
+  "published_iso": "2026-02-06T19:00:14Z"
+ },
+ {
+  "title": "Xiaoice: Training-Free Video Understanding via Self-Supervised Spatio-Temporal Clustering of Semantic Features",
+  "title_norm": "xiaoice training free video understanding via self supervised spatio temporal cl",
+  "abstract": "The remarkable zero-shot reasoning capabilities of large-scale Visual Language Models (VLMs) on static images have yet to be fully translated to the video domain. Conventional video understanding models often rely on extensive, task-specific training on annotated datasets, a process that is both costly and limited in scalability. This paper introduces a novel, training-free framework for video understanding that circumvents end-to-end training by synergistically combining the rich semantic priors of pre-trained VLMs with classic machine learning algorithms for pattern discovery. Our core idea is to reframe video understanding as a self-supervised spatio-temporal clustering problem within a high-dimensional semantic feature space. The proposed pipeline first transforms a video stream into a semantic feature trajectory using the frozen visual encoder of a pre-trained VLM. Subsequently, we employ Kernel Temporal Segmentation (KTS), a robust machine learning technique, to partition the continuous feature stream into discrete, semantically coherent event segments. These segments are then subjected to unsupervised density-based clustering to identify recurring macroscopic scenes and themes throughout the video. By selecting representative keyframes from each discovered cluster and leveraging the VLM's generative capabilities for textual description, our framework automatically produces a structured, multi-modal summary of the video content. This approach provides an effective, interpretable, and model-agnostic pathway for zero-shot, automated structural analysis of video content.",
+  "year": 2025,
+  "venue": "arXiv",
+  "authors": [
+   "Shihao Ji",
+   "Zihui Song"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2510.16781v2",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2510.16781v2",
+  "published_iso": "2025-10-19T10:13:34Z"
+ },
+ {
+  "title": "Goose: Anisotropic Speculation Trees for Training-Free Speculative Decoding",
+  "title_norm": "goose anisotropic speculation trees for training free speculative decoding",
+  "abstract": "Speculative decoding accelerates large language model inference by drafting multiple candidate tokens and verifying them in a single forward pass. Candidates are organized as a tree: deeper trees accept more tokens per step, but adding depth requires sacrificing breadth (fallback options) under a fixed verification budget. Existing training-free methods draft from a single token source and shape their trees without distinguishing candidate quality across origins. We observe that two common training-free token sources - n-gram matches copied from the input context, and statistical predictions from prior forward passes - differ dramatically in acceptance rate (~6x median gap, range 2-18x across five models and five benchmarks). We prove that when such a quality gap exists, the optimal tree is anisotropic (asymmetric): reliable tokens should form a deep chain while unreliable tokens spread as wide branches, breaking through the depth limit of balanced trees. We realize this structure in GOOSE, a training-free framework that builds an adaptive spine tree - a deep chain of high-acceptance context-matched tokens with wide branches of low-acceptance alternatives at each node. We prove that the number of tokens accepted per step is at least as large as that of either source used alone. On five LLMs (7B-33B) and five benchmarks, GOOSE achieves 1.9-4.3x lossless speedup, outperforming balanced-tree baselines by 12-33% under the same budget.",
+  "year": 2026,
+  "venue": "arXiv",
+  "authors": [
+   "Tao Jin",
+   "Phuong Minh Nguyen",
+   "Naoya Inoue"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2604.02047v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2604.02047v1",
+  "published_iso": "2026-04-02T13:48:42Z"
+ },
+ {
+  "title": "How Contrastive Decoding Enhances Large Audio Language Models?",
+  "title_norm": "how contrastive decoding enhances large audio language models",
+  "abstract": "While Contrastive Decoding (CD) has proven effective at enhancing Large Audio Language Models (LALMs), the underlying mechanisms driving its success and the comparative efficacy of different strategies remain unclear. This study systematically evaluates four distinct CD strategies across diverse LALM architectures. We identify Audio-Aware Decoding and Audio Contrastive Decoding as the most effective methods. However, their impact varies significantly by model. To explain this variability, we introduce a Transition Matrix framework to map error pattern shifts during inference. Our analysis demonstrates that CD reliably rectifies errors in which models falsely claim an absence of audio or resort to uncertainty-driven guessing. Conversely, it fails to correct flawed reasoning or confident misassertions. Ultimately, these findings provide a clear guideline for determining which LALM architectures are most suitable for CD enhancement based on their baseline error profiles.",
+  "year": 2026,
+  "venue": "arXiv",
+  "authors": [
+   "Tzu-Quan Lin",
+   "Wei-Ping Huang",
+   "Yi-Cheng Lin",
+   "Hung-yi Lee"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2603.09232v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2603.09232v1",
+  "published_iso": "2026-03-10T06:05:51Z"
+ },
+ {
+  "title": "Speculative Coupled Decoding for Training-Free Lossless Acceleration of Autoregressive Visual Generation",
+  "title_norm": "speculative coupled decoding for training free lossless acceleration of autoregr",
+  "abstract": "Autoregressive (AR) modeling has recently emerged as a promising new paradigm in visual generation, but its practical adoption is severely constrained by the slow inference speed of per-token generation, which often requires thousands of steps to produce a single sample. While several Speculative Decoding (SD)-based methods have been proposed to solve this problem by generating multiple tokens in a single forward step, they suffer from limited speedup, degraded quality, or require the training of a draft model. To solve these problems, we propose a new training-free, lossless SD framework, Speculative Coupled Decoding (SCD), by extending the recently proposed Speculative Jacobi Decoding (SJD). While SJD shows strong potential for accelerating AR generation by combining Jacobi iteration and SD, we found that its acceptance rate is still significantly limited due to the instability arising from the independent sampling process used during draft token generation. To overcome this, we introduce an information-theoretic approach, Coupling, which stabilizes the drafting trajectory of SJD by maximizing the probability of sampling identical draft tokens across consecutive iterations, significantly enhancing the acceptance rate while preserving its lossless property. Remarkably, this method requires only a single-line modification to the existing algorithm with almost zero overhead, yet achieves substantial performance gains, delivering up to a 4.2x speedup in image generation and 13.6x speedup in video generation compared to standard AR decoding, without any degradation or the need for additional training. The source code is available at https://github.com/junhyukso/SCD",
+  "year": 2025,
+  "venue": "arXiv",
+  "authors": [
+   "Junhyuk So",
+   "Hyunho Kook",
+   "Chaeyeon Jang",
+   "Eunhyeok Park"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2510.24211v2",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2510.24211v2",
+  "published_iso": "2025-10-28T09:26:27Z"
+ },
+ {
+  "title": "DOA: Training-Free Decoder-Only Attention Policy for Long-Form Simultaneous Translation with SpeechLLMs",
+  "title_norm": "doa training free decoder only attention policy for long form simultaneous trans",
+  "abstract": "Simultaneous speech-to-text translation (SimulST) generates translations while speech is still unfolding, requiring a streaming policy that decides when to read and when to write. State-of-the-art approaches rely on attention-based encoder-decoder models where cross-attention provides explicit alignment signals. In contrast, Speech Large Language Models (SpeechLLMs) are decoder-only architectures relying solely on self-attention. This raises a central question: whether decoder self-attention contains sufficiently stable alignment signals to guide the streaming policy. Moreover, existing approaches typically rely on training-based adaptations or heuristic wait-$k$ policies and have not been validated in long-form settings. To fill these gaps, we propose Decoder-Only Attention (DOA), a training-free policy that enables long-form simultaneous translation with off-the-shelf SpeechLLMs by deriving a proxy alignment from self-attention. Experiments on Phi4-Multimodal and Qwen3-Omni show that DOA provides an effective alignment signal for supporting streaming decisions, enabling low-latency long-form SimulST with quality close to offline decoding without retraining.",
+  "year": 2026,
+  "venue": "arXiv",
+  "authors": [
+   "Sara Papi",
+   "Luisa Bentivogli"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2605.31432v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2605.31432v1",
+  "published_iso": "2026-05-29T15:27:26Z"
+ },
+ {
+  "title": "Learning to Decode in Parallel: Self-Coordinating Neural Network for Real-Time Quantum Error Correction",
+  "title_norm": "learning to decode in parallel self coordinating neural network for real time qu",
+  "abstract": "Fast, reliable decoders are pivotal components for enabling fault-tolerant quantum computation (FTQC). Neural network decoders like AlphaQubit have demonstrated potential, achieving higher accuracy than traditional human-designed decoding algorithms. However, existing implementations of neural network decoders lack the parallelism required to decode the syndrome stream generated by a superconducting logical qubit in real time. Moreover, integrating AlphaQubit with sliding window-based parallel decoding schemes presents non-trivial challenges: AlphaQubit is trained solely to output a single bit corresponding to the global logical correction for an entire memory experiment, rather than local physical corrections that can be easily integrated. We address this issue by training a recurrent, transformer-based neural network specifically tailored for parallel window decoding. While it still outputs a single bit, we derive training labels from a consistent set of local corrections and train on various types of decoding windows simultaneously. This approach enables the network to self-coordinate across neighboring windows, facilitating high-accuracy parallel decoding of arbitrarily long memory experiments.\n  As a result, we overcome the throughput bottleneck that previously precluded the use of AlphaQubit-type decoders in FTQC. Our work presents the first scalable, neural-network-based parallel decoding framework that simultaneously achieves SOTA accuracy and the stringent throughput required for real-time quantum error correction. Using an end-to-end experimental workflow, we benchmark our decoder on the Zuchongzhi 3.2 superconducting quantum processor on surface codes with distances up to 7, demonstrating its superior accuracy. Moreover, we demonstrate that, using our approach, a single TPU v6e is capable of decoding surface codes with distances up to 25 within 1us per decoding round.",
+  "year": 2026,
+  "venue": "arXiv",
+  "authors": [
+   "Kai Zhang",
+   "Zhengzhong Yi",
+   "Shaojun Guo",
+   "Linghang Kong",
+   "Situ Wang",
+   "Xiaoyu Zhan",
+   "Tan He",
+   "Weiping Lin",
+   "Tao Jiang",
+   "Dongxin Gao",
+   "Yiming Zhang",
+   "Fangming Liu",
+   "Fang Zhang",
+   "Zhengfeng Ji",
+   "Fusheng Chen",
+   "Jianxin Chen"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2601.09921v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2601.09921v1",
+  "published_iso": "2026-01-14T23:04:25Z"
+ },
+ {
+  "title": "SJD++: Improved Speculative Jacobi Decoding for Training-free Acceleration of Discrete Auto-regressive Text-to-Image Generation",
+  "title_norm": "sjd improved speculative jacobi decoding for training free acceleration of discr",
+  "abstract": "Large autoregressive models can generate high-quality, high-resolution images but suffer from slow generation speed, because these models require hundreds to thousands of sequential forward passes for next-token prediction during inference. To accelerate autoregressive text-to-image generation, we propose Speculative Jacobi Decoding++ (SJD++), a training-free probabilistic parallel decoding algorithm. Unlike traditional next-token prediction, SJD++ performs multi-token prediction in each forward pass, drastically reducing generation steps. Specifically, it integrates the iterative multi-token prediction mechanism from Jacobi decoding, with the probabilistic drafting-and-verification mechanism from speculative sampling. More importantly, for further acceleration, SJD++ reuses high-confidence draft tokens after each verification phase instead of resampling them all. We conduct extensive experiments on several representative autoregressive text-to-image generation models and demonstrate that SJD++ achieves $2\\times$ to $3\\times$ inference latency reduction and $2\\times$ to $7\\times$ step compression, while preserving visual quality with no observable degradation.",
+  "year": 2025,
+  "venue": "arXiv",
+  "authors": [
+   "Yao Teng",
+   "Zhihuan Jiang",
+   "Han Shi",
+   "Xian Liu",
+   "Xuefei Ning",
+   "Guohao Dai",
+   "Yu Wang",
+   "Zhenguo Li",
+   "Xihui Liu"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2512.07503v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2512.07503v1",
+  "published_iso": "2025-12-08T12:36:43Z"
+ },
+ {
+  "title": "Training-Free Loosely Speculative Decoding: Accepting Semantically Correct Drafts Beyond Exact Match",
+  "title_norm": "training free loosely speculative decoding accepting semantically correct drafts",
+  "abstract": "Large language models (LLMs) achieve strong performance across diverse tasks but suffer from high inference latency due to their autoregressive generation. Speculative Decoding (SPD) mitigates this issue by verifying candidate tokens in parallel from a smaller draft model, yet its strict exact-match verification discards many semantically valid continuations. Moreover, existing training-based SPD methods often suffer from performance degradation on out-of-distribution (OOD) tasks. To this end, we propose Training-Free Loosely Speculative Decoding (FLy), a novel method that loosens the rigid verification criterion by leveraging the target model's self-corrective behavior to judge whether a draft-target mismatch remains semantically valid. FLy introduces a two-tier mechanism: an entropy-level gate that identifies whether the current token allows multiple plausible alternatives or is nearly deterministic, and a token-level deferred window that distinguishes genuine errors from differently worded yet semantically correct variants. To further reduce latency, we design a multi-level acceleration strategy that accelerates not only the target model but also the drafter itself. Owing to its training-free design, FLy composes seamlessly with arbitrary draft-target pairs and generalizes across models and domains without hyperparameter re-tuning. Experiments show that FLy preserves more than 99% of the target model's accuracy while achieving an average 2.81x speedup on Llama-3.1-70B-Instruct and 5.07x speedup on the 405B variant. Notably, on out-of-domain datasets, our method remains highly effective and outperforms the training-based method EAGLE-3 by 1.62x.",
+  "year": 2025,
+  "venue": "arXiv",
+  "authors": [
+   "Jinze Li",
+   "Yixing Xu",
+   "Guanchen Li",
+   "Shuo Yang",
+   "Jinfeng Xu",
+   "Xuanwu Yin",
+   "Dong Li",
+   "Edith C. H. Ngai",
+   "Emad Barsoum"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2511.22972v3",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2511.22972v3",
+  "published_iso": "2025-11-28T08:23:30Z"
+ },
+ {
+  "title": "Dynamic-dLLM: Dynamic Cache-Budget and Adaptive Parallel Decoding for Training-Free Acceleration of Diffusion LLM",
+  "title_norm": "dynamic dllm dynamic cache budget and adaptive parallel decoding for training fr",
+  "abstract": "Diffusion Large Language Models (dLLMs) offer a promising alternative to autoregressive models, excelling in text generation tasks due to their bidirectional attention mechanisms. However, their computational complexity scales on the order of L cubed with the sequence length L. This poses significant challenges for long-sequence and real-time applications, primarily due to the lack of compatibility with key-value caching and the non-autoregressive nature of denoising steps. Existing acceleration methods rely on static caching or parallel decoding strategies, which fail to account for the dynamic behavior of token properties across layers and decoding steps. We propose Dynamic-dLLM, a training-free framework that enhances dLLM inference efficiency through two components: Dynamic Cache Updating (DCU), which adaptively allocates cache-update budgets based on layer-wise token dynamics, and Adaptive Parallel Decoding (APD), which dynamically calibrates decoding thresholds to balance generation quality and efficiency. Extensive experiments on models like LLaDA-8B-Instruct, LLaDA-1.5, and Dream-v0-7B-Instruct across benchmarks such as MMLU, GSM8K, and HumanEval demonstrate that Dynamic-dLLM significantly improves inference speed. It attains an average speedup exceeding 3 times while maintaining performance. Dynamic-dLLM outperforms state-of-the-art acceleration methods and provides a plug-and-play solution for efficient dLLM deployment without compromising performance. The code is available at https://github.com/TianyiWu233/DYNAMIC-DLLM.",
+  "year": 2026,
+  "venue": "arXiv",
+  "authors": [
+   "Tianyi Wu",
+   "Xiaoxi Sun",
+   "Yanhua Jiao",
+   "Yulin Li",
+   "Yixin Chen",
+   "YunHao Cao",
+   "YiQi Hu",
+   "Zhuotao Tian"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2606.26120v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2606.26120v1",
+  "published_iso": "2026-05-27T02:47:50Z"
+ },
+ {
+  "title": "Temporal Contrastive Decoding: A Training-Free Method for Large Audio-Language Models",
+  "title_norm": "temporal contrastive decoding a training free method for large audio language mo",
+  "abstract": "Large audio-language models (LALMs) generalize across speech, sound, and music, but unified decoders can exhibit a \\emph{temporal smoothing bias}: transient acoustic cues may be underutilized in favor of temporally smooth context that is better supported by language priors, leading to less specific audio-grounded outputs. We propose \\emph{Temporal Contrastive Decoding} (TCD), a training-free decoding method for unified LALMs that mitigates this effect at inference time. TCD constructs a temporally blurred slow-path view by smoothing the input waveform and re-encoding it, then contrasts next-token logits from the original and slow-path views. The contrastive signal is applied as a token-level logit update restricted to a small candidate set. A self-normalized stability score sets the blur window and update scale, and a step-wise gate based on uncertainty and audio reliance activates the update only when needed. Experiments on MMAU and AIR-Bench show consistent improvements on strong unified LALMs. We further conduct ablations and an architectural applicability study to analyze the contributions of key components and how TCD behaves across large audio-language model designs.",
+  "year": 2026,
+  "venue": "arXiv",
+  "authors": [
+   "Yanda Li",
+   "Yuhan Liu",
+   "Zirui Song",
+   "Yunchao Wei",
+   "Martin Takáč",
+   "Salem Lahlou"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2604.15383v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2604.15383v1",
+  "published_iso": "2026-04-16T02:30:41Z"
+ },
+ {
+  "title": "DART: Draft-Agreement Routing for Training-Free Adaptive Thinking Budgets in Hybrid Reasoning Models",
+  "title_norm": "dart draft agreement routing for training free adaptive thinking budgets in hybr",
+  "abstract": "Hybrid reasoning models can answer directly or spend extra tokens on extended thinking. A practical router should choose between these modes for each query, so easy problems avoid unnecessary reasoning and hard problems receive enough budget to finish the answer. Existing routers move in this direction, but they typically require labeled training data or fix thinking budgets up front, ignoring answer-level evidence from the model itself. We introduce DART, a training-free routing framework that samples two cheap no-think drafts, accepts direct answering when the drafts agree, and predicts a thinking budget from draft entropy when they disagree. Across the main comparisons, DART preserves or improves always-thinking accuracy in most settings while reducing thinking-token use. On math reasoning, accuracy improves by up to $+$9.0 points on Olympiad-level problems while thinking tokens drop 15-69%. On code reasoning under execution-based equivalence, accuracy improves by up to +22.5 points while thinking tokens drop 51-63%. The Stage~1 signal extends across model scales (0.6B-32B), model families, and API-only hosted settings, with no labeled data and no gradient updates required.",
+  "year": 2026,
+  "venue": "arXiv",
+  "authors": [
+   "Jungseob Lee",
+   "Seongtae Hong",
+   "Seungjun Lee",
+   "Jaehyung Seo",
+   "Junyoung Son",
+   "Sugyeong Eo",
+   "Chanjun Park",
+   "Hyeongju Park",
+   "Hyeonseok Moon",
+   "Heuiseok Lim"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2606.23181v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2606.23181v1",
+  "published_iso": "2026-06-22T11:24:59Z"
+ },
+ {
+  "title": "Sampling for Quality: Training-Free Reward-Guided LLM Decoding via Sequential Monte Carlo",
+  "title_norm": "sampling for quality training free reward guided llm decoding via sequential mon",
+  "abstract": "We introduce a principled probabilistic framework for reward-guided decoding in large language models, addressing the limitations of standard decoding methods that optimize token-level likelihood rather than sequence-level quality. Our method defines a reward-augmented target distribution over complete sequences by combining model transition probabilities with prefix-dependent reward potentials. Importantly, the approach is training-free: it leaves model weights unchanged and instead modifies the inference distribution via reward potentials, with all gains arising purely from inference-time sampling. To sample from this distribution, we develop Sequential Monte Carlo algorithms, including a computationally efficient prefix-only variant and a lookahead variant whose intermediate targets match the exact marginals of the full sequence distribution. The framework also integrates resample-move updates with Metropolis-Hastings rejuvenation and supports block-wise generation, subsuming common decoding strategies such as temperature sampling and power-tempered objectives. Empirical results across three 7B models show significant gains. On code generation (HumanEval), our method improves base performance by up to 54.9% and surpasses the strongest sampling baselines by 9.1%-15.3%. On mathematical reasoning (MATH500), it achieves gains of up to 8.8%. Notably, it reaches 87.8% on HumanEval and 78.4% on MATH500 with Qwen2.5-7B, consistently outperforming the reinforcement learning method GRPO.",
+  "year": 2026,
+  "venue": "arXiv",
+  "authors": [
+   "Jelena Markovic-Voronov",
+   "Wenhui Zhu",
+   "Bo Long",
+   "Zhipeng Wang",
+   "Suyash Gupta",
+   "Kayhan Behdin",
+   "Bee-Chung Chen",
+   "Deepak Agarwal"
+  ],
+  "citations": null,
+  "source": "arxiv",
+  "source_id": "2604.16453v1",
+  "doi": "",
+  "paper_url": "https://arxiv.org/abs/2604.16453v1",
+  "published_iso": "2026-04-07T21:48:04Z"
+ }
+]

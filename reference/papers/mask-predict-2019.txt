@@ -1,0 +1,551 @@
+                                                                        Mask-Predict: Parallel Decoding of
+                                                                       Conditional Masked Language Models
+
+                                                    Marjan Ghazvininejad∗               Omer Levy∗       Yinhan Liu∗               Luke Zettlemoyer
+                                                                                        Facebook AI Research
+                                                                                             Seattle, WA
+
+
+
+
+                                                                  Abstract                         entire sequence (left and right context) to pre-
+                                                                                                   dict each masked word. We train with a simple
+                                                Most machine translation systems generate          masking scheme where the number of masked tar-
+                                                text autoregressively from left to right. We,
+                                                                                                   get tokens is distributed uniformly, presenting the
+
+
+
+
+arXiv:1904.09324v2 [cs.CL] 4 Sep 2019
+                                                instead, use a masked language modeling ob-
+                                                jective to train a model to predict any subset
+                                                                                                   model with both easy (single mask) and difficult
+                                                of the target words, conditioned on both the       (completely masked) examples. Unlike recently
+                                                input text and a partially masked target trans-    proposed insertion models (Gu et al., 2019; Stern
+                                                lation. This approach allows for efficient it-     et al., 2019), which treat each token as a separate
+                                                erative decoding, where we first predict all       training instance, CMLMs can train from the en-
+                                                of the target words non-autoregressively, and      tire sequence in parallel, resulting in much faster
+                                                then repeatedly mask out and regenerate the        training.
+                                                subset of words that the model is least confi-
+                                                                                                      We also introduce a new decoding algorithm,
+                                                dent about. By applying this strategy for a con-
+                                                stant number of iterations, our model improves     mask-predict, which uses the order-agnostic na-
+                                                state-of-the-art performance levels for non-       ture of CMLMs to support highly parallel decod-
+                                                autoregressive and parallel decoding transla-      ing. Mask-predict repeatedly masks out and re-
+                                                tion models by over 4 BLEU on average. It is       predicts the subset of words in the current trans-
+                                                also able to reach within about 1 BLEU point       lation that the model is least confident about,
+                                                of a typical left-to-right transformer model,      in contrast to recent parallel decoding translation
+                                                while decoding significantly faster.1
+                                                                                                   approaches that repeatedly predict the entire se-
+                                                                                                   quence (Lee et al., 2018). Decoding starts with a
+                                        1       Introduction
+                                                                                                   completely masked target text, to predict all of the
+                                        Most machine translation systems use sequen-               words in parallel, and ends after a constant num-
+                                        tial decoding strategies where words are predicted         ber of mask-predict cycles. This overall strategy
+                                        one-by-one. In this paper, we present a model and          allows the model to repeatedly reconsider word
+                                        a parallel decoding algorithm which, for a rela-           choices within a rich bi-directional context and, as
+                                        tively small sacrifice in performance, can be used         we will show, produce high-quality translations in
+                                        to generate translations in a constant number of           just a few cycles.
+                                        decoding iterations.                                          Experiments on benchmark machine translation
+                                           We introduce conditional masked language                datasets show the strengths of mask-predict de-
+                                        models (CMLMs), which are encoder-decoder ar-              coding for transformer CMLMs. With just 4 it-
+                                        chitectures trained with a masked language model           erations, BLEU scores already surpass the perfor-
+                                        objective (Devlin et al., 2018; Lample and Con-            mance of the best non-autoregressive and parallel
+                                        neau, 2019). This change allows the model to               decoding models.2
+                                        learn to predict, in parallel, any arbitrary subset           With 10 iterations, the approach outper-
+                                        of masked words in the target translation. We use          forms the current state-of-the-art parallel decod-
+                                        transformer CMLMs, where the decoder’s self at-                2
+                                                                                                         We use the term “parallel decoding” to refer to the family
+                                        tention (Vaswani et al., 2017) can attend to the           of approaches that can generate the entire target sequence in
+                                                                                                   parallel. These are often referred to as “non-autoregressive”
+                                                ∗
+                                              Equal contribution, sorted alphabetically.           approaches, but both iterative refinement (Lee et al., 2018)
+                                            1
+                                             Our code is publicly available at:                    and our mask-predict approach condition on the model’s past
+                                        https://github.com/facebookresearch/Mask-Predict           predictions.
+ing model (Lee et al., 2018) by gaps of 4-5 BLEU        While the architecture can technically make pre-
+points on the WMT’14 English-German transla-            dictions over all target-language tokens (including
+tion benchmark, and up to 3 BLEU points on              Yobs ), we only compute the loss for the tokens in
+WMT’16 English-Romanian, but with the same              Ymask .
+model complexity and decoding speed. When
+compared to standard autoregressive transformer         2.3    Predicting Target Sequence Length
+models, CMLMs with mask-predict offer a trade-
+                                                        In traditional left-to-right machine translation,
+off between speed and performance, trading up
+                                                        where the target sequence is predicted token by
+to 2 BLEU points in translation quality for a 3x
+                                                        token, it is natural to determine the length of the
+speed-up during decoding.
+                                                        sequence dynamically by simply predicting a spe-
+                                                        cial EOS (end of sentence) token. However, for
+2     Conditional Masked Language Models
+                                                        CMLMs to predict the entire sequence in paral-
+A conditional masked language model (CMLM)              lel, they must know its length in advance. This
+predicts a set of target tokens Ymask given a source    problem was recognized by prior work in non-
+text X and part of the target text Yobs . It makes      autoregressive translation, where the length is pre-
+the strong assumption that the tokens Ymask are         dicted with a fertility model (Gu et al., 2018) or by
+conditionally independent of each other (given X        pooling the encoder’s outputs into a length classi-
+and Yobs ), and predicts the individual probabilities   fier (Lee et al., 2018).
+P (y|X, Yobs ) for each y ∈ Ymask . Since the num-         We follow Devlin et al. (2018) and add a special
+ber of tokens in Ymask is given in advance, the         LENGTH token to the encoder, akin to the CLS to-
+model is also implicitly conditioning on the length     ken in BERT. The model is trained to predict the
+of the target sequence N = |Ymask | + |Yobs |.          length of the target sequence N as the LENGTH
+                                                        token’s output, similar to predicting another token
+2.1    Architecture                                     from a different vocabulary, and its loss is added to
+We adopt the standard encoder-decoder trans-            the cross-entropy loss from the target sequence.
+former for machine translation (Vaswani et al.,
+2017): a source-language encoder that does self-        3     Decoding with Mask-Predict
+attention, and a target-language decoder that has
+one set of attention heads over the encoder’s out-      We introduce the mask-predict algorithm, which
+put and another set for the target language (self-      decodes an entire sequence in parallel within a
+attention). In terms of parameters, our architec-       constant number of cycles. At each iteration, the
+ture is identical to the standard one. We deviate       algorithm selects a subset of tokens to mask, and
+from the standard decoder by removing the self-         then predicts them (in parallel) using an underly-
+attention mask that prevents left-to-right decoders     ing CMLM. Masking the tokens where the model
+from attending on future tokens. In other words,        has doubts while conditioning on previous high-
+our decoder is bi-directional, in the sense that it     confidence predictions lets the model re-predict
+can use both left and right contexts to predict each    the more challenging cases, but with more infor-
+token.                                                  mation. At the same time, the ability to make large
+                                                        parallel changes at each step allows mask-predict
+2.2    Training Objective                               to converge on a high quality output sequence in a
+                                                        sub-linear number of decoding iterations.
+During training, we randomly select Ymask among
+the target tokens. We first sample the number
+                                                        3.1    Formal Description
+of masked tokens from a uniform distribution be-
+tween one and the sequence’s length, and then ran-      Given the target sequence’s length N (see Sec-
+domly choose that number of tokens. Following           tion 3.3), we define two variables: the target se-
+Devlin et al. (2018), we replace the inputs of the      quence (y1 , . . . , yN ) and the probability of each
+tokens Ymask with a special MASK token.                 token (p1 , . . . , pN ). The algorithm runs for a pre-
+   We optimize the CMLM for cross-entropy loss          determined number of iterations T , which is either
+over every token in Ymask . This can be done in         a constant or a simple function of N . At each iter-
+parallel, since the model assumes that the tokens in    ation, we perform a mask operation, followed by
+Ymask are conditionally independent of each other.      predict.
+      src      Der Abzug der franzsischen Kampftruppen wurde am 20. November abgeschlossen .
+      t=0      The departure of the French combat completed completed on 20 November .
+      t=1      The departure of French combat troops was completed on 20 November .
+      t=2      The withdrawal of French combat troops was completed on November 20th .
+
+Figure 1: An example from the WMT’14 DE-EN validation set that illustrates how mask-predict generates text. At
+each iteration, the highlighted tokens are masked and repredicted, conditioned on the other tokens in the sequence.
+
+
+Mask For the first iteration (t = 0), we mask              This produces an ungrammatical translation with
+all the tokens. For later iterations, we mask the n        repetitions (“completed completed”), which is
+tokens with the lowest probability scores:                 typical of non-autoregressive models due to the
+                 (t)                                       multi-modality problem (Gu et al., 2018).
+               Ymask = arg min(pi , n)                         In the second iteration (t = 1), we select 8 of
+                             i
+                   (t)         (t)
+                 Yobs = Y \ Ymask                          the 12 tokens generated in the previous step; these
+                                                           token were predicted with the lowest probabilities
+The number of masked tokens n is a function of             at t = 0. We mask them and repredict with the
+the iteration t; specifically, we use linear decay         CMLM, while conditioning on the 4 unmasked
+n = N · TT−t , where T is the total number of itera-                  (1)
+                                                           tokens Yobs = {“The”, “20”, “November”, “.”}.
+tions. For example, if T = 10, we will mask 90%            This results in a more grammatical and accurate
+of the tokens at t = 1, 80% at t = 2, and so forth.        translation. Our analysis shows that this second it-
+Predict After masking, the CMLM predicts the               eration removes most repetitions, perhaps because
+                  (t)                                      conditioning on even a little bit of the target se-
+masked tokens Ymask , conditioned on the source
+                                          (t)              quence is enough to collapse the multi-modal tar-
+text X and the unmasked target tokens Yobs . We            get distribution into a single output (Section 5.1).
+select the prediction with the highest probability             In the last iteration (t = 2), we select the 4
+                               (t)
+for each masked token yi ∈ Ymask and update its            of the 12 tokens that had the lowest probabilities.
+probability score accordingly:                             Two of those tokens were predicted at the first step
+         (t)                                  (t)          (t = 0), and not repredicted at the second step
+        yi = arg max P (yi = w|X, Yobs )
+                        w                                  (t = 1). It is quite common for earlier predictions
+         (t)                            (t)                to be masked at later iterations because they were
+        pi = max P (yi = w|X, Yobs )
+                  w
+                                                           predicted with less information and thus tend to
+The values and the probabilities of unmasked to-           have lower probabilities. Now that the model is
+       (t)
+kens Yobs remain unchanged:                                conditioning on 8 tokens, it is able to produce an
+                        (t)     (t−1)
+                                                           more fluent translation; “withdrawal” is a better
+                       yi = yi                             fit for describing troop movement, and “November
+                        (t)     (t−1)                      20th” is a more common date format in English.
+                       pi = pi
+We tried updating or decaying these probabilities          3.3   Deciding Target Sequence Length
+in preliminary experiments, but found that this            When generating, we first compute the CMLM’s
+heuristic works well despite the fact that some            encoder, and then use the LENGTH token’s en-
+probabilities are stale.                                   coding to predict a distribution over the target se-
+3.2   Example                                              quence’s length (see Section 2.3). Since much of
+                                                           the CMLM’s computation can be batched, we se-
+Figure 1 illustrates how mask-predict can generate
+                                                           lect the top ` length candidates with the highest
+a good translation in just three iterations.
+                                                           probabilities, and decode the same example with
+   In the first iteration (t = 0), the entire target
+                          (0)               (0)            different lengths in parallel. We then select the se-
+sequence is masked (Ymask = Y and Yobs = ∅),               quence with the highest average log-probability as
+and is thus generated by the CMLM in a purely              our result:
+non-autoregressive process:
+                (0)           (0)
+                                                                               1 X      (T )
+            P (Ymask |X, Yobs ) = P (Y |X)                                         log pi
+                                                                               N
+Our analysis reveals that translating multiple can-     to create the final model. During decoding, we
+didate sequences of different lengths can improve       use a beam size of b = 5 for autoregressive de-
+performance (see Section 5.3).                          coding, and similarly use ` = 5 length candidates
+                                                        for mask-predict decoding. We trained with mixed
+4     Experiments                                       precision floating point arithmetic on two DGX-
+We evaluate CMLMs with mask-predict decoding            1 machines, each with eight 16GB Nvidia V100
+on standard machine translation benchmarks. We          GPUs interconnected by Infiniband (Micikevicius
+find that our approach significantly outperforms        et al., 2018).
+prior parallel decoding machine translation meth-       Model Distillation Following previous work on
+ods and even approaches the performance of stan-        non-autoregressive and insertion-based machine
+dard autoregressive models (Section 4.2), while         translation (Gu et al., 2018; Lee et al., 2018; Stern
+decoding significantly faster (Section 4.3).            et al., 2019), we train CMLMs on translations
+4.1    Experimental Setup                               produced by a standard left-to-right transformer
+                                                        model (large for EN-DE and EN-ZH, base for EN-
+Translation Benchmarks We evaluate on three
+                                                        RO). For a fair comparison, we also train standard
+standard datasets, WMT’14 EN-DE (4.5M sen-
+                                                        left-to-right base transformers on translations pro-
+tence pairs), WMT’16 EN-RO (610k pairs) and
+                                                        duced by large transformer models for EN-DE and
+WMT’17 EN-ZH (20M pairs) in both directions.
+                                                        EN-ZH, in addition to the standard baselines. We
+The datasets are tokenized into subword units us-
+                                                        analyze the impact of distillation in Section 5.4.
+ing BPE (Sennrich et al., 2016). We use the same
+preprocessed data as Vaswani et al. (2017) and Wu       4.2   Translation Quality
+et al. (2019) for WMT’14 EN-DE and WMT’17
+                                                        We compare our approach to three other parallel
+EN-ZH respectively, and use the data from Lee
+                                                        decoding translation methods: the fertility-based
+et al. (2018) for WMT’16 EN-RO. We evaluate
+                                                        sequence-to-sequence model of Gu et al. (2018),
+performance with BLEU (Papineni et al., 2002)
+                                                        the CTC-loss transformer of Libovický and Helcl
+for all language pairs, except from EN to ZH,
+                                                        (2018), and the iterative refinement approach of
+where we use SacreBLEU (Post, 2018).3
+                                                        Lee et al. (2018). The first two methods are purely
+Hyperparameters We follow most of the stan-             non-autoregressive, while the iterative refinement
+dard hyperparameters for transformers in the base       approach is only non-autoregressive in the first de-
+configuration (Vaswani et al., 2017): 6 layers per      coding iteration, similar to our approach. In terms
+stack, 8 attention heads per layer, 512 model di-       of speed, each mask-predict iteration is virtually
+mensions, 2048 hidden dimensions. We also ex-           equivalent to a refinement iteration.
+periment with 512 hidden dimensions, for com-              Table 1 shows that among the parallel decoding
+parison with previous parallel decoding models          methods, our approach yields the highest BLEU
+(Gu et al., 2018; Lee et al., 2018). We follow          scores by a considerable margin. When control-
+the weight initialization scheme from BERT (De-         ling for the number of parameters (i.e. considering
+vlin et al., 2018), which samples weights from          only the smaller CMLM configuration), CMLMs
+N (0, 0.02), initializes biases to zero, and sets       score roughly 4 BLEU points higher than the pre-
+layer normalization parameters to β = 0, γ = 1.         vious state of the art on WMT’14 EN-DE, in both
+For regularization, we use 0.3 dropout, 0.01 L2         directions. Another striking result is that a CMLM
+weight decay, and smoothed cross validation loss        with only 4 mask-predict iterations yields higher
+with ε = 0.1. We train batches of 128k to-              scores than 10 iterations of the iterative refinement
+kens using Adam (Kingma and Ba, 2015) with              model; in fact, only 3 mask-predict iterations are
+β = (0.9, 0.999) and ε = 10−6 . The learning            necessary for achieving a new state of the art on
+rate warms up to a peak of 5 · 10−4 within 10,000       both directions of WMT’14 EN-DE (not shown).
+steps, and then decays with the inverse square-            The translations produced by CMLMs with
+root schedule. We trained all models for 300k           mask-predict also score competitively when com-
+steps, measured the validation loss at the end of       pared to strong transformer-based autoregressive
+each epoch, and averaged the 5 best checkpoints         models. In all 4 benchmarks, our base CMLM
+   3
+     SacreBLEU hash:       BLEU+case.mixed+lang.en-zh   reaches within 0.5-1.2 BLEU points from a well-
++numrefs.1+smooth.exp+test.wmt17+tok.zh+version.1.3.7   tuned base transformer, a relative decrease of less
+  Model                                        Dimensions       Iterations        WMT’14               WMT’16
+                                             (Model/Hidden)                    EN-DE DE-EN          EN-RO RO-EN
+  NAT w/ Fertility (Gu et al., 2018)             512/512               1       19.17      23.20     29.79      31.44
+  CTC Loss (Libovický and Helcl, 2018)         512/4096               1       17.68      19.80     19.93      24.71
+  Iterative Refinement (Lee et al., 2018)        512/512               1       13.91      16.77     24.45      25.73
+                                                 512/512              10       21.61      25.48     29.32      30.19
+       (Dynamic #Iterations)                     512/512               ?       21.54      25.43     29.66      30.30
+  Small CMLM with Mask-Predict                   512/512               1       15.06      19.26     20.12      20.36
+                                                 512/512               4       24.17      28.55     30.00      30.43
+                                                 512/512              10       25.51      29.47     31.65      32.27
+  Base CMLM with Mask-Predict                   512/2048               1       18.05      21.83     27.32      28.20
+                                                512/2048               4       25.94      29.90     32.53      33.23
+                                                512/2048              10       27.03      30.53     33.08      33.31
+  Base Transformer (Vaswani et al., 2017)       512/2048              N        27.30      ——        ——         ——
+  Base Transformer (Our Implementation)         512/2048              N        27.74      31.09     34.28      33.99
+  Base Transformer (+Distillation)             512/2048               N        27.86      31.07     ——         ——
+  Large Transformer (Vaswani et al., 2017)     1024/4096              N        28.40      ——        ——         ——
+  Large Transformer (Our Implementation)       1024/4096              N        28.60      31.71     ——         ——
+
+Table 1: The performance (BLEU) of CMLMs with mask-predict, compared to other parallel decoding machine
+translation methods. The standard (sequential) transformer is shown for reference. Bold numbers indicate state-
+of-the-art performance among parallel decoding methods.
+
+             Model                                      Dimensions           Iterations      WMT’17
+                                                      (Model/Hidden)                      EN-ZH ZH-EN
+             Base CMLM with Mask-Predict                   512/2048              1        24.23     13.64
+                                                           512/2048              4        32.63     21.90
+                                                           512/2048             10        33.19     23.21
+             Base Transformer (Our Implementation)         512/2048              N        34.31     23.74
+             Base Transformer (+Distillation)              512/2048              N        34.44     23.99
+             Large Transformer (Our Implementation)        1024/4096             N        35.01     24.65
+
+Table 2: The performance (BLEU) of CMLMs with mask-predict, compared to the standard (sequential) trans-
+former on WMT’ 17 EN-ZH.
+
+
+than 4% in translation quality. In many scenarios,            (b = 1) as a faster but less accurate baseline. For
+this is an acceptable price to pay for a significant          CMLMs, we vary the number of mask-predict it-
+speedup from parallel decoding.                               erations (T = 4, . . . , 10) and length candidates
+   Table 2 shows that these trends also hold for              (` = 1, 2, 3). For both models, we decode batches
+English-Chinese translation, in both directions,              of 10 sentences.4 For each decoding run, we
+despite major linguistic differences between the              measure the performance (BLEU) and wall time
+two languages.                                                (seconds) from when the model and data have
+                                                              been loaded until the last example has been trans-
+4.3   Decoding Speed                                          lated, and calculate the relative decoding speed-up
+Because CMLMs can predict the entire sequence                 (CMLM time / baseline time) to assess the speed-
+in parallel, mask-predict can translate an entire             performance trade-off.
+sequence in a constant number of decoding iter-                  The implementation of both the baseline trans-
+ations. Does this appealing theoretical property              former and our CMLM is based on fairseq
+translate into a wall-time speed-up in practice? By           (Gehring et al., 2017), which efficiently decodes
+comparing the actual decoding times, we show                  left-to-right transformers by caching the state.
+that, for some sacrifice in performance, our paral-           Caching reduces the baseline’s decoding speed
+lel method can translate much faster than standard            from 210 seconds to 128.5; CMLMs do not use
+sequential transformers.                                      cached decoding. All experiments used exactly
+                                                              the same machine and the same single GPU.
+Setup As the baseline system, we use the base
+transformer with beam search (b = 5) to trans-                   4
+                                                                   The batch size was chosen arbitrarily; mask-predict can
+late WMT’14 EN-DE; we also use greedy search                  scale up to much larger batch sizes.
+Figure 2: The trade-off between speed-up and translation quality of a base CMLM with mask-predict, compared
+to the standard sequentially-decoded base transformer on the WMT’14 EN-DE test set, with beam sizes b = 1
+(orange triangle) and b = 5 (red triangle). Each blue circle represents a mask-predict decoding run with a different
+number of iterations (T = 4, . . . , 10) and length candidates (` = 1, 2, 3).
+
+
+Results Figure 2 shows the speed-performance                5.1   Why Are Multiple Iterations Necessary?
+trade-off. We see that mask-predict is versatile;
+on one hand, we can translate over 3 times faster           Various non-autoregressive translation models, in-
+than the baseline at a cost of 2 BLEU points                cluding our own CMLM, make the strong as-
+(T = 4, ` = 2), or alternatively retain a high qual-        sumption that the individual token predictions are
+ity of 27.03 BLEU while gaining a 30% speed-up              conditionally independent of each other. Such a
+(T = 4, ` = 2). Surprisingly, this latter config-           model might consider two or more possible trans-
+uration outperforms an autoregressive transformer           lations, A and B, but because there is no coordi-
+with greedy decoding (b = 1) in both quality and            nation mechanism between the token predictions,
+speed. We also observe that more balanced con-              it could predict one token from A and another to-
+figurations (e.g. T = 8, ` = 2) yield similar per-          ken from B. This problem, known as the multi-
+formance to the single-beam autoregressive trans-           modality problem (Gu et al., 2018), often man-
+former, but decode much faster.                             ifest as token repetitions in the output when the
+                                                            model has multiple hypotheses that predict the
+                                                            same word w with high confidence, but at different
+5   Analysis
+                                                            positions.
+To complement the quantitative results in Sec-                 We hypothesize that multiple mask-predict it-
+tion 4, we present qualitative analysis that pro-           erations alleviate the multi-modality problem by
+vides some intuition as to why our approach works           allowing the model to condition on parts of the in-
+and where future work could potentially improve             put, thus collapsing the multi-modal distribution
+it.                                                         into a sharper uni-modal distribution. To test our
+   Iterations   WMT’14 EN-DE      WMT’16 EN-RO                                    T =4       T = 10      T =N
+                BLEU    Reps      BLEU    Reps
+                                                                1 ≤ N < 10        21.8        22.4       22.4
+      T =1      18.05   16.72%     27.32    9.34%              10 ≤ N < 20        24.6        25.9       26.0
+      T =2      22.91    5.40%     31.08    2.82%              20 ≤ N < 30        24.9        26.7       27.1
+      T =3      24.99    2.03%     32.19    1.26%              30 ≤ N < 40        24.9        26.7       27.6
+      T =4      25.94    1.07%     32.53    0.87%              40 ≤ N             25.0        27.5       28.1
+      T =5      26.30    0.72%     32.62    0.61%
+                                                         Table 4: The performance (BLEU) of base CMLM
+Table 3: The performance (BLEU) and percentage of        with different amounts of mask-predict iterations (T )
+repeating tokens when decoding with a different num-     on WMT’14 EN-DE, bucketed by target sequence
+ber of mask-predict iterations (T ).                     length (N ). Decoding with ` = 1 length candidates.
+
+
+hypothesis, we measure the percentage of repet-             Length       WMT’14 EN-DE           WMT’16 EN-RO
+itive tokens produced by each iteration of mask-           Candidates    BLEU    LP             BLEU    LP
+predict as a proxy metric for the multi-modality              `=1         26.56     16.1%        32.75     13.8%
+problem.                                                      `=2         27.03     30.6%        33.06     26.1%
+                                                              `=3         27.09     43.1%        33.11     39.6%
+   Table 3 shows that, indeed, the proportion of              `=4         27.09     53.1%        32.13     49.2%
+repetitive tokens drops drastically during the first          `=5         27.03     62.2%        33.08     57.5%
+2-3 iterations. This finding suggests that the first          `=6         26.91     69.5%        32.91     64.3%
+                                                              `=7         26.71     75.5%        32.75     70.4%
+few iterations are critical for converging into a             `=8         26.59     80.3%        32.50     74.6%
+uni-modal distribution. The decrease in repeti-               `=9         26.42     83.8%        32.09     78.3%
+tions also correlates with the steep rise in trans-           Gold        27.27          —       33.20          —
+lation quality (BLEU), supporting the conjecture
+of Gu et al. (2018) that multi-modality is a major       Table 5: The performance (BLEU) of base CMLM
+roadblock for purely non-autoregressive machine          with 10 mask-predict iterations (T = 10), varied by the
+translation.                                             number of length candidates (`), compared to decoding
+                                                         with the reference target length (Gold). Length preci-
+5.2   Do Longer Sequences Need More                      sion (LP) is the percentage of examples that contain the
+      Iterations?                                        correct length as one of their candidates.
+
+A potential concern with using a constant amount
+of decoding iterations is that it may be effective for
+short sequences (where the number of iterations T        length of the target sequence (Section 2.3) and de-
+is closer to the output’s length N ), but insufficient   codes multiple length candidates in parallel (Sec-
+for longer sequences. To determine whether this          tion 3.3). We compare our model’s performance
+is the case, we use compare-mt (Neubig et al.,           with a varying number of length candidates to its
+2019) to bucket the evaluation data by target sen-       performance when conditioned on the reference
+tence length and compute the performance with            (gold) target length in order to determine how ac-
+different values of T .                                  curate it is at predicting the correct length and
+   Table 4 shows that increasing the number of de-       assess the relative contribution of decoding with
+coding iterations (T ) appears to mainly improve         multiple length candidates.
+the performance on longer sequences. Having said            Table 5 shows that having multiple candidates
+that, the performance differences across length          can increase performance almost as much as con-
+buckets are not very large, and it seems that even 4     ditioning on the gold length. Surprisingly, adding
+mask-predict iterations are enough to produce de-        too many candidates can even degrade perfor-
+cent translations for long sequences (40 ≤ N ).          mance. We suspect that because CMLMs are im-
+                                                         plicitly conditioned on the target length, producing
+5.3   Do More Length Candidates Help?                    a translation that is too short (i.e. high precision,
+Traditional autoregressive models can dynami-            low recall) will have a high average log probabil-
+cally decide the length of the target sequence by        ity. In preliminary experiments, we tried to ad-
+generating a special END token when they are             dress this issue by weighting the different candi-
+done, but that is not true for models that de-           dates according to the model’s length prediction,
+code multiple tokens in parallel, such as CMLMs.         but this approach gave too much weight to the top
+To address this problem, our model predicts the          candidate and resulted in lower performance.
+    Iterations   WMT’14 EN-DE    WMT’16 EN-RO          mask a varying percentage of tokens, only from
+                 Raw     Dist    Raw     Dist          the target, and do not replace input tokens with
+    T =1         10.64   18.05   21.22    27.32        noise. Most importantly, the goal of our work is
+    T =4         22.25   25.94   31.40    32.53
+    T = 10       24.61   27.03   32.86    33.08
+                                                       different; we do not use CMLMs for pre-training,
+                                                       but to directly generate text with mask-predict
+Table 6: The performance (BLEU) of base CMLM,          decoding.
+trained with either raw data (Raw) or knowledge dis-      Concurrently with our work, Song et al. (2019)
+tillation from an autoregressive model (Dist).         extend the approach of Lample and Conneau
+                                                       (2019) by using separate encoder and decoder pa-
+                                                       rameters (as in our model) and pre-training them
+5.4    Is Model Distillation Necessary?
+                                                       jointly in an autoregressive version of masked
+Previous work on non-autoregressive and                language modeling, although with monolingual
+insertion-based machine translation reported that      data. While this work demonstrates that pre-
+it was necessary to train their models on text         training CMLMs can improve autoregressive ma-
+generated by an autoregressive teacher model,          chine translation, it does not try to leverage the
+a process known as distillation. To determine          parallel and bi-directional nature of CMLMs to
+CMLM’s dependence on this process, we train            generate text in a non-left-to-right manner.
+a models on both raw and distilled data, and
+compare their performance.                             Generating from Masked Language Models
+   Table 6 shows that in every case, training with     One such approach for generating text from a
+model distillation substantially outperforms train-    masked language model casts BERT (Devlin et al.,
+ing on raw data. The gaps are especially large         2018), a non-conditional masked language model,
+when decoding with a single iteration (purely non-     as a Markov random field (Wang and Cho, 2019).
+autoregressive). Overall, it appears as though         By masking a sequence of length N and then
+CMLMs are heavily dependent on model distilla-         iteratively sampling a single token at each time
+tion.                                                  from the model (either sequentially or in arbitrary
+   On the English-Romanian benchmark, the dif-         order), one can produce grammatical examples.
+ferences are much smaller, and after 10 iterations     While this sampling process has a theoretical jus-
+the raw-data model can perform comparably with         tification, it also requires N forward passes of the
+the distilled model. A possible explanation is that    model; mask-predict decoding, on the other hand,
+our teacher model was weaker for this dataset due      can produce text in a constant number of itera-
+to insufficient hyperparameter tuning. Alterna-        tions.
+tively, it could also be the case that the English-
+German dataset is much noisier than the English-       Parallel Decoding for Machine Translation
+Romanian one, and that the teacher model essen-        There have been several advances in parallel
+tially cleans the training data. Unfortunately, we     decoding machine translation by training non-
+do not have enough evidence to support or refute       autoregressive models. Gu et al. (2018) introduce
+either hypothesis at this time.                        a transformer-based approach with explicit word
+                                                       fertility, and identify the multi-modality problem.
+6     Related Work                                     Libovický and Helcl (2018) approach the multi-
+                                                       modality problem by collapsing repetitions with
+Training Masked Language Models with                   the Connectionist Temporal Classification training
+Translation Data Recent work by Lample and             objective (Graves et al., 2006). Perhaps most simi-
+Conneau (2019) shows that training a masked            lar to our work is the iterative refinement approach
+language model on sentence-pair translation data,      of Lee et al. (2018), in which the model corrects
+as a pre-training step, can improve performance        the original non-autoregressive prediction by pass-
+on cross-lingual tasks, including autoregressive       ing it multiple times through a denoising autoen-
+machine translation. Our training scheme builds        coder. A major difference is that Lee et al. (2018)
+on their work, with the following differences: we      train their noisy autoencoder to deal with corrupt
+use separate model parameters for source and           inputs by applying stochastic corruption heuristics
+target texts (encoder and decoder), and we also        on the training data, while we simply mask a ran-
+use a different masking scheme. Specifically, we       dom number of input tokens. We also show that
+our approach outperforms all of these models by           Alex Graves, Santiago Fernández, Faustino Gomez,
+wide margins.                                               and Jürgen Schmidhuber. 2006.        Connectionist
+                                                            temporal classification: Labelling unsegmented se-
+Arbitrary Order Language Generation Fi-                     quence data with recurrent neural networks. In Pro-
+nally, recent work has developed insertion-based            ceedings of the 23rd international conference on
+                                                            Machine learning, pages 369–376. ACM.
+transformers for arbitrary, but fixed, word order
+generation (Gu et al., 2019; Stern et al., 2019).         Jiatao Gu, James Bradbury, Caiming Xiong, Victor OK
+While they do not decode in a constant number of             Li, and Richard Socher. 2018. Non-autoregressive
+                                                             neural machine translation. In ICLR.
+iterations, Stern et al. (2019) show strong results in
+logarithmic time. Both models treat each token in-        Jiatao Gu, Qi Liu, and Kyunghyun Cho. 2019.
+                                                             Insertion-based decoding with automatically
+sertion as a separate training example, which can-
+                                                             inferred generation order.   arXiv preprint
+not be computed in parallel with every other in-             arXiv:1902.01370.
+sertion in the same sequence. This makes training
+                                                          Diederik P Kingma and Jimmy Ba. 2015. Adam: A
+significantly more expensive that standard trans-
+                                                            method for stochastic optimization. In International
+formers (which use causal attention masking) and            Conference for Learning Representations.
+our CMLMs (which can predict all of the masked
+                                                          Guillaume Lample and Alexis Conneau. 2019. Cross-
+tokens in parallel).
+                                                            lingual language model pretraining. arXiv preprint
+                                                            arXiv:1901.07291.
+7   Conclusion
+                                                          Jason Lee, Elman Mansimov, and Kyunghyun Cho.
+This work introduces conditional masked lan-                 2018. Deterministic non-autoregressive neural se-
+guage models and a novel mask-predict decod-                 quence modeling by iterative refinement. In Pro-
+ing algorithm that leverages their parallelism to            ceedings of the 2018 Conference on Empirical Meth-
+                                                             ods in Natural Language Processing, pages 1173–
+generate text in a constant number of decoding               1182, Brussels, Belgium. Association for Computa-
+iterations. We show that, in the context of ma-              tional Linguistics.
+chine translation, our approach substantially out-
+                                                          Jindřich Libovický and Jindřich Helcl. 2018. End-to-
+performs previous parallel decoding methods, and             end non-autoregressive neural machine translation
+can approach the performance of sequential au-               with connectionist temporal classification. In Pro-
+toregressive models while decoding much faster.              ceedings of the 2018 Conference on Empirical Meth-
+While there are still open problems, such as the             ods in Natural Language Processing, pages 3016–
+                                                             3021, Brussels, Belgium. Association for Computa-
+need to condition on the target’s length and the             tional Linguistics.
+dependence on knowledge distillation, our re-
+sults provide a significant step forward in non-          Paulius Micikevicius, Sharan Narang, Jonah Alben,
+                                                            Gregory Diamos, Erich Elsen, David Garcia, Boris
+autoregressive and parallel decoding approaches             Ginsburg, Michael Houston, Oleksii Kuchaiev,
+to machine translation. In a broader sense, this pa-        Ganesh Venkatesh, and Hao Wu. 2018. Mixed preci-
+per shows that masked language models are useful            sion training. In International Conference on Learn-
+not only for representing text, but also for gener-         ing Representations.
+ating text efficiently.                                   Graham Neubig, Zi-Yi Dou, Junjie Hu, Paul Michel,
+                                                            Danish Pruthi, and Xinyi Wang. 2019. compare-mt:
+Acknowledgements                                            A tool for holistic comparison of language gener-
+                                                            ation systems. In Meeting of the North American
+We thank Abdelrahman Mohamed for sharing his                Chapter of the Association for Computational Lin-
+expertise on non-autoregressive models, and our             guistics (NAACL) Demo Track, Minneapolis, USA.
+colleagues at FAIR for valuable feedback.                 Kishore Papineni, Salim Roukos, Todd Ward, and Wei-
+                                                            Jing Zhu. 2002. Bleu: a method for automatic eval-
+                                                            uation of machine translation. In Proceedings of the
+References                                                  40th Annual Meeting of the Association for Com-
+                                                            putational Linguistics, pages 311–318, Philadelphia,
+Jacob Devlin, Ming-Wei Chang, Kenton Lee, and               Pennsylvania, USA. Association for Computational
+   Kristina Toutanova. 2018. Bert: Pre-training of deep     Linguistics.
+   bidirectional transformers for language understand-
+   ing. arXiv preprint arXiv:1810.04805.                  Matt Post. 2018. A call for clarity in reporting BLEU
+                                                           scores. In Proceedings of the Third Conference on
+Jonas Gehring, Michael Auli, David Grangier, Denis         Machine Translation: Research Papers, pages 186–
+  Yarats, and Yann N Dauphin. 2017. Convolutional          191, Belgium, Brussels. Association for Computa-
+  Sequence to Sequence Learning. ArXiv e-prints.           tional Linguistics.
+Rico Sennrich, Barry Haddow, and Alexandra Birch.
+  2016. Neural machine translation of rare words
+  with subword units. In Proceedings of the 54th An-
+  nual Meeting of the Association for Computational
+  Linguistics (Volume 1: Long Papers), pages 1715–
+  1725, Berlin, Germany. Association for Computa-
+  tional Linguistics.
+Kaitao Song, Xu Tan, Tao Qin, Jianfeng Lu, and Tie-
+  Yan Liu. 2019. Mass: Masked sequence to sequence
+  pre-training for language generation. arXiv preprint
+  arXiv:1905.02450.
+Mitchell Stern, William Chan, Jamie Kiros, and Jakob
+  Uszkoreit. 2019. Insertion transformer: Flexible se-
+  quence generation via insertion operations. arXiv
+  preprint arXiv:1902.03249.
+Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob
+  Uszkoreit, Llion Jones, Aidan N Gomez, Łukasz
+  Kaiser, and Illia Polosukhin. 2017. Attention is all
+  you need. In Advances in Neural Information Pro-
+  cessing Systems, pages 5998–6008.
+Alex Wang and Kyunghyun Cho. 2019. Bert has
+  a mouth, and it must speak: Bert as a markov
+  random field language model.   arXiv preprint
+  arXiv:1902.04094.
+Felix Wu, Angela Fan, Alexei Baevski, Yann N
+  Dauphin, and Michael Auli. 2019. Pay less attention
+  with lightweight and dynamic convolutions. Inter-
+  national Conference on Learning Representations.
+

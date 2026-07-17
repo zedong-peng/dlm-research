@@ -1,0 +1,1308 @@
+[
+ {
+  "title": "Hard or Just Unreached? Diagnosing the Sampling Blind Spot in Math-Reasoning Difficulty Estimation",
+  "title_norm": "hard or just unreached diagnosing the sampling blind spot in math reasoning diff",
+  "abstract": "Math and science reasoning benchmarks rely on pass@k, the fraction of sampled chains that reach gold, as the canonical per-example difficulty signal. The same signal drives RL with verifiable rewards, math data curation, synthetic curricula, and verifier training. We show this proxy has a persistent blind spot on its hardest stratum: on the eight free-form math cells we test (GSM8K and MATH across four open-weight models), 10.3-22.9% of the examples that no sampling seed solves in six tries are instead solved at matched compute by a six-chain deterministic regime. These are greedy decoding plus five cheap residual-stream perturbations applied via activation grafting, while greedy alone solves at most 6% on these math cells. Recovery scales with the additional budget, across perturbations whose mechanistic distinctness we verify across all twelve cells (cross-kind fix-set Jaccard<= 0.47 in every setup). Activation grafting is used as an intervention on internal representations, not a decoding method; we use it purely as a diagnostic and diversification tool, and our recovered items show that the pass@k= 0 % stratum is structurally identifiable in the residual stream rather than that the unmodified model reaches them under ordinary inference.",
+  "tldr": "Recovered items show that the pass@k= 0 % stratum is structurally identifiable in the residual stream rather than that the unmodified model reaches them under ordinary inference.",
+  "year": 2026,
+  "venue": "",
+  "publication_types": [],
+  "authors": [
+   "Luca Zhou",
+   "Sajel Shah",
+   "Emanuele Rodolà",
+   "Roberto Dessì"
+  ],
+  "citations": 0,
+  "source": "semanticscholar",
+  "source_id": "709acdad120539e7e08ecc19c7d3124030d7cde3",
+  "paper_id": "arxiv:2606.19636",
+  "doi": "",
+  "arxiv_id": "2606.19636",
+  "dblp_key": "",
+  "paper_url": "https://www.semanticscholar.org/paper/709acdad120539e7e08ecc19c7d3124030d7cde3",
+  "published_iso": "2026-06-17"
+ },
+ {
+  "title": "HyPER: Bridging Exploration and Exploitation for Scalable LLM Reasoning with Hypothesis Path Expansion and Reduction",
+  "title_norm": "hyper bridging exploration and exploitation for scalable llm reasoning with hypo",
+  "abstract": "Scaling test-time compute with multi-path chain-of-thought improves reasoning accuracy, but its effectiveness depends critically on the exploration-exploitation trade-off. Existing approaches address this trade-off in rigid ways: tree-structured search hard-codes exploration through brittle expansion rules that interfere with post-trained reasoning, while parallel reasoning over-explores redundant hypothesis paths and relies on weak answer selection. Motivated by the observation that the optimal balance is phase-dependent and that correct and incorrect reasoning paths often diverge only at late stages, we reformulate test-time scaling as a dynamic expand-reduce control problem over a pool of hypotheses. We propose HyPER, a training-free online control policy for multi-path decoding in mixture-of-experts models that reallocates computation under a fixed budget using lightweight path statistics. HyPER consists of an online controller that transitions from exploration to exploitation as the hypothesis pool evolves, a token-level refinement mechanism that enables efficient generation-time exploitation without full-path resampling, and a length- and confidence-aware aggregation strategy for reliable answer-time exploitation. Experiments on four mixture-of-experts language models across diverse reasoning benchmarks show that HyPER consistently achieves a superior accuracy-compute trade-off, improving accuracy by 8 to 10 percent while reducing token usage by 25 to 40 percent.",
+  "tldr": "HyPER is proposed, a training-free online control policy for multi-path decoding in mixture-of-experts models that reallocates computation under a fixed budget using lightweight path statistics and consistently achieves a superior accuracy-compute trade-off.",
+  "year": 2026,
+  "venue": "arXiv.org",
+  "publication_types": [
+   "JournalArticle"
+  ],
+  "authors": [
+   "Shengxuan Qiu",
+   "Haochen Huang",
+   "Shuzhang Zhong",
+   "Pengfei Zuo",
+   "Meng Li"
+  ],
+  "citations": 0,
+  "source": "semanticscholar",
+  "source_id": "954dfc684df2753b0d60e3fbab6a1aaa0299e1b6",
+  "paper_id": "dblp:journals/corr/abs-2602-06527",
+  "doi": "10.48550/arXiv.2602.06527",
+  "arxiv_id": "2602.06527",
+  "dblp_key": "journals/corr/abs-2602-06527",
+  "paper_url": "https://www.semanticscholar.org/paper/954dfc684df2753b0d60e3fbab6a1aaa0299e1b6",
+  "published_iso": "2026-02-06"
+ },
+ {
+  "title": "Dynamic-dLLM: Dynamic Cache-Budget and Adaptive Parallel Decoding for Training-Free Acceleration of Diffusion LLM",
+  "title_norm": "dynamic dllm dynamic cache budget and adaptive parallel decoding for training fr",
+  "abstract": "Diffusion Large Language Models (dLLMs) offer a promising alternative to autoregressive models, excelling in text generation tasks due to their bidirectional attention mechanisms. However, their computational complexity scales on the order of L cubed with the sequence length L. This poses significant challenges for long-sequence and real-time applications, primarily due to the lack of compatibility with key-value caching and the non-autoregressive nature of denoising steps. Existing acceleration methods rely on static caching or parallel decoding strategies, which fail to account for the dynamic behavior of token properties across layers and decoding steps. We propose Dynamic-dLLM, a training-free framework that enhances dLLM inference efficiency through two components: Dynamic Cache Updating (DCU), which adaptively allocates cache-update budgets based on layer-wise token dynamics, and Adaptive Parallel Decoding (APD), which dynamically calibrates decoding thresholds to balance generation quality and efficiency. Extensive experiments on models like LLaDA-8B-Instruct, LLaDA-1.5, and Dream-v0-7B-Instruct across benchmarks such as MMLU, GSM8K, and HumanEval demonstrate that Dynamic-dLLM significantly improves inference speed. It attains an average speedup exceeding 3 times while maintaining performance. Dynamic-dLLM outperforms state-of-the-art acceleration methods and provides a plug-and-play solution for efficient dLLM deployment without compromising performance. The code is available at https://github.com/TianyiWu233/DYNAMIC-DLLM.",
+  "tldr": "Dynamic-dLLM is proposed, a training-free framework that enhances dLLM inference efficiency through two components: Dynamic Cache Updating (DCU), which adaptively allocates cache-update budgets based on layer-wise token dynamics, and Adaptive Parallel Decoding (APD), which dynamically calibrates decoding thresholds to balance generation quality and efficiency.",
+  "year": 2026,
+  "venue": "",
+  "publication_types": [],
+  "authors": [
+   "Tianyi Wu",
+   "Xiaoxia Sun",
+   "Ya Jiao",
+   "Yulin Li",
+   "Yixin Chen",
+   "YunHao Cao"
+  ],
+  "citations": 3,
+  "source": "semanticscholar",
+  "source_id": "2e88bad27a9f74591bbf3aaa1420001c3cd6c773",
+  "paper_id": "arxiv:2606.26120",
+  "doi": "",
+  "arxiv_id": "2606.26120",
+  "dblp_key": "",
+  "paper_url": "https://www.semanticscholar.org/paper/2e88bad27a9f74591bbf3aaa1420001c3cd6c773",
+  "published_iso": "2026-05-27"
+ },
+ {
+  "title": "Goose: Anisotropic Speculation Trees for Training-Free Speculative Decoding",
+  "title_norm": "goose anisotropic speculation trees for training free speculative decoding",
+  "abstract": "Speculative decoding accelerates large language model inference by drafting multiple candidate tokens and verifying them in a single forward pass. Candidates are organized as a tree: deeper trees accept more tokens per step, but adding depth requires sacrificing breadth (fallback options) under a fixed verification budget. Existing training-free methods draft from a single token source and shape their trees without distinguishing candidate quality across origins. We observe that two common training-free token sources - n-gram matches copied from the input context, and statistical predictions from prior forward passes - differ dramatically in acceptance rate (~6x median gap, range 2-18x across five models and five benchmarks). We prove that when such a quality gap exists, the optimal tree is anisotropic (asymmetric): reliable tokens should form a deep chain while unreliable tokens spread as wide branches, breaking through the depth limit of balanced trees. We realize this structure in GOOSE, a training-free framework that builds an adaptive spine tree - a deep chain of high-acceptance context-matched tokens with wide branches of low-acceptance alternatives at each node. We prove that the number of tokens accepted per step is at least as large as that of either source used alone. On five LLMs (7B-33B) and five benchmarks, GOOSE achieves 1.9-4.3x lossless speedup, outperforming balanced-tree baselines by 12-33% under the same budget.",
+  "tldr": "GOOSE is a training-free framework that builds an adaptive spine tree - a deep chain of high-acceptance context-matched tokens with wide branches of low-acceptance alternatives at each node, and it is proved that the number of tokens accepted per step is at least as large as that of either source used alone.",
+  "year": 2026,
+  "venue": "arXiv.org",
+  "publication_types": [
+   "JournalArticle"
+  ],
+  "authors": [
+   "Tao Jin",
+   "P. Nguyen",
+   "Naoya Inoue"
+  ],
+  "citations": 1,
+  "source": "semanticscholar",
+  "source_id": "0e46532d6e535321564fdd3461fc8e04ce76b97c",
+  "paper_id": "dblp:journals/corr/abs-2604-02047",
+  "doi": "10.48550/arXiv.2604.02047",
+  "arxiv_id": "2604.02047",
+  "dblp_key": "journals/corr/abs-2604-02047",
+  "paper_url": "https://www.semanticscholar.org/paper/0e46532d6e535321564fdd3461fc8e04ce76b97c",
+  "published_iso": "2026-04-02"
+ },
+ {
+  "title": "Fast Training-free Perceptual Image Compression",
+  "title_norm": "fast training free perceptual image compression",
+  "abstract": "Training-free perceptual image codec adopt pre-trained unconditional generative model during decoding to avoid training new conditional generative model. However, they heavily rely on diffusion inversion or sample communication, which take 1 min to intractable amount of time to decode a single image. In this paper, we propose a training-free algorithm that improves the perceptual quality of any existing codec with theoretical guarantee. We further propose different implementations for optimal perceptual quality when decoding time budget is $\\approx 0.1$s, $0.1-10$s and $\\ge 10$s. Our approach: 1). improves the decoding time of training-free codec from 1 min to $0.1-10$s with comparable perceptual quality. 2). can be applied to non-differentiable codec such as VTM. 3). can be used to improve previous perceptual codecs, such as MS-ILLM. 4). can easily achieve perception-distortion trade-off. Empirically, we show that our approach successfully improves the perceptual quality of ELIC, VTM and MS-ILLM with fast decoding. Our approach achieves comparable FID to previous training-free codec with significantly less decoding time. And our approach still outperforms previous conditional generative model based codecs such as HiFiC and MS-ILLM in terms of FID. The source code is provided in the supplementary material.",
+  "tldr": "A training-free algorithm that improves the perceptual quality of any existing codec with theoretical guarantee and outperforms previous conditional generative model based codecs such as HiFiC and MS-ILLM in terms of FID.",
+  "year": 2025,
+  "venue": "arXiv.org",
+  "publication_types": [
+   "JournalArticle"
+  ],
+  "authors": [
+   "Ziran Zhu",
+   "Tongda Xu",
+   "Minye Huang",
+   "Dailan He",
+   "Xingtong Ge",
+   "Xinjie Zhang"
+  ],
+  "citations": 0,
+  "source": "semanticscholar",
+  "source_id": "c5a002ee3f8cbbb52319c4066e6a913840c7d1ed",
+  "paper_id": "dblp:journals/corr/abs-2506-16102",
+  "doi": "10.48550/arXiv.2506.16102",
+  "arxiv_id": "2506.16102",
+  "dblp_key": "journals/corr/abs-2506-16102",
+  "paper_url": "https://www.semanticscholar.org/paper/c5a002ee3f8cbbb52319c4066e6a913840c7d1ed",
+  "published_iso": "2025-06-19"
+ },
+ {
+  "title": "Visually Guided Decoding: Gradient-Free Hard Prompt Inversion with Language Models",
+  "title_norm": "visually guided decoding gradient free hard prompt inversion with language model",
+  "abstract": "Text-to-image generative models like DALL-E and Stable Diffusion have revolutionized visual content creation across various applications, including advertising, personalized media, and design prototyping. However, crafting effective textual prompts to guide these models remains challenging, often requiring extensive trial and error. Existing prompt inversion approaches, such as soft and hard prompt techniques, are not so effective due to the limited interpretability and incoherent prompt generation. To address these issues, we propose Visually Guided Decoding (VGD), a gradient-free approach that leverages large language models (LLMs) and CLIP-based guidance to generate coherent and semantically aligned prompts. In essence, VGD utilizes the robust text generation capabilities of LLMs to produce human-readable prompts. Further, by employing CLIP scores to ensure alignment with user-specified visual concepts, VGD enhances the interpretability, generalization, and flexibility of prompt generation without the need for additional training. Our experiments demonstrate that VGD outperforms existing prompt inversion techniques in generating understandable and contextually relevant prompts, facilitating more intuitive and controllable interactions with text-to-image models.",
+  "tldr": "Visually Guided Decoding is proposed, a gradient-free approach that leverages large language models (LLMs) and CLIP-based guidance to generate coherent and semantically aligned prompts and enhances the interpretability, generalization, and flexibility of prompt generation without the need for additional training.",
+  "year": 2025,
+  "venue": "International Conference on Learning Representations",
+  "publication_types": [
+   "JournalArticle"
+  ],
+  "authors": [
+   "Donghoon Kim",
+   "Min-jeong Bae",
+   "Kyuhong Shim",
+   "B. Shim"
+  ],
+  "citations": 9,
+  "source": "semanticscholar",
+  "source_id": "56ec9acc835e86d1e305c0c38e8b347ff0b362a2",
+  "paper_id": "dblp:conf/iclr/KimBSS25",
+  "doi": "10.48550/arXiv.2505.08622",
+  "arxiv_id": "2505.08622",
+  "dblp_key": "conf/iclr/KimBSS25",
+  "paper_url": "https://www.semanticscholar.org/paper/56ec9acc835e86d1e305c0c38e8b347ff0b362a2",
+  "published_iso": "2025-05-13"
+ },
+ {
+  "title": "DART: Draft-Agreement Routing for Training-Free Adaptive Thinking Budgets in Hybrid Reasoning Models",
+  "title_norm": "dart draft agreement routing for training free adaptive thinking budgets in hybr",
+  "abstract": "Hybrid reasoning models can answer directly or spend extra tokens on extended thinking. A practical router should choose between these modes for each query, so easy problems avoid unnecessary reasoning and hard problems receive enough budget to finish the answer. Existing routers move in this direction, but they typically require labeled training data or fix thinking budgets up front, ignoring answer-level evidence from the model itself. We introduce DART, a training-free routing framework that samples two cheap no-think drafts, accepts direct answering when the drafts agree, and predicts a thinking budget from draft entropy when they disagree. Across the main comparisons, DART preserves or improves always-thinking accuracy in most settings while reducing thinking-token use. On math reasoning, accuracy improves by up to $+$9.0 points on Olympiad-level problems while thinking tokens drop 15-69%. On code reasoning under execution-based equivalence, accuracy improves by up to +22.5 points while thinking tokens drop 51-63%. The Stage~1 signal extends across model scales (0.6B-32B), model families, and API-only hosted settings, with no labeled data and no gradient updates required.",
+  "tldr": "DART is introduced, a training-free routing framework that samples two cheap no-think drafts, accepts direct answering when the drafts agree, and predicts a thinking budget from draft entropy when they disagree, and preserves or improves always-thinking accuracy in most settings while reducing thinking-token use.",
+  "year": 2026,
+  "venue": "",
+  "publication_types": [],
+  "authors": [
+   "Jungseob Lee",
+   "Seongtae Hong",
+   "Seungjun Lee",
+   "J. Seo",
+   "Junyoung Son",
+   "Sugyeong Eo"
+  ],
+  "citations": 0,
+  "source": "semanticscholar",
+  "source_id": "41363a02cb2c36bf9ac46ca95c8a118d956cb022",
+  "paper_id": "arxiv:2606.23181",
+  "doi": "",
+  "arxiv_id": "2606.23181",
+  "dblp_key": "",
+  "paper_url": "https://www.semanticscholar.org/paper/41363a02cb2c36bf9ac46ca95c8a118d956cb022",
+  "published_iso": "2026-06-22"
+ },
+ {
+  "title": "Training-free Context-adaptive Attention for Efficient Long Context Modeling",
+  "title_norm": "training free context adaptive attention for efficient long context modeling",
+  "abstract": "Large Language Models (LLMs) have demonstrated remarkable capabilities across a wide range of natural language processing tasks. These capabilities stem primarily from the self-attention mechanism, which enables modeling of long-range dependencies. However, the quadratic complexity of self-attention with respect to sequence length poses significant computational and memory challenges, especially as sequence length extends to extremes. While various sparse attention and KV cache compression methods have been proposed to improve efficiency, they often suffer from limitations such as reliance on fixed patterns, inability to handle both prefilling and decoding stages, or the requirement for additional training. In this paper, we propose Training-free Context-adaptive Attention (TCA-Attention), a training-free sparse attention mechanism that selectively attends to only the informative tokens for efficient long-context inference. Our method consists of two lightweight phases: i) an offline calibration phase that determines head-specific sparsity budgets via a single forward pass, and ii) an online token selection phase that adaptively retains core context tokens using a lightweight redundancy metric. TCA-Attention provides a unified solution that accelerates both prefilling and decoding while reducing KV cache memory footprint, without requiring parameter updates or architectural changes. Theoretical analysis shows that our approach maintains bounded approximation error. Extensive experiments demonstrate that TCA-Attention achieves a 2.8$\\times$ speedup and reduces KV cache by 61% at 128K context length while maintaining performance comparable to full attention across various benchmarks, offering a practical plug-and-play solution for efficient long-context inference.",
+  "tldr": "TCA-Attention is proposed, a training-free sparse attention mechanism that selectively attends to only the informative tokens for efficient long-context inference, offering a practical plug-and-play solution for efficient long-context inference.",
+  "year": 2025,
+  "venue": "arXiv.org",
+  "publication_types": [
+   "JournalArticle"
+  ],
+  "authors": [
+   "Zeng You",
+   "Yaofo Chen",
+   "Shuhai Zhang",
+   "Zhijie Qiu",
+   "Ting Wu",
+   "Yingjian Li"
+  ],
+  "citations": 1,
+  "source": "semanticscholar",
+  "source_id": "f56b12228283cf42cf8120a18fee60849b965f83",
+  "paper_id": "dblp:journals/corr/abs-2512-09238",
+  "doi": "10.48550/arXiv.2512.09238",
+  "arxiv_id": "2512.09238",
+  "dblp_key": "journals/corr/abs-2512-09238",
+  "paper_url": "https://www.semanticscholar.org/paper/f56b12228283cf42cf8120a18fee60849b965f83",
+  "published_iso": "2025-12-10"
+ },
+ {
+  "title": "SAGE: Training-Free Semantic Evidence Composition for Edge-Cloud Inference under Hard Uplink Budgets",
+  "title_norm": "sage training free semantic evidence composition for edge cloud inference under ",
+  "abstract": "Edge-cloud hybrid inference offloads difficult inputs to a powerful remote model, but the uplink channel imposes hard per-request constraints on the number of bits that can be transmitted. We show that selecting transmitted content based solely on attention-based importance, the standard approach in collaborative inference, is inherently limited under hard budgets. Two findings support this claim. First, replacing high-importance units with low-importance but complementary ones improves server accuracy. This shows that what matters is not individual importance but how well the transmitted set covers diverse aspects of the input. Second, spatially uniform selection without any content information achieves competitive accuracy at moderate budgets. This confirms that spatial coverage alone carries independent value. Based on this analysis, we propose SAGE (Semantic Attention-Guided Evidence), a principled, training-free method that combines importance filtering with embedding-diversity sampling. SAGE achieves 93% of the server ceiling in offloaded accuracy while transmitting fewer than half of the available evidence units on ImageNet-1K, substantially outperforming importance-only composition.",
+  "tldr": "It is shown that selecting transmitted content based solely on attention-based importance, the standard approach in collaborative inference, is inherently limited under hard budgets, and a principled, training-free method that combines importance filtering with embedding-diversity sampling is proposed, SAGE.",
+  "year": 2026,
+  "venue": "arXiv.org",
+  "publication_types": [
+   "JournalArticle"
+  ],
+  "authors": [
+   "Inhyeok Choi",
+   "Hyuncheol Park"
+  ],
+  "citations": 0,
+  "source": "semanticscholar",
+  "source_id": "c6e25c58ebb0a7684473b18080e75eaf1e113eba",
+  "paper_id": "dblp:journals/corr/abs-2604-19623",
+  "doi": "10.48550/arXiv.2604.19623",
+  "arxiv_id": "2604.19623",
+  "dblp_key": "journals/corr/abs-2604-19623",
+  "paper_url": "https://www.semanticscholar.org/paper/c6e25c58ebb0a7684473b18080e75eaf1e113eba",
+  "published_iso": "2026-04-21"
+ },
+ {
+  "title": "ReasonAlloc: Hierarchical Decoding-Time KV Cache Budget Allocation for Reasoning Models",
+  "title_norm": "reasonalloc hierarchical decoding time kv cache budget allocation for reasoning ",
+  "abstract": "Long chain-of-thought (CoT) trajectories in large language model (LLM) reasoning cause severe inference bottlenecks due to rapid key-value (KV) cache growth. Current decoding-time compression methods mitigate this issue via token eviction, but typically assume a uniform budget distribution across all layers and heads. In contrast, existing non-uniform budget allocation methods are predominantly designed for the static prompt prefill phase, and they do not capture the stepwise context demands of autoregressive reasoning. To bridge this gap, we propose ReasonAlloc, a training-free framework that recasts decoding-time KV compression as a hierarchical budget allocation problem. ReasonAlloc operates at two complementary levels: an offline layer-wise preallocation strategy captures an architecture-driven demand pattern which we call ``\\textit{Reasoning Wave}'', while an online head-wise strategy reallocates resources during decoding to information-rich heads based on real-time utility. Evaluations on mathematical reasoning benchmarks (MATH-500, AIME~2024) using DeepSeek-R1-Distill-Llama-8B, DeepSeek-R1-Distill-Qwen-14B, and AceReason-14B show that ReasonAlloc outperforms uniform-budget R-KV, SnapKV, and Pyramid-RKV (a baseline enforcing a static, monotonically decreasing layer budget), with the largest gains at small budgets (128-512 tokens). ReasonAlloc is plug-and-play with existing token-eviction policies and introduces negligible inference-time overhead.",
+  "tldr": "ReasonAlloc is a training-free framework that recasts decoding-time KV compression as a hierarchical budget allocation problem and outperforms uniform-budget R-KV, SnapKV, and Pyramid-RKV (a baseline enforcing a static, monotonically decreasing layer budget), with the largest gains at small budgets.",
+  "year": 2026,
+  "venue": "",
+  "publication_types": [],
+  "authors": [
+   "Wenhao Liu",
+   "Haomin Shi",
+   "Yunhe Li",
+   "WeiZhi Fei",
+   "Xiangyu Wang",
+   "Mengzhe Ruan"
+  ],
+  "citations": 0,
+  "source": "semanticscholar",
+  "source_id": "4ccc783aa6a8b6bffd47ebbe847673464e1e5d1a",
+  "paper_id": "arxiv:2606.11164",
+  "doi": "",
+  "arxiv_id": "2606.11164",
+  "dblp_key": "",
+  "paper_url": "https://www.semanticscholar.org/paper/4ccc783aa6a8b6bffd47ebbe847673464e1e5d1a",
+  "published_iso": "2026-06-09"
+ },
+ {
+  "title": "HeadRank: Decoding-Free Passage Reranking via Preference-Aligned Attention Heads",
+  "title_norm": "headrank decoding free passage reranking via preference aligned attention heads",
+  "abstract": "Decoding-free reranking methods that read relevance signals directly from LLM attention weights offer significant latency advantages over autoregressive approaches, yet suffer from attention score homogenization: middle-context documents receive near-identical scores, destroying the fine-grained distinctions required for ranking. We propose HeadRank, a framework that lifts preference optimization from discrete token space into the continuous attention domain through entropy-regularized head selection, hard adjacent-level preference pairs, and a distribution regularizer that jointly sharpen discriminability in the homogenized middle zone. Depth truncation at the deepest selected layer further reduces inference to $\\mathcal{O}(1)$ forward passes. Across 14 benchmarks on three Qwen3 scales (0.6B--4B) using only 211 training queries, HeadRank achieves the highest average NDCG@10 at every scale, outperforming both generative and decoding-free baselines on the majority of benchmarks with 100\\% formatting success. At 4B, 57.4\\% of relevant middle-zone documents reach the top quartile versus 14.2\\% for irrelevant ones -- a 43-percentage-point selectivity gap that demonstrates the effectiveness of attention-space preference alignment for listwise reranking.",
+  "tldr": "HeadRank is proposed, a framework that lifts preference optimization from discrete token space into the continuous attention domain through entropy-regularized head selection, hard adjacent-level preference pairs, and a distribution regularizer that jointly sharpen discriminability in the homogenized middle zone.",
+  "year": 2026,
+  "venue": "arXiv.org",
+  "publication_types": [
+   "JournalArticle"
+  ],
+  "authors": [
+   "Juyuan Wang",
+   "Chenxing Wang",
+   "Yuchen Fang",
+   "Huiyun Hu",
+   "Jun Du",
+   "Aolin Li"
+  ],
+  "citations": 1,
+  "source": "semanticscholar",
+  "source_id": "08ab3273ab7fceb8128e93a334391be5738ee965",
+  "paper_id": "dblp:journals/corr/abs-2604-17237",
+  "doi": "10.48550/arXiv.2604.17237",
+  "arxiv_id": "2604.17237",
+  "dblp_key": "journals/corr/abs-2604-17237",
+  "paper_url": "https://www.semanticscholar.org/paper/08ab3273ab7fceb8128e93a334391be5738ee965",
+  "published_iso": "2026-04-19"
+ },
+ {
+  "title": "Locality Matters for Training-Free Audio Token Compression in Audio-Language Models",
+  "title_norm": "locality matters for training free audio token compression in audio language mod",
+  "abstract": "Audio-language models (ALMs) are increasingly used for audio captioning, question answering, and open-ended audio understanding, but their inference cost remains high when audio inputs are represented as long prefix-token sequences. These audio prefixes consume context budget, increase memory usage, and make deployment harder in resource-constrained or latency-sensitive settings. Existing training-free audio-token reduction methods mainly rely on fixed pooling or score-based pruning. Fixed pooling is content-agnostic, while score-based pruning can preserve isolated salient tokens but discard nearby acoustic context. We propose Local Temporal Bipartite Merging (LTBM), a training-free encoder-space compression method that merges similar nearby audio tokens under an explicit temporal window constraint. Beyond introducing LTBM, we use a controlled Global Merge variant to isolate whether temporal locality itself is a useful inductive bias for audio-token compression. Experiments on AudioCaps, Clotho, and MMAU with Qwen2-Audio show evidence of a task-dependent locality effect: locality-aware merging is more favorable for captioning at several compression settings, especially under stronger compression, while global matching is more competitive for multiple-choice audio understanding. A cross-backbone validation on Audio Flamingo 3 further supports the captioning-side advantage of locality-aware merging under moderate and aggressive compression.",
+  "tldr": "Experiments show evidence of a task-dependent locality effect: locality-aware merging is more favorable for captioning at several compression settings, especially under stronger compression, while global matching is more competitive for multiple-choice audio understanding.",
+  "year": 2026,
+  "venue": "arXiv.org",
+  "publication_types": [
+   "JournalArticle"
+  ],
+  "authors": [
+   "Jiale Luo",
+   "Xiaoyu Liang",
+   "Haoji Hu"
+  ],
+  "citations": 0,
+  "source": "semanticscholar",
+  "source_id": "15bf86a76882a1806c1663238939e076ef6af664",
+  "paper_id": "dblp:journals/corr/abs-2605-25179",
+  "doi": "10.48550/arXiv.2605.25179",
+  "arxiv_id": "2605.25179",
+  "dblp_key": "journals/corr/abs-2605-25179",
+  "paper_url": "https://www.semanticscholar.org/paper/15bf86a76882a1806c1663238939e076ef6af664",
+  "published_iso": "2026-05-24"
+ },
+ {
+  "title": "ViCrop-Det: Spatial Attention Entropy Guided Cropping for Training-Free Small-Object Detection",
+  "title_norm": "vicrop det spatial attention entropy guided cropping for training free small obj",
+  "abstract": "Transformer-based architectures have established a dominant paradigm in global semantic perception; however, they remain fundamentally constrained by the profound spatial heterogeneity inherent in natural images. Specifically, the imposition of a uniform global receptive field across regions of varying information density inevitably leads to local feature degradation, particularly in dense conflict zones populated by microscopic targets. To address this mechanistic limitation, we propose ViCrop-Det, a training-free inference framework that introduces adaptive spatial trust region shrinkage. Inspired by the use of attention entropy in anomaly segmentation, ViCrop-Det leverages the detection decoder's cross-attention distribution as an endogenous probe. By utilizing Spatial Attention Entropy (SAE) to heuristically evaluate local spatial ambiguity, the framework executes dynamic spatial routing, allocating a fixed computational budget exclusively to regions exhibiting both high target saliency and high cognitive uncertainty. By shrinking the spatial trust region and injecting high-frequency localized observations, ViCrop-Det actively resolves spatial ambiguity and recovers fine-grained features without requiring architectural modifications. Extensive evaluations on VisDrone and DOTA-v1.5 demonstrate that ViCrop-Det yields competitive performance enhancements, consistently adding +1-3 mAP@50 to RT-DETR-R50 and Deformable DETR with a marginal 20-23\\% latency overhead. On MS COCO, $AP_{S}$ improves while $AP_{M}/AP_{L}$ remains stable, indicating precise fine-scale refinement without compromising the global spatial prior. Under compute-matched settings, our adaptive routing strategy comprehensively surpasses uniform slicing baselines, achieving a highly optimized accuracy-speed trade-off.",
+  "tldr": "ViCrop-Det is proposed, a training-free inference framework that introduces adaptive spatial trust region shrinkage and utilizes Spatial Attention Entropy to heuristically evaluate local spatial ambiguity, allocating a fixed computational budget exclusively to regions exhibiting both high target saliency and high cognitive uncertainty.",
+  "year": 2026,
+  "venue": "arXiv.org",
+  "publication_types": [
+   "JournalArticle"
+  ],
+  "authors": [
+   "Hui Wang",
+   "Hongze Li",
+   "Wei Chen",
+   "Xiaojin Zhang"
+  ],
+  "citations": 0,
+  "source": "semanticscholar",
+  "source_id": "a606ca09536b0ca48454f9f45bede6562b131c64",
+  "paper_id": "dblp:journals/corr/abs-2604-26806",
+  "doi": "10.48550/arXiv.2604.26806",
+  "arxiv_id": "2604.26806",
+  "dblp_key": "journals/corr/abs-2604-26806",
+  "paper_url": "https://www.semanticscholar.org/paper/a606ca09536b0ca48454f9f45bede6562b131c64",
+  "published_iso": "2026-04-29"
+ },
+ {
+  "title": "ProCon: Projection-Consistency Memory for Training-Free Anomaly Detection",
+  "title_norm": "procon projection consistency memory for training free anomaly detection",
+  "abstract": "Memory-based anomaly detection is attractive because it localizes defects from normal images without training a decoder or synthesizing pseudo anomalies. However, most memory methods still use the memory bank as a nearest-neighbor lookup table: a test patch is treated as normal if it has one nearby normal anchor. This hard retrieval view is vulnerable to false-normal matches and does not test whether the patch is consistently supported by a local normal neighborhood. We propose ProCon, a training-free framework that turns memory retrieval into decoder-free reconstruction. ProCon softly projects each test patch onto nearby normal memory vectors and uses the projection residual as anomaly evidence. To stabilize this residual, it constructs seed-perturbed layer-wise memories, aggregates bank residuals by a median, and fuses depth-specific residual maps by layer consensus. ProCon requires no decoder training, backbone fine-tuning, learned fusion weights, or pseudo-anomaly supervision. Across MVTec-AD, VisA, and Real-IAD under the single-category evaluation protocol, ProCon achieves strong image- and pixel-level performance under seven standard metrics, including image AUROC scores of 99.8%, 99.2%, and 93.2%, respectively. Ablations show that the gains come from replacing hard retrieval with soft normal projection and stabilizing the residuals through memory and depth consensus. The code is available at https://github.com/jw-chae/Procon",
+  "tldr": "ProCon is a training-free framework that turns memory retrieval into decoder-free reconstruction and achieves strong image- and pixel-level performance under seven standard metrics, including image AUROC scores of 99.8%, 99.2%, and 93.2%, respectively.",
+  "year": 2026,
+  "venue": "",
+  "publication_types": [],
+  "authors": [
+   "Joongwon Chae",
+   "Lihui Luo",
+   "Yang Liu",
+   "Dongmei Yu",
+   "Peiwu Qin",
+   "Runming Wang"
+  ],
+  "citations": 0,
+  "source": "semanticscholar",
+  "source_id": "504bb0d30b12ae214b903b903b4f8a46eca6e3d8",
+  "paper_id": "arxiv:2607.04894",
+  "doi": "",
+  "arxiv_id": "2607.04894",
+  "dblp_key": "",
+  "paper_url": "https://www.semanticscholar.org/paper/504bb0d30b12ae214b903b903b4f8a46eca6e3d8",
+  "published_iso": "2026-07-06"
+ },
+ {
+  "title": "FAST-DIPS: Adjoint-Free Analytic Steps and Hard-Constrained Likelihood Correction for Diffusion-Prior Inverse Problems",
+  "title_norm": "fast dips adjoint free analytic steps and hard constrained likelihood correction",
+  "abstract": "Training-free diffusion priors enable inverse-problem solvers without retraining, but for nonlinear forward operators data consistency often relies on repeated derivatives or inner optimization/MCMC loops with conservative step sizes, incurring many iterations and denoiser/score evaluations. We propose a training-free solver that replaces these inner loops with a hard measurement-space feasibility constraint (closed-form projection) and an analytic, model-optimal step size, enabling a small, fixed compute budget per noise level. Anchored at the denoiser prediction, the correction is approximated via an adjoint-free, ADMM-style splitting with projection and a few steepest-descent updates, using one VJP and either one JVP or a forward-difference probe, followed by backtracking and decoupled re-annealing. We prove local model optimality and descent under backtracking for the step-size rule, and derive an explicit KL bound for mode-substitution re-annealing under a local Gaussian conditional surrogate. We also develop a latent variant and a one-parameter pixel$\\rightarrow$latent hybrid schedule. Experiments achieve competitive PSNR/SSIM/LPIPS with up to 19.5$\\times$ speedup, without hand-coded adjoints or inner MCMC.",
+  "tldr": "This work proves local model optimality and descent under backtracking for the step-size rule, and derive an explicit KL bound for mode-substitution re-annealing under a local Gaussian conditional surrogate.",
+  "year": 2026,
+  "venue": "arXiv.org",
+  "publication_types": [
+   "JournalArticle"
+  ],
+  "authors": [
+   "Minwoo Kim",
+   "Seunghyeok Shin",
+   "Hongki Lim"
+  ],
+  "citations": 0,
+  "source": "semanticscholar",
+  "source_id": "334b6b570caa291daa2e60c3ea79869853ffb73e",
+  "paper_id": "dblp:journals/corr/abs-2603-01591",
+  "doi": "10.48550/arXiv.2603.01591",
+  "arxiv_id": "2603.01591",
+  "dblp_key": "journals/corr/abs-2603-01591",
+  "paper_url": "https://www.semanticscholar.org/paper/334b6b570caa291daa2e60c3ea79869853ffb73e",
+  "published_iso": "2026-03-02"
+ },
+ {
+  "title": "From Bits to Rounds: Parallel Decoding with Exploration for Diffusion Language Models",
+  "title_norm": "from bits to rounds parallel decoding with exploration for diffusion language mo",
+  "abstract": "Diffusion Language Models (DLMs) have recently emerged as a strong alternative to autoregressive language models (LMs). DLMs offer comparable accuracy with faster inference speed via parallel decoding. However, standard DLM decoding strategies relying on high-confidence tokens encounter an inherent information-theoretic bottleneck that restricts decoding progress and ultimately slows generation. We demonstrate both theoretically and empirically that prioritizing high-confidence tokens is inherently inefficient. High-probability tokens carry negligible information and strictly relying on them limits the effective progress made in each decoding round. We prove that the number of decoding rounds must grow linearly with the sample's total information (negative log-likelihood) and inversely with the per-round information budget, establishing a bits-to-rounds principle. We also propose Explore-Then-Exploit (ETE), a training-free decoding strategy that maximizes information throughput and decoding efficiency. ETE combines cross-block decoding with targeted exploration of high-uncertainty tokens to reshape the conditional distribution and trigger cascades of confident predictions. Experiments verify our theoretical bounds and demonstrate that ETE consistently reduces the required number of decoding rounds compared to confidence-only baselines without compromising generation quality.",
+  "tldr": "This work proves that the number of decoding rounds must grow linearly with the sample's total information and inversely with the per-round information budget, establishing a bits-to-rounds principle and proposes Explore-Then-Exploit (ETE), a training-free decoding strategy that maximizes information throughput and decoding efficiency.",
+  "year": 2025,
+  "venue": "arXiv.org",
+  "publication_types": [
+   "JournalArticle"
+  ],
+  "authors": [
+   "Hengyu Fu",
+   "Baihe Huang",
+   "Virginia Adams",
+   "Charles Wang",
+   "V. Srinivasan",
+   "Jiantao Jiao"
+  ],
+  "citations": 15,
+  "source": "semanticscholar",
+  "source_id": "513e0c794e3a6f7eee576bbed5e1e73e3be80573",
+  "paper_id": "dblp:journals/corr/abs-2511-21103",
+  "doi": "10.48550/arXiv.2511.21103",
+  "arxiv_id": "2511.21103",
+  "dblp_key": "journals/corr/abs-2511-21103",
+  "paper_url": "https://www.semanticscholar.org/paper/513e0c794e3a6f7eee576bbed5e1e73e3be80573",
+  "published_iso": "2025-11-26"
+ },
+ {
+  "title": "Efficient Long-Horizon GUI Agents via Training-Free KV Cache Compression",
+  "title_norm": "efficient long horizon gui agents via training free kv cache compression",
+  "abstract": "Large Vision-Language Models (VLMs) have emerged as powerful engines for autonomous GUI agents, yet their deployment is severely constrained by the substantial memory footprint and latency of the Key-Value (KV) cache during long-horizon interactions. While existing cache compression methods have proven effective for LLMs, we empirically demonstrate that they suffer from suboptimal performance in GUI scenarios due to a fundamental misalignment: unlike general visual tasks where attention sparsity varies across layers, GUI attention patterns exhibit uniform high-sparsity across all transformer layers. Motivated by this insight, we propose ST-Lite, a training-free KV cache compression framework tailored for efficient GUI agents that explicitly addresses the dynamic spatio-trajectory dependencies within GUI data streams. ST-Lite introduces a novel dual-branch scoring policy incorporating Component-centric Spatial Saliency (CSS) and Trajectory-aware Semantic Gating (TSG). Specifically, CSS preserves the structural integrity of interactive UI elements by evaluating local neighborhood saliency, while TSG mitigates historical redundancy by dynamically filtering visually repetitive KV pairs within the interaction trajectory. Extensive evaluations demonstrate that with only a 10-20% cache budget, ST-Lite achieves a 2.45x decoding acceleration while maintaining comparable or even superior performance compared to full-cache baselines, offering a scalable solution for resource-constrained GUI agents.",
+  "tldr": "ST-Lite is proposed, a training-free KV cache compression framework tailored for efficient GUI agents that explicitly addresses the dynamic spatio-trajectory dependencies within GUI data streams and introduces a novel dual-branch scoring policy incorporating Component-centric Spatial Saliency and Trajectory-aware Semantic Gating.",
+  "year": 2026,
+  "venue": "arXiv.org",
+  "publication_types": [
+   "JournalArticle"
+  ],
+  "authors": [
+   "Bowen Zhou",
+   "Zhou Xu",
+   "Wanli Li",
+   "Jingyu Xiao",
+   "Haoqian Wang"
+  ],
+  "citations": 2,
+  "source": "semanticscholar",
+  "source_id": "218afae5ec9e7d7650eab752f08c6e0ebda590b3",
+  "paper_id": "dblp:journals/corr/abs-2603-00188",
+  "doi": "10.48550/arXiv.2603.00188",
+  "arxiv_id": "2603.00188",
+  "dblp_key": "journals/corr/abs-2603-00188",
+  "paper_url": "https://www.semanticscholar.org/paper/218afae5ec9e7d7650eab752f08c6e0ebda590b3",
+  "published_iso": "2026-02-27"
+ },
+ {
+  "title": "Single-Rollout Hidden-State Dynamics for Training-Free RLVR Data Selection",
+  "title_norm": "single rollout hidden state dynamics for training free rlvr data selection",
+  "abstract": "Reinforcement learning with verifiable rewards (RLVR) can yield large reasoning gains from very few training instances, yet its strong sensitivity to which instances are used makes data selection a central bottleneck. Most existing selection pipelines rely on training-time optimization signals and/or require access to verifiable rewards or ground-truth answers over large candidate pools, which is costly and often infeasible in specialized domains. We study RLVR data selection in a setting where selection must be performed before any RL training and without labels or reward evaluation on the full pool. We propose SHIFT, a one-shot, training-free selector based solely on inference-time hidden-state dynamics. For each candidate instance, SHIFT runs a single deterministic reasoning rollout and computes a reasoning-induced representation shift (RIRS) as the start-to-end hidden-state delta. SHIFT uses the RIRS magnitude as a lightweight proxy for instance utility and enforces coverage via a quality-weighted farthest-first CoreSet procedure in an RIRS-augmented feature space, producing compact subsets that scale to large unlabeled pools. Across mathematical reasoning and medical QA benchmarks under ultra-low budgets, SHIFT consistently outperforms training-free diversity and difficulty/uncertainty baselines, improving both in-domain accuracy and transfer to harder evaluation settings. Ablations show that RIRS-based coverage and quality-weighting contribute complementary gains, and analyses indicate that RIRS is not explained by simple input/output length statistics. Code is available at github.com/JianghaoWu/SHIFT.",
+  "tldr": "SHIFT is proposed, a one-shot, training-free selector based solely on inference-time hidden-state dynamics that consistently outperforms training-free diversity and difficulty/uncertainty baselines, improving both in-domain accuracy and transfer to harder evaluation settings.",
+  "year": 2026,
+  "venue": "arXiv.org",
+  "publication_types": [
+   "JournalArticle"
+  ],
+  "authors": [
+   "Jianghao Wu",
+   "Jianfei Cai",
+   "Weiqiang Wang",
+   "Jing Ye",
+   "Daniel F. Schmidt",
+   "Yasmeen George"
+  ],
+  "citations": 0,
+  "source": "semanticscholar",
+  "source_id": "21b54bdd616036a3a157c670d0d211e95e0dca3b",
+  "paper_id": "dblp:journals/corr/abs-2605-28631",
+  "doi": "10.48550/arXiv.2605.28631",
+  "arxiv_id": "2605.28631",
+  "dblp_key": "journals/corr/abs-2605-28631",
+  "paper_url": "https://www.semanticscholar.org/paper/21b54bdd616036a3a157c670d0d211e95e0dca3b",
+  "published_iso": "2026-05-27"
+ },
+ {
+  "title": "Depth-Entropy Guided Sampling for Training-Free LLM Reasoning",
+  "title_norm": "depth entropy guided sampling for training free llm reasoning",
+  "abstract": "Reinforcement learning (RL) has become the dominant paradigm for improving the reasoning capabilities of large language models, but it requires expensive training, curated data, and reward signals. Recent work shows that sampling from sharpened base-model distributions at test time recovers much of the RL gain, yet existing methods rely solely on output-layer likelihoods and ignore the transformer's internal forward-pass dynamics. We introduce Depth-Entropy Guided Sampling (DEGS), a training-free, test-time method that exploits layer-wise entropy collapse as an intrinsic quality signal. We observe that stronger reasoners -- including RL-posttrained variants -- exhibit a distinctive\"late collapse\": logit-lens decoded entropy stays elevated until deeper layers before converging. We define a per-sequence collapse depth $D(\\mathbf{x})$ and a joint objective $\\pi(\\mathbf{x}) \\propto p(\\mathbf{x})^\\alpha \\exp(\\beta D(\\mathbf{x}))$ that combines sequence likelihood with this depth-entropy structure, instantiated inside an MCMC power-sampling framework (DEGS-MCMC). Across three open-weight models and four reasoning benchmarks, this near-chance per-candidate signal compounds over the sampling trajectory into state-of-the-art training-free accuracy, with gains largest out of domain and on the harder splits -- exactly where likelihood alone falls short -- at single-digit-percent wall-clock overhead. DEGS narrowly trails an in-house GRPO reference on the math splits GRPO was trained for, yet surpasses it out of domain on GPQA for all three models, without any training, reward model, or labeled data.",
+  "tldr": "This work introduces Depth-Entropy Guided Sampling (DEGS), a training-free, test-time method that exploits layer-wise entropy collapse as an intrinsic quality signal and observes that stronger reasoners -- including RL-posttrained variants -- exhibit a distinctive \"late collapse\".",
+  "year": 2026,
+  "venue": "",
+  "publication_types": [],
+  "authors": [
+   "Zibin Meng",
+   "Peng Xie",
+   "Kani Chen"
+  ],
+  "citations": 0,
+  "source": "semanticscholar",
+  "source_id": "e627fef6b493cce06387b5bf6a2dbf55c26957f6",
+  "paper_id": "arxiv:2607.09693",
+  "doi": "",
+  "arxiv_id": "2607.09693",
+  "dblp_key": "",
+  "paper_url": "https://www.semanticscholar.org/paper/e627fef6b493cce06387b5bf6a2dbf55c26957f6",
+  "published_iso": "2026-06-19"
+ },
+ {
+  "title": "Checkerboard: A Simple, Effective, Efficient and Learning-free Clean Label Backdoor Attack with Low Poisoning Budget",
+  "title_norm": "checkerboard a simple effective efficient and learning free clean label backdoor",
+  "abstract": "Backdoor attacks threaten the deep learning supply chain by poisoning a small fraction of the training data so that a model behaves normally on clean inputs but misclassifies trigger-carrying inputs to an attacker-chosen target class. Clean-label backdoor attacks are especially dangerous because poisoned samples remain label-consistent and are therefore harder to detect. Yet existing clean-label attacks typically rely on expensive optimization, surrogate-model training, or nontrivial data access. We present Checkerboard, a theoretically grounded, learning-free clean-label backdoor attack that is effective, efficient, and simple to implement. From a linear separability formulation, we derive a checkerboard trigger in closed form, removing the need for surrogate-model training and trigger optimization. For texture-rich datasets, we introduce Complexity-driven Sample Selection, which uses only target-class data to improve trigger-to-background contrast by selecting low-complexity images for poisoning. Across four benchmark datasets, Checkerboard outperforms 8 baseline attacks and achieves state-of-the-art performance under low poisoning budgets. For example, on CIFAR-10, under a trigger perturbation budget of $10/255$, poisoning 20 training samples achieves $99.99\\%$ Attack Success Rate (ASR). On ImageNet-100, a poisoning rate of only $0.46\\%$ yields over $94\\%$ ASR without degrading clean accuracy. The proposed attack also remains effective against state-of-the-art backdoor defenses and shows strong resistance to adaptive defenses.",
+  "tldr": "From a linear separability formulation, a checkerboard trigger is derived in closed form, removing the need for surrogate-model training and trigger optimization, and this work presents Checkerboard, a theoretically grounded, learning-free clean-label backdoor attack that is effective, efficient, and simple to implement.",
+  "year": 2026,
+  "venue": "arXiv.org",
+  "publication_types": [
+   "JournalArticle"
+  ],
+  "authors": [
+   "Yi Yang",
+   "Jinyang Huang",
+   "Binbin Liu",
+   "Feng-Qi Cui",
+   "Xiaokang Zhou",
+   "Zhi Liu"
+  ],
+  "citations": 0,
+  "source": "semanticscholar",
+  "source_id": "83ab16496242e0638644f14f17fca345976d8b97",
+  "paper_id": "dblp:journals/corr/abs-2605-01298",
+  "doi": "10.48550/arXiv.2605.01298",
+  "arxiv_id": "2605.01298",
+  "dblp_key": "journals/corr/abs-2605-01298",
+  "paper_url": "https://www.semanticscholar.org/paper/83ab16496242e0638644f14f17fca345976d8b97",
+  "published_iso": "2026-05-02"
+ },
+ {
+  "title": "Noise-Aware Decoding with Salient Region Enhancing for Zero-Shot Image Captioning",
+  "title_norm": "noise aware decoding with salient region enhancing for zero shot image captionin",
+  "abstract": "Image captioning aims to create natural language descriptions of images. Recent advancements in image captioning have explored text-only training methods that eliminate the need for image annotations. However, these methods are prone to generate descriptions that include objects that do not actually appear in the image, but are instead drawn from the retrieval texts or hard prompts-resulting in object hallucinations. To address this issue, we propose synergistic prompting mechanism called NASCap (Noise-Aware Decoding with Salient Region Enhancing for Zero-Shot Image Captioning). Our method further improves the accuracy of generated captions by designing a fusion model with mask attention that isolate integrates retrieved captions with input features. The hard prompt mixed with negative entities is designed to further improve model's robust to wrong information. Additionally, we introduce a training-free multi-granularity fusion strategy that dynamically perceive and enhance salient regions into global representation. Extensive experiments demonstrate that NASCap sets a new state-of-the art cross-domain (transferable) captioning and performs Through extensive experiments, our straightforward yet powerful approach has demonstrated its efficacy, outperforming the state-of-the-art methods by a significant margin in image captioning compared to zero-shot captioning based on text-only training.",
+  "tldr": "This work proposes synergistic prompting mechanism called NASCap (Noise-Aware Decoding with Salient Region Enhancing for Zero-Shot Image Captioning), which improves the accuracy of generated captions by designing a fusion model with mask attention that isolate integrates retrieved captions with input features.",
+  "year": 2025,
+  "venue": "ACM Multimedia",
+  "publication_types": [
+   "Book",
+   "JournalArticle"
+  ],
+  "authors": [
+   "Yuxin Xie",
+   "Dongyue Chen",
+   "Yue Zhu",
+   "Tong Jia",
+   "Shizhuo Deng"
+  ],
+  "citations": 0,
+  "source": "semanticscholar",
+  "source_id": "e41d9059aa70e9502d493b118601d3f01d85a38e",
+  "paper_id": "dblp:conf/mm/Xie0Z0D25",
+  "doi": "10.1145/3746027.3755762",
+  "arxiv_id": "",
+  "dblp_key": "conf/mm/Xie0Z0D25",
+  "paper_url": "https://www.semanticscholar.org/paper/e41d9059aa70e9502d493b118601d3f01d85a38e",
+  "published_iso": "2025-10-27"
+ },
+ {
+  "title": "TALON: Confidence-Aware Speculative Decoding with Adaptive Token Trees",
+  "title_norm": "talon confidence aware speculative decoding with adaptive token trees",
+  "abstract": "Speculative decoding (SD) has become a standard technique for accelerating LLM inference without sacrificing output quality. Recent advances in speculative decoding have shifted from sequential chain-based drafting to tree-structured generation, where the draft model constructs a tree of candidate tokens to explore multiple possible drafts in parallel. However, existing tree-based SD methods typically build a fixed-width, fixed-depth draft tree, which fails to adapt to the varying difficulty of tokens and contexts. As a result, the draft model cannot dynamically adjust the tree structure to early stop on difficult tokens and extend generation for simple ones. To address these challenges, we introduce TALON, a training-free, budget-driven adaptive tree expansion framework that can be plugged into existing tree-based methods. Unlike static methods, TALON constructs the draft tree iteratively until a fixed token budget is met, using a hybrid expansion strategy that adaptively allocates the node budget to each layer of the draft tree. This framework naturally shapes the draft tree into a\"deep-and-narrow\"form for deterministic contexts and a\"shallow-and-wide\"form for uncertain branches, effectively optimizing the trade-off between exploration width and generation depth under a given budget. Extensive experiments across 5 models and 6 datasets demonstrate that TALON consistently outperforms state-of-the-art EAGLE-3, achieving up to 5.16x end-to-end speedup over auto-regressive decoding.",
+  "tldr": "TALON is introduced, a training-free, budget-driven adaptive tree expansion framework that can be plugged into existing tree-based SD methods that outperforms state-of-the-art EAGLE-3, achieving up to 5.16x end-to-end speedup over auto-regressive decoding.",
+  "year": 2026,
+  "venue": "arXiv.org",
+  "publication_types": [
+   "JournalArticle"
+  ],
+  "authors": [
+   "Tianyu Liu",
+   "Qitan Lv",
+   "Yuhao Shen",
+   "Xiao Sun",
+   "Xiaoyan Sun"
+  ],
+  "citations": 9,
+  "source": "semanticscholar",
+  "source_id": "c37d87b414a1cf830547eb6311f9e4f3e28d4182",
+  "paper_id": "dblp:journals/corr/abs-2601-07353",
+  "doi": "10.48550/arXiv.2601.07353",
+  "arxiv_id": "2601.07353",
+  "dblp_key": "journals/corr/abs-2601-07353",
+  "paper_url": "https://www.semanticscholar.org/paper/c37d87b414a1cf830547eb6311f9e4f3e28d4182",
+  "published_iso": "2026-01-12"
+ },
+ {
+  "title": "The Hidden Cost of Structured Generation in LLMs: Draft-Conditioned Constrained Decoding",
+  "title_norm": "the hidden cost of structured generation in llms draft conditioned constrained d",
+  "abstract": "Large language models (LLMs) are increasingly used to generate executable outputs, JSON objects, and API calls, where a single syntax error can make the output unusable. Constrained decoding enforces validity token-by-token via masking and renormalization, but it can distort generation when the model assigns low probability mass to valid continuations, pushing decoding toward locally valid yet semantically incorrect trajectories. We propose \\emph{Draft-Conditioned Constrained Decoding (DCCD)}, a simple two-step, training-free inference procedure that decouples semantic planning from structural enforcement: an unconstrained draft is generated first, and constrained decoding is then applied, conditioned on this draft, to guarantee validity. We analyze DCCD through a KL-projection view, showing that draft conditioning increases feasible mass and reduces the cumulative\"projection tax\"induced by hard constraints, with an optional best-of-$K$ draft selection. Across structured reasoning benchmarks, DCCD improves strict structured accuracy by up to +24 percentage points over standard constrained decoding (e.g., 15.2\\% to 39.0\\% on GSM8K with a 1B model), and enables smaller model pairs to match or exceed much larger constrained baselines, yielding substantial gains in parameter efficiency.",
+  "tldr": "Draft-Conditioned Constrained Decoding is proposed, a simple two-step, training-free inference procedure that decouples semantic planning from structural enforcement and enables smaller model pairs to match or exceed much larger constrained baselines, yielding substantial gains in parameter efficiency.",
+  "year": 2026,
+  "venue": "",
+  "publication_types": [],
+  "authors": [
+   "A. Reddy",
+   "Thayne T. Walker",
+   "James S. Ide",
+   "A. S. Bedi"
+  ],
+  "citations": 5,
+  "source": "semanticscholar",
+  "source_id": "88beb3a63e00141d83caf49c09b076b15ffa3730",
+  "paper_id": "arxiv:2603.03305",
+  "doi": "",
+  "arxiv_id": "2603.03305",
+  "dblp_key": "",
+  "paper_url": "https://www.semanticscholar.org/paper/88beb3a63e00141d83caf49c09b076b15ffa3730",
+  "published_iso": "2026-02-08"
+ },
+ {
+  "title": "Bastion: Budget-Aware Speculative Decoding with Tree-structured Block Diffusion Drafting",
+  "title_norm": "bastion budget aware speculative decoding with tree structured block diffusion d",
+  "abstract": "Block-diffusion drafters have recently emerged as a powerful alternative for speculative decoding by predicting multiple future-token distributions in a single parallel step. However, since these parallel predictions are sampled from position-wise marginals rather than fully conditioned sequences, committing to a single greedy path often fails to capture the target model's preferred trajectory. To address this, we propose BASTION, a budget-aware speculative decoding framework with tree-based diffusion drafting. Unlike existing methods that rely on static tree topologies, BASTION dynamically constructs query-dependent trees by balancing draft quality against hardware constraints. Our framework integrates three synergistic components: (1) an acceptance surrogate that estimates expected accepted length via path confidence, (2) an online latency estimator that calibrates a hardware-aware roofline model, and (3) an adaptive best-first expansion that grows the tree until marginal gains no longer justify incremental verification costs. BASTION is training-free, preserves the target model's distribution, and requires no per-setting tuning. Across diverse benchmarks and GPU architectures, BASTION achieves up to a 6.61x speedup over standard autoregressive decoding, outperforming state-of-the-art block-diffusion baselines by 39%.",
+  "tldr": "This work proposes BASTION, a budget-aware speculative decoding framework with tree-based diffusion drafting that achieves up to a 6.61x speedup over standard autoregressive decoding, outperforming state-of-the-art block-diffusion baselines by 39%.",
+  "year": 2026,
+  "venue": "arXiv.org",
+  "publication_types": [
+   "JournalArticle"
+  ],
+  "authors": [
+   "Soowon Oh",
+   "Nam Cao",
+   "Yujin Kim",
+   "Hojung Jung",
+   "Huzama Ahmad",
+   "Sangmin Bae"
+  ],
+  "citations": 0,
+  "source": "semanticscholar",
+  "source_id": "ef86789aa7662b87dfd498da51de6d9135c45326",
+  "paper_id": "dblp:journals/corr/abs-2605-29727",
+  "doi": "10.48550/arXiv.2605.29727",
+  "arxiv_id": "2605.29727",
+  "dblp_key": "journals/corr/abs-2605-29727",
+  "paper_url": "https://www.semanticscholar.org/paper/ef86789aa7662b87dfd498da51de6d9135c45326",
+  "published_iso": "2026-05-28"
+ },
+ {
+  "title": "AsyncLane: Decoupling Refinement from Advancement in Diffusion Language Model Decoding",
+  "title_norm": "asynclane decoupling refinement from advancement in diffusion language model dec",
+  "abstract": "Block-wise semi-autoregressive decoding is the standard inference paradigm for diffusion large language models (DLMs), but it imposes a strict dependency between blocks: the next block cannot begin until the current block is fully decoded or its denoising budget is exhausted. We observe that once a block exposes a reliable delimiter boundary or stable semantic prefix, continuation generation need not wait for every residual token to be resolved. We propose AsyncLane, a training-free decoding scheduler that decouples refinement from advancement. AsyncLane forks a generate lane at observed delimiter boundaries into a refine lane and a continuation generate lane: the prefix remains editable, while the continuation advances before prefix refinement finishes. The resulting lane tree records decoding dependencies and output order, while execution proceeds over the active lane set. To make this asynchronous schedule efficient under bidirectional attention, AsyncLane combines shared-prefix lane batching, lookahead draft reuse, cascading termination, and compact cache refresh with refresh-logit reuse, preventing model-call cost from scaling directly with the number of lanes. AsyncLane is a drop-in replacement for block-wise DLM samplers and requires no retraining. Experiments on mathematical reasoning and code generation show that AsyncLane consistently improves throughput while maintaining competitive quality. Across LLaDA and Dream backbones, AsyncLane achieves the highest TPS in all evaluated benchmark-length settings; relative to the fastest competing baseline, it reaches peak speedups of 2.95x on LLaDA and 3.04x on Dream, with especially large gains under longer generation budgets.",
+  "tldr": "AsyncLane is a drop-in replacement for block-wise DLM samplers and requires no retraining, and experiments on mathematical reasoning and code generation show that AsyncLane consistently improves throughput while maintaining competitive quality.",
+  "year": 2026,
+  "venue": "",
+  "publication_types": [],
+  "authors": [
+   "Yingxuan Ren",
+   "Yuxuan Lou",
+   "Yong Liu",
+   "Pengcheng Fang",
+   "Ziming Wang",
+   "Pengfei Zhou"
+  ],
+  "citations": 0,
+  "source": "semanticscholar",
+  "source_id": "ef23e2234139db8af287079a4761cc8681a33272",
+  "paper_id": "arxiv:2606.08411",
+  "doi": "",
+  "arxiv_id": "2606.08411",
+  "dblp_key": "",
+  "paper_url": "https://www.semanticscholar.org/paper/ef23e2234139db8af287079a4761cc8681a33272",
+  "published_iso": "2026-06-07"
+ },
+ {
+  "title": "Teacher-Free Self-Training Amplifies but Does Not Compound: A Pass@$K$ Crossover on a Free-Verifier Domain",
+  "title_norm": "teacher free self training amplifies but does not compound a pass k crossover on",
+  "abstract": "When a language model trains on its own verified outputs, does it acquire capability beyond its base, or merely get better at expressing capability the base already had? We make the question decidable with a teacher-free\"constellation\"-- a generator, a learned critic, and a free exact verifier -- on a FlashFill-style\"trapdoor\"DSL, where verified (problem, solution) pairs are cheap to synthesize, hard to invert, and free to check exactly. Everything runs on one 4-bit Qwen3-4B on a single 24 GB GPU, with no model in the loop larger than the base. We report three findings. (i) Critic-guided selection beats verifier-filtered best-of-$k$ by $+9.1$ pp ($6/6$ seeds), with the entire gain localized to tasks where candidates disagree on held-out inputs. (ii) Per-round STaR self-training raises the ceiling but never accelerates -- the gain tracks remaining headroom and decelerates across $K=4$ independent training trajectories. (iii) The domain has no clean zero-capability frontier, so the usual\"$0\\% \\to$ climb $=$ emergence\"test is invalid here. A measured pass@$K$ crossover settles the diagnosis: the trained model wins at the operating budget (pass@$8$) but the base overtakes it at a large budget (pass@$64$) on every trajectory, so self-training concentrates probability mass rather than expanding reach. This is amplification, not compounding. ($K=4$ is indicative, not yet a robust across-trajectory CI.)",
+  "tldr": "This work makes the question decidable with a teacher-free\"constellation\"-- a generator, a learned critic, and a free exact verifier -- on a FlashFill-style\"trapdoor\"DSL, where verified (problem, solution) pairs are cheap to synthesize, hard to invert, and free to check exactly.",
+  "year": 2026,
+  "venue": "",
+  "publication_types": [],
+  "authors": [
+   "Igor Strozzi"
+  ],
+  "citations": 0,
+  "source": "semanticscholar",
+  "source_id": "9a78633905d1133f3c105aa9377dcb55983e385a",
+  "paper_id": "arxiv:2606.07856",
+  "doi": "",
+  "arxiv_id": "2606.07856",
+  "dblp_key": "",
+  "paper_url": "https://www.semanticscholar.org/paper/9a78633905d1133f3c105aa9377dcb55983e385a",
+  "published_iso": "2026-06-05"
+ },
+ {
+  "title": "Cross-Attention Speculative Decoding",
+  "title_norm": "cross attention speculative decoding",
+  "abstract": "Speculative decoding (SD) is a widely adopted approach for accelerating inference in large language models (LLMs), particularly when the draft and target models are well aligned. However, state-of-the-art SD methods typically rely on tightly coupled, self-attention-based Transformer decoders, often augmented with auxiliary pooling or fusion layers. This coupling makes them increasingly complex and harder to generalize across different models. We present Budget EAGLE (Beagle), the first, to our knowledge, cross-attention-based Transformer decoder SD model that achieves performance on par with leading self-attention SD models (EAGLE-v2) while eliminating the need for pooling or auxiliary components, simplifying the architecture, improving training efficiency, and maintaining stable memory usage during training-time simulation. To enable effective training of this novel architecture, we propose Two-Stage Block-Attention Training, a new method that achieves training stability and convergence efficiency in block-level attention scenarios. Extensive experiments across multiple LLMs and datasets show that Beagle achieves competitive inference speedups and higher training efficiency than EAGLE-v2, offering a strong alternative for architectures in speculative decoding.",
+  "tldr": "Budget EAGLE (Beagle) is presented, the first, to the authors' knowledge, cross-attention-based Transformer decoder SD model that achieves performance on par with leading self-attention SD models (EAGLE-v2) while eliminating the need for pooling or auxiliary components, simplifying the architecture, improving training efficiency, and maintaining stable memory usage during training-time simulation.",
+  "year": 2025,
+  "venue": "arXiv.org",
+  "publication_types": [
+   "JournalArticle"
+  ],
+  "authors": [
+   "Wei Zhong",
+   "Manasa Bharadwaj",
+   "Yixiao Wang",
+   "Nikhil Verma",
+   "Yipeng Ji",
+   "Chul Lee"
+  ],
+  "citations": 2,
+  "source": "semanticscholar",
+  "source_id": "dd255ad3e569c9a8c28f8fb510f9f91323cb3b66",
+  "paper_id": "dblp:journals/corr/abs-2505-24544",
+  "doi": "10.48550/arXiv.2505.24544",
+  "arxiv_id": "2505.24544",
+  "dblp_key": "journals/corr/abs-2505-24544",
+  "paper_url": "https://www.semanticscholar.org/paper/dd255ad3e569c9a8c28f8fb510f9f91323cb3b66",
+  "published_iso": "2025-05-30"
+ },
+ {
+  "title": "AsyncSpade: Efficient Test-Time Scaling with Asynchronous Sparse Decoding",
+  "title_norm": "asyncspade efficient test time scaling with asynchronous sparse decoding",
+  "abstract": "Test-time scaling (TTS) boosts LLM reasoning via long chain-of-thought (CoT), but the linear KV-cache growth amplifies the memory-bound bottleneck of LLM decoding. Query-aware page-level sparse decoding can achieve state-of-the-art performance under constrained FLOPs budgets, but is limited by both sequential-dependent page filtering and coarse-grained token selection, hampering serving efficiency and model performance on TTS tasks under high concurrency and long CoT scenarios (consuming even higher runtime than the forward pipeline itself). In this paper, we first find that the current-step query state can be accurately approximated in a unified manner from a short window of recent queries, enabling training-free query-aware sparsity without waiting in the decoding loop. We propose AsyncSpade, an asynchronous framework for efficient TTS built on two core components: (1) a novel light-weight temporal-regressive module that predicts the next-token query state; (2) an asynchronous and disaggregated framework that decouples the KV cache filtering from the auto-regressive decoding loop, overlapping the token-level KV selection with the forward inference computation through asynchronism. To our knowledge, AsyncSpade is the first to eliminate the sequential dependence without sacrificing model performance. We validate the effectiveness of AsyncSpade on common LLM serving setups with an A100 node, where AsyncSpade fully overlaps KV-cache operations with the inference pipeline, achieving theoretical optimal time-per-output-token (TPOT). Specifically, AsyncSpade delivers over 20% reduction on TPOT compared to SoTA baseline (i.e. Quest) and at least 50% TPOT reduction compared to full attention on Qwen3-8B and Qwen3-32B models, while matching or surpassing their accuracy on various TTS benchmarks (AIME-24/25, GPQA-Diamond, MATH-500).",
+  "tldr": "This paper finds that the current-step query state can be accurately approximated in a unified manner from a short window of recent queries, enabling training-free query-aware sparsity without waiting in the decoding loop, and proposes AsyncSpade, an asynchronous framework for efficient TTS built on two core components.",
+  "year": 2025,
+  "venue": "arXiv.org",
+  "publication_types": [
+   "JournalArticle"
+  ],
+  "authors": [
+   "Shuqing Luo",
+   "Yilin Guan",
+   "Pingzhi Li",
+   "Hanrui Wang",
+   "Tianlong Chen"
+  ],
+  "citations": 1,
+  "source": "semanticscholar",
+  "source_id": "cdd27c5237ee385ebba0e3db379e8e98e33a8065",
+  "paper_id": "dblp:journals/corr/abs-2510-07486",
+  "doi": "10.48550/arXiv.2510.07486",
+  "arxiv_id": "2510.07486",
+  "dblp_key": "journals/corr/abs-2510-07486",
+  "paper_url": "https://www.semanticscholar.org/paper/cdd27c5237ee385ebba0e3db379e8e98e33a8065",
+  "published_iso": "2025-10-08"
+ },
+ {
+  "title": "Don't Overthink It: Inter-Rollout Action Agreement as a Free Adaptive-Compute Signal for LLM Agents",
+  "title_norm": "don t overthink it inter rollout action agreement as a free adaptive compute sig",
+  "abstract": "Inference-time compute scaling has emerged as a powerful technique for improving the reliability of large language model (LLM) agents, but existing methods apply compute uniformly: every decision step receives the same budget regardless of its difficulty. We introduce TrACE (Trajectorical Adaptive Compute via agrEement), a training-free controller that allocates LLM calls adaptively across agent timesteps by measuring inter-rollout action agreement. At each step, TrACE samples a small set of candidate next actions and measures how consistently the model commits to the same action. High agreement signals an easy decision; the controller commits immediately. Low agreement signals uncertainty; the controller samples additional rollouts up to a configurable cap before committing to the plurality action. No learned components, no external verifier, and no human labels are required. We evaluate TrACE against greedy decoding and fixed-budget self-consistency (SC-4, SC-8) on two benchmarks spanning single-step reasoning (GSM8K, n=50) and multi-step household navigation (MiniHouse, n=30), using a Qwen 2.5 3B Instruct model running on CPU. TrACE-4 matches SC-4 accuracy while using 33% fewer LLM calls on GSM8K and 39% fewer on MiniHouse. TrACE-8 matches SC-8 accuracy with 55% fewer calls on GSM8K and 65% fewer on MiniHouse. We further show that inter-rollout agreement is a reliable signal of step-level success, validating the core hypothesis that the model's own output consistency encodes difficulty information that can be exploited without training. TrACE is the first training-free, per-timestep adaptive-compute controller for LLM agents to be evaluated on multi-step sequential decision tasks.",
+  "tldr": "TrACE is the first training-free, per-timestep adaptive-compute controller for LLM agents to be evaluated on multi-step sequential decision tasks, and it is shown that inter-rollout agreement is a reliable signal of step-level success.",
+  "year": 2026,
+  "venue": "arXiv.org",
+  "publication_types": [
+   "JournalArticle"
+  ],
+  "authors": [
+   "Khushal Sethi"
+  ],
+  "citations": 1,
+  "source": "semanticscholar",
+  "source_id": "5a3696f45969e4bce35971cd9eb69622c28c073f",
+  "paper_id": "dblp:journals/corr/abs-2604-08369",
+  "doi": "10.48550/arXiv.2604.08369",
+  "arxiv_id": "2604.08369",
+  "dblp_key": "journals/corr/abs-2604-08369",
+  "paper_url": "https://www.semanticscholar.org/paper/5a3696f45969e4bce35971cd9eb69622c28c073f",
+  "published_iso": "2026-04-09"
+ },
+ {
+  "title": "MoE-Spec: Expert Budgeting for Efficient Speculative Decoding",
+  "title_norm": "moe spec expert budgeting for efficient speculative decoding",
+  "abstract": "Speculative decoding accelerates Large Language Model (LLM) inference by verifying multiple drafted tokens in parallel. However, for Mixture-of-Experts (MoE) models, this parallelism introduces a severe bottleneck: large draft trees activate many unique experts, significantly increasing memory pressure and diminishing speedups from speculative decoding relative to autoregressive decoding. Prior methods reduce speculation depth when MoE verification becomes expensive. We propose MoE-Spec, a training-free verification-time expert budgeting method that decouples speculation depth from memory cost by enforcing a fixed expert capacity limit at each layer, loading only the experts that contribute most to verification and dropping the long tail of rarely used experts that drive bandwidth overhead. Experiments across multiple model scales and datasets show that this method yields 10--30\\% higher throughput than state-of-the-art speculative decoding baselines (EAGLE-3) at comparable quality, with flexibility to trade accuracy for further latency reductions through tighter budgets.",
+  "tldr": "MoE-Spec is proposed, a training-free verification-time expert budgeting method that decouples speculation depth from memory cost by enforcing a fixed expert capacity limit at each layer, loading only the experts that contribute most to verification and dropping the long tail of rarely used experts that drive bandwidth overhead.",
+  "year": 2026,
+  "venue": "arXiv.org",
+  "publication_types": [
+   "JournalArticle"
+  ],
+  "authors": [
+   "Bradley McDanel",
+   "Steven Li",
+   "Sruthikesh Surineni",
+   "Harshit Khaitan"
+  ],
+  "citations": 3,
+  "source": "semanticscholar",
+  "source_id": "80d2a4b01a1c5f53e6a7abb10bc940dbb3bd445f",
+  "paper_id": "dblp:journals/corr/abs-2602-16052",
+  "doi": "10.48550/arXiv.2602.16052",
+  "arxiv_id": "2602.16052",
+  "dblp_key": "journals/corr/abs-2602-16052",
+  "paper_url": "https://www.semanticscholar.org/paper/80d2a4b01a1c5f53e6a7abb10bc940dbb3bd445f",
+  "published_iso": "2026-02-17"
+ },
+ {
+  "title": "TACG: Trajectory-Aware Commit Gating for Diffusion Language Model Decoding",
+  "title_norm": "tacg trajectory aware commit gating for diffusion language model decoding",
+  "abstract": "Diffusion language models (DLLMs) generate text by iteratively denoising masked positions, exposing a trajectory of predictive distributions rather than a single instantaneous belief. Most existing decoders ignore this trajectory and commit tokens from the current snapshot alone, conflating confidence with commitment readiness: a transient top-1 peak under incomplete context can be locked in, while candidates with consistent cross-step support are delayed. We propose Trajectory-Aware Commit Gating (TACG), a training-free gate-level decoder that anchors token identities to the base posterior and uses trajectory-aware signals only to decide whether the current proposal is ready to commit. TACG combines Temporal Implicit Logits Guidance (TILG), which keeps an exponential moving average of past logits as a self-reference and contrasts the current logits against this reference in natural-parameter space, with a History Gate (HG) that enforces short-term proposal persistence before commitment. Together with a capped extra-promotion budget, these components yield a stability-constrained commit rule without auxiliary networks or extra forward passes. We evaluate TACG on LLaDA, Dream, and LLaDA2-Mini across code (HumanEval, MBPP) and math (GSM8K, MATH500) benchmarks; it typically improves or preserves accuracy while reducing denoising steps and increasing tokens per forward (TPF). The code is publicly available at https://github.com/Clarence-CV/TACG-DLLM.",
+  "tldr": "Trajectory-Aware Commit Gating (TACG), a training-free gate-level decoder that anchors token identities to the base posterior and uses trajectory-aware signals only to decide whether the current proposal is ready to commit, is proposed.",
+  "year": 2026,
+  "venue": "",
+  "publication_types": [],
+  "authors": [
+   "Chengcheng Wang",
+   "Tingzhang Luo",
+   "Wenhao Li",
+   "Jianyuan Guo",
+   "Chang Xu"
+  ],
+  "citations": 0,
+  "source": "semanticscholar",
+  "source_id": "2cda1d71d5859cc8c9349c8768b10acdd2da872b",
+  "paper_id": "arxiv:2607.03236",
+  "doi": "",
+  "arxiv_id": "2607.03236",
+  "dblp_key": "",
+  "paper_url": "https://www.semanticscholar.org/paper/2cda1d71d5859cc8c9349c8768b10acdd2da872b",
+  "published_iso": "2026-07-03"
+ },
+ {
+  "title": "Calibrated e-CUSUM Decoding for Quantized Reasoning Models: Why Token Log-Probability Is the Wrong Observable for Decoding Monitors",
+  "title_norm": "calibrated e cusum decoding for quantized reasoning models why token log probabi",
+  "abstract": "Low-bit quantization makes small reasoning models inexpensive to deploy but can degrade their chains of thought. This motivates decoder-side monitors that intervene when generation becomes unreliable. We show that a natural candidate, the centered token log-probability increment $\\log p(w_t)+H_t$, is the wrong observable for this purpose. Under the model's own sampling law it is a mean-zero martingale by construction, so it measures sampling self-consistency rather than trajectory health and is nearly silent during confident repetition, where both $\\log p(w_t)$ and entropy are close to zero. We introduce a training-free decoding controller that combines (i) a degeneration-aware alarm score fusing token uncertainty with explicit verbatim repetition and (ii) a calibrated e-process-inspired sequential detector. The raw product process is Ville-valid under a conditional-mean null, while the deployed CUSUM-floored statistic is treated as an empirical change detector because the score is history-dependent and autocorrelated. On GSM8K with DeepSeek-R1-Distill-Qwen-1.5B in FP16 and INT4, calibration turns a monitor that fires on 93--95% of generations into a selective detector of failing traces ($\\phi \\approx 0.3$, precision $\\approx 0.6$ against a 0.38 base rate). In this pilot, the controller reduces measured verbatim-degeneration signals and yields a positive but statistically inconclusive INT4 accuracy change from 63% to 69% (paired McNemar $p=0.18$, $n=100$), at a 28% token-budget cost. We also find that non-termination, rather than looping, is the dominant failure mode on GSM8K. The main contribution is methodological: an explanation of why centered token log-probability is inadequate for decoder monitoring and a calibrated, cautiously evaluated replacement.",
+  "tldr": "A training-free decoding controller that combines a degeneration-aware alarm score fusing token uncertainty with explicit verbatim repetition and a calibrated e-process-inspired sequential detector, and finds that non-termination, rather than looping, is the dominant failure mode on GSM8K.",
+  "year": 2026,
+  "venue": "",
+  "publication_types": [],
+  "authors": [
+   "El Hassane",
+   "Ettifouri",
+   "Ayoub Belfatmi",
+   "Mahaman Sanoussi",
+   "Yahaya Alassan",
+   "Walid Dahhane"
+  ],
+  "citations": 0,
+  "source": "semanticscholar",
+  "source_id": "bfeaca4238ce9500da90205a55fb432db5dc3031",
+  "paper_id": "arxiv:2607.11317",
+  "doi": "",
+  "arxiv_id": "2607.11317",
+  "dblp_key": "",
+  "paper_url": "https://www.semanticscholar.org/paper/bfeaca4238ce9500da90205a55fb432db5dc3031",
+  "published_iso": "2026-07-13"
+ },
+ {
+  "title": "Cassandra: Enabling Reasoning LLMs at Edge via Self-Speculative Decoding",
+  "title_norm": "cassandra enabling reasoning llms at edge via self speculative decoding",
+  "abstract": "Speculative decoding has emerged as a promising lossless approach for accelerating Large Language Models (LLMs). As reasoning LLMs increasingly suffer from decode-stage overhead and approximation-based methods degrade accuracy, lossless speculative decoding has become essential for efficient inference. However, existing methods still struggle to deliver strong low-batch performance without additional training, limiting practical deployment on consumer devices. To address this challenge, we propose Cassandra, an algorithm-hardware co-designed self-speculative decoding framework optimized for low-batch scenarios. Cassandra constructs a high-performance, training-free draft model through fine-grained data selection. Using optimized pruning and mantissa truncation, it identifies the most salient values in both model weights and the Key-Value (KV) cache, enabling rapid candidate token generation before full-precision parallel verification. Unlike prior self-speculative decoding methods based on layer skipping or structured KV compression, Cassandra achieves significantly higher efficiency. To further reduce the overhead of format conversion between Cassandra representations and standard floating-point formats, we also introduce a lightweight encoder-decoder hardware module designed for seamless integration with commercial GPUs and NPUs. Experimental results show that Cassandra achieves up to 2.41x speedup over the BF16 baseline without additional training. Furthermore, on Llama 3 8B running on an NVIDIA GeForce RTX 4090, Cassandra generates 1.81x more tokens under the same memory budget compared to Eagle-3, a state-of-the-art speculative decoding method.",
+  "tldr": "Cassandra, an algorithm-hardware co-designed self-speculative decoding framework optimized for low-batch scenarios, and a lightweight encoder-decoder hardware module designed for seamless integration with commercial GPUs and NPUs are introduced.",
+  "year": 2026,
+  "venue": "arXiv.org",
+  "publication_types": [
+   "JournalArticle"
+  ],
+  "authors": [
+   "Soongyu Choi",
+   "Yuntae Kim",
+   "Muyoung Son",
+   "Joo-Young Kim"
+  ],
+  "citations": 0,
+  "source": "semanticscholar",
+  "source_id": "9a1e65876d63ffbfaf4328cf50dc3a1a8c85168b",
+  "paper_id": "dblp:journals/corr/abs-2605-26558",
+  "doi": "10.48550/arXiv.2605.26558",
+  "arxiv_id": "2605.26558",
+  "dblp_key": "journals/corr/abs-2605-26558",
+  "paper_url": "https://www.semanticscholar.org/paper/9a1e65876d63ffbfaf4328cf50dc3a1a8c85168b",
+  "published_iso": "2026-05-26"
+ },
+ {
+  "title": "Simple Supervision Is Hard to Beat: A Bitter Lesson from Sparse Target Labels in Domain-Adaptive Object Detection",
+  "title_norm": "simple supervision is hard to beat a bitter lesson from sparse target labels in ",
+  "abstract": "Source-free domain adaptive object detection adapts a source-trained detector to an unlabeled target domain, typically through teacher-student self-training with pseudo-labels. We revisit this setting when a small, uniformly sampled subset of target images is labeled. We introduce Random-Target Supervised Mixing (RTSM), a simple anchor that incorporates these annotations through a supervised detection loss while leaving the original unlabeled adaptation branch unchanged. Across evaluations spanning four SFDA-OD methods, two object detectors, multiple adaptation tasks, and target-label budgets from 1% to 10%, RTSM consistently improves pure SFDA by 1.7 to 18.3 AP50. We then examine whether the same annotations can provide further gains by steering unlabeled self-training. To this end, we evaluate ten sparse-label feedback plugins covering pseudo-label selection, object completion, and optimization control, which yield limited and method-dependent gains over RTSM. These results reveal a bitter lesson for sparse-label SFDA-OD: simple supervision is hard to beat. RTSM therefore provides a simple yet effective anchor for sparse-label SFDA-OD.",
+  "tldr": null,
+  "year": 2026,
+  "venue": "",
+  "publication_types": [],
+  "authors": [
+   "Lijun Zhang",
+   "Ruinian Xu",
+   "Mudit Agrawal"
+  ],
+  "citations": 0,
+  "source": "semanticscholar",
+  "source_id": "f5ffd600e6e16695f3189dc832776288d5572f62",
+  "paper_id": "arxiv:2606.30795",
+  "doi": "",
+  "arxiv_id": "2606.30795",
+  "dblp_key": "",
+  "paper_url": "https://www.semanticscholar.org/paper/f5ffd600e6e16695f3189dc832776288d5572f62",
+  "published_iso": "2026-06-29"
+ },
+ {
+  "title": "Natural Language Processing and soft data for motor skill assessment: A case study in surgical training simulations",
+  "title_norm": "natural language processing and soft data for motor skill assessment a case stud",
+  "abstract": "BACKGROUND AND OBJECTIVE\nAutomated surgical skill assessment using kinematic and video data (hard data) sources has been widely adopted in the literature. However, experts' opinions (soft data) in the form of free-text could be an invaluable source for evaluating one's skill level since the availability and semantic richness of the soft data are both higher than the hard data. In this paper, the feasibility of using soft data as a single source of skill assessment is analyzed with various Natural Language Processing (NLP) algorithms of different levels of complexity.\n\n\nMETHODS\nAn experiment named \"Vertex Pursuit\" was designed to address the absence of a dataset with free-text soft data in synchronization with hard data. This experiment challenges participants' hand-eye coordination, both-hand coordination, precision, and dexterity by tracking haptic device movements along a star pentagon shape. Top-performing participants receive additional training to provide expert feedback through free-text comments evaluating their peers' trials. Traditional machine learning approaches are employed, including various word and sentence embedding techniques combined with a diverse set of classifiers, to assess skill levels based on this soft data. Additionally, encoder-only and decoder-only large language models (LLMs) are applied to the data, with the latter leveraging three prompt engineering techniques.\n\n\nRESULTS\nThe task of skill assessment using soft data is demonstrated to be a complex NLP task, and as the complexity of the method increases, the results improve. The top performance was achieved with the decoder-only LLMs and the rule-based prompting strategy.\n\n\nCONCLUSION\nThis paper studied the feasibility of using soft data in a simulated surgical skill assessment scenario. While further research is needed, the proposed methods can reduce subjectivity, alleviate the burden on human experts, and enable more widespread, scalable skill evaluation in surgical training programs.",
+  "tldr": "The feasibility of using soft data as a single source of skill assessment in a simulated surgical skill assessment scenario is analyzed with various Natural Language Processing (NLP) algorithms of different levels of complexity.",
+  "year": 2025,
+  "venue": "Comput. Methods Programs Biomed.",
+  "publication_types": [
+   "JournalArticle"
+  ],
+  "authors": [
+   "A. Iranfar",
+   "Mohammad Soleymannejad",
+   "Behzad Moshiri",
+   "H. D. Taghirad"
+  ],
+  "citations": 2,
+  "source": "semanticscholar",
+  "source_id": "4f679cef6a2f30630c3f0d1be802b494992f9a67",
+  "paper_id": "dblp:journals/cmpb/IranfarSMT25",
+  "doi": "10.1016/j.cmpb.2025.108686",
+  "arxiv_id": "",
+  "dblp_key": "journals/cmpb/IranfarSMT25",
+  "paper_url": "https://www.semanticscholar.org/paper/4f679cef6a2f30630c3f0d1be802b494992f9a67",
+  "published_iso": "2025-03-01"
+ },
+ {
+  "title": "Why Is Spatial Reasoning Hard for VLMs? An Attention Mechanism Perspective on Focus Areas",
+  "title_norm": "why is spatial reasoning hard for vlms an attention mechanism perspective on foc",
+  "abstract": "Large Vision Language Models (VLMs) have long struggled with spatial reasoning tasks. Surprisingly, even simple spatial reasoning tasks, such as recognizing\"under\"or\"behind\"relationships between only two objects, pose significant challenges for current VLMs. In this work, we study the spatial reasoning challenge from the lens of mechanistic interpretability, diving into the model's internal states to examine the interactions between image and text tokens. By tracing attention distribution over the image through out intermediate layers, we observe that successful spatial reasoning correlates strongly with the model's ability to align its attention distribution with actual object locations, particularly differing between familiar and unfamiliar spatial relationships. Motivated by these findings, we propose ADAPTVIS based on inference-time confidence scores to sharpen the attention on highly relevant regions when confident, while smoothing and broadening the attention window to consider a wider context when confidence is lower. This training-free decoding method shows significant improvement (e.g., up to a 50 absolute point improvement) on spatial reasoning benchmarks such as WhatsUp and VSR with negligible cost. We make code and data publicly available for research purposes at https://github.com/shiqichen17/AdaptVis.",
+  "tldr": "This work studies the spatial reasoning challenge from the lens of mechanistic interpretability, diving into the model's internal states to examine the interactions between image and text tokens and proposes ADAPTVIS based on inference-time confidence scores to sharpen the attention on highly relevant regions when confident, while smoothing and broadening the attention window to consider a wider context when confidence is lower.",
+  "year": 2025,
+  "venue": "International Conference on Machine Learning",
+  "publication_types": [
+   "JournalArticle",
+   "Conference"
+  ],
+  "authors": [
+   "Shiqi Chen",
+   "Tongyao Zhu",
+   "Ruochen Zhou",
+   "Jinghan Zhang",
+   "Siyang Gao",
+   "Juan Carlos Niebles"
+  ],
+  "citations": 95,
+  "source": "semanticscholar",
+  "source_id": "9de83e51be23e0a2bf6d62dc8af6163df247332e",
+  "paper_id": "dblp:journals/corr/abs-2503-01773",
+  "doi": "10.48550/arXiv.2503.01773",
+  "arxiv_id": "2503.01773",
+  "dblp_key": "journals/corr/abs-2503-01773",
+  "paper_url": "https://www.semanticscholar.org/paper/9de83e51be23e0a2bf6d62dc8af6163df247332e",
+  "published_iso": "2025-03-03"
+ },
+ {
+  "title": "Learning to Place Guards by Reinforcement: A Geo-Free Neural Policy for the Vertex-Guard Art Gallery Problem",
+  "title_norm": "learning to place guards by reinforcement a geo free neural policy for the verte",
+  "abstract": "Neural combinatorial optimization (NCO) has shown that policies trained by reinforcement can construct strong solutions to NP-hard problems directly from raw instances. What such a policy actually learns, as opposed to what its decoder expresses, remains much less clear. We study this distinction on the vertex-guard Art Gallery Problem, the NP-hard task of choosing polygon vertices from which to observe an entire region. A pointer-network policy is trained from a coverage-aware reward over its own rollouts under the constraint we call geo-free inference: at test time it sees only vertex coordinates, with no visibility computation and no geometric oracle. The policy places guards economically but leaves a tail of under-covered polygons that widens far beyond the training range. To locate the cause, we freeze the trained encoder and read its embeddings with a small single-shot classifier, still geo-free at inference. The classifier closes most of the feasibility gap, in and out of distribution and at up to roughly five times the training range, cutting under-covered polygons by about an order of magnitude at an explicitly reported cost in guard count. We read this as evidence that the reinforcement-trained representation already encodes the geometry required for feasibility, and that residual failures reflect decoder calibration rather than missing knowledge. Probing a frozen encoder thus offers a practical way to ask what a neural combinatorial solver has internalized.",
+  "tldr": "Probing a frozen encoder offers a practical way to ask what a neural combinatorial solver has internalized, and reads this as evidence that the reinforcement-trained representation already encodes the geometry required for feasibility.",
+  "year": 2026,
+  "venue": "",
+  "publication_types": [],
+  "authors": [
+   "Domagoj vSeverdija",
+   "J. Maltar",
+   "Nathan Chappel",
+   "D. Matijević"
+  ],
+  "citations": 0,
+  "source": "semanticscholar",
+  "source_id": "b51f456660fe7b38ac7b745d7fb1f1773b8f55b6",
+  "paper_id": "arxiv:2606.21604",
+  "doi": "",
+  "arxiv_id": "2606.21604",
+  "dblp_key": "",
+  "paper_url": "https://www.semanticscholar.org/paper/b51f456660fe7b38ac7b745d7fb1f1773b8f55b6",
+  "published_iso": "2026-06-19"
+ },
+ {
+  "title": "Draft Less, Retrieve More: Hybrid Tree Construction for Speculative Decoding",
+  "title_norm": "draft less retrieve more hybrid tree construction for speculative decoding",
+  "abstract": "Speculative decoding (SD) accelerates large language model inference by leveraging a draft-then-verify paradigm. To maximize the acceptance rate, recent methods construct expansive draft trees, which unfortunately incur severe VRAM bandwidth and computational overheads that bottleneck end-to-end speedups. While dynamic-depth pruning can reduce this latency by removing marginal branches, it also discards potentially valid candidates, preventing the acceptance rate from reaching the upper bound of dense trees. In this paper, we identify a critical opportunity in resource allocation: the transition from dense to pruned drafting frees up significant computational budget. To break this Pareto tradeoff, we introduce Graft, a compensation framework that couples pruning and retrieval as mutually reinforcing operations. Pruning supplies sufficient budget for retrieval, while retrieval compensates for pruning-induced coverage loss and recovers accepted length. By employing a sequential `prune-then-graft'mechanism, Graft attaches highly predictive retrieved tokens into positions opened by pruning, filling the topological gaps with near-zero overhead. Graft is entirely training-free and lossless. Comprehensive evaluations show that Graft establishes a new Pareto frontier across practical deployment settings, including short-context generation, long-context generation, and large-scale models. On short-context benchmarks, it achieves up to 5.41$\\times$ speedup and improves average speedup over EAGLE-3 by up to 21.8% on the large-scale Qwen3-235B. We also provide a preliminary exploration of applying Graft to the DFlash-style block drafting paradigm, offering initial evidence and insights for extending grafting beyond autoregressive draft trees.",
+  "tldr": "Compensation framework Graft is introduced, a compensation framework that couples pruning and retrieval as mutually reinforcing operations that establishes a new Pareto frontier across practical deployment settings, including short-context generation, long-context generation, and large-scale models.",
+  "year": 2026,
+  "venue": "arXiv.org",
+  "publication_types": [
+   "JournalArticle"
+  ],
+  "authors": [
+   "Yuhao Shen",
+   "Tianyu Liu",
+   "Xinyi Hu",
+   "Quan Kong",
+   "Baolin Zhang",
+   "Jun Dai"
+  ],
+  "citations": 1,
+  "source": "semanticscholar",
+  "source_id": "7307c0969ee782e7160a572525f427ffb0816a30",
+  "paper_id": "dblp:journals/corr/abs-2605-20104",
+  "doi": "10.48550/arXiv.2605.20104",
+  "arxiv_id": "2605.20104",
+  "dblp_key": "journals/corr/abs-2605-20104",
+  "paper_url": "https://www.semanticscholar.org/paper/7307c0969ee782e7160a572525f427ffb0816a30",
+  "published_iso": "2026-05-19"
+ },
+ {
+  "title": "Beyond Static Cropping: Layer-Adaptive Visual Localization and Decoding Enhancement",
+  "title_norm": "beyond static cropping layer adaptive visual localization and decoding enhanceme",
+  "abstract": "Large Vision-Language Models (LVLMs) have advanced rapidly by aligning visual patches with the text embedding space, but a fixed visual-token budget forces images to be resized to a uniform pretraining resolution, often erasing fine-grained details and causing hallucinations via over-reliance on language priors. Recent attention-guided enhancement (e.g., cropping or region-focused attention allocation) alleviates this, yet it commonly hinges on a static\"magic layer\"empirically chosen on simple recognition benchmarks and thus may not transfer to complex reasoning tasks. In contrast to this static assumption, we propose a dynamic perspective on visual grounding. Through a layer-wise sensitivity analysis, we demonstrate that visual grounding is a dynamic process: while simple object recognition tasks rely on middle layers, complex visual search and reasoning tasks require visual information to be reactivated at deeper layers. Based on this observation, we introduce Visual Activation by Query (VAQ), a metric that identifies the layer whose attention map is most relevant to query-specific visual grounding by measuring attention sensitivity to the input query. Building on VAQ, we further propose LASER (Layer-adaptive Attention-guided Selective visual and decoding Enhancement for Reasoning), a training-free inference procedure that adaptively selects task-appropriate layers for visual localization and question answering. Experiments across diverse VQA benchmarks show that LASER significantly improves VQA accuracy across tasks with varying levels of complexity.",
+  "tldr": "This work introduces Visual Activation by Query (VAQ), a metric that identifies the layer whose attention map is most relevant to query-specific visual grounding by measuring attention sensitivity to the input query, and proposes LASER (Layer-adaptive Attention-guided Selective visual and decoding Enhancement for Reasoning), a training-free inference procedure that adaptively selects task-appropriate layers for visual localization and question answering.",
+  "year": 2026,
+  "venue": "arXiv.org",
+  "publication_types": [
+   "JournalArticle"
+  ],
+  "authors": [
+   "Zipeng Zhu",
+   "Zhanghao Hu",
+   "Qinglin Zhu",
+   "Yuxi Hong",
+   "Yijun Liu",
+   "Jingyong Su"
+  ],
+  "citations": 0,
+  "source": "semanticscholar",
+  "source_id": "6254edcc51b74b2967d1d85b81883bd4eb88e8c1",
+  "paper_id": "dblp:journals/corr/abs-2602-04304",
+  "doi": "10.48550/arXiv.2602.04304",
+  "arxiv_id": "2602.04304",
+  "dblp_key": "journals/corr/abs-2602-04304",
+  "paper_url": "https://www.semanticscholar.org/paper/6254edcc51b74b2967d1d85b81883bd4eb88e8c1",
+  "published_iso": "2026-02-04"
+ },
+ {
+  "title": "Unsupervised Learning for Distributed Downlink Power Allocation in Cell-Free mMIMO Networks",
+  "title_norm": "unsupervised learning for distributed downlink power allocation in cell free mmi",
+  "abstract": "Cell-free massive multiple-input multiple-output (CF-mMIMO) surmounts conventional cellular network limitations in terms of coverage, capacity, and interference management. This paper aims to introduce a novel unsupervised learning framework for the downlink (DL) power allocation problem in CF-mMIMO networks, utilizing only large-scale fading (LSF) coefficients as input, rather than the hard-to-obtain exact user location or channel state information (CSI). Both centralized and distributed CF-mMIMO power control learning frameworks are explored, with deep neural networks (DNNs) trained to estimate power coefficients while addressing the constraints of pilot contamination and power budgets. For both learning frameworks, the proposed approach is utilized to maximize three well-known power control objectives under maximum-ratio and regularized zero-forcing precoding schemes: 1) sum of spectral efficiency, 2) minimum signal-to-interference-plus-noise ratio (SINR) for max-min fairness, and 3) product of SINRs for proportional fairness, for each of which customized loss functions are formulated. The proposed unsupervised learning approach circumvents the arduous task of training data computations, typically required in supervised learning methods, bypassing the use of conventional complex optimization methods and heuristic methodologies. Furthermore, an LSF-based radio unit (RU) selection algorithm is employed to activate only the contributing RUs, allowing efficient utilization of network resources. Simulation results demonstrate that our proposed unsupervised learning framework outperforms existing supervised learning and heuristic solutions, showcasing an improvement of up to 20% in spectral efficiency and more than 40% in terms of energy efficiency compared to state-of-the-art supervised learning counterparts.",
+  "tldr": "A novel unsupervised learning framework for the downlink (DL) power allocation problem in CF-mMIMO networks is introduced, utilizing only large-scale fading (LSF) coefficients as input, rather than the hard-to-obtain exact user location or channel state information (CSI).",
+  "year": 2025,
+  "venue": "IEEE Transactions on Machine Learning in Communications and Networking",
+  "publication_types": [
+   "JournalArticle"
+  ],
+  "authors": [
+   "Mattia Fabiani",
+   "A. Abdallah",
+   "A. Çelik",
+   "Omer Haliloglu",
+   "Ahmed M. Eltawil"
+  ],
+  "citations": 6,
+  "source": "semanticscholar",
+  "source_id": "321c826879b8b8610121543c302b10eb4737d961",
+  "paper_id": "doi:10.1109/TMLCN.2025.3562808",
+  "doi": "10.1109/TMLCN.2025.3562808",
+  "arxiv_id": "",
+  "dblp_key": "",
+  "paper_url": "https://doi.org/10.1109/tmlcn.2025.3562808",
+  "published_iso": null
+ },
+ {
+  "title": "First Finish Search: Efficient Test-Time Scaling in Large Language Models",
+  "title_norm": "first finish search efficient test time scaling in large language models",
+  "abstract": "Test-time scaling (TTS), which involves dynamic allocation of compute during inference, offers a promising way to improve reasoning in large language models. While existing TTS methods work well, they often rely on long decoding paths or require a large number of samples to be generated, increasing the token usage and inference latency. We observe the surprising fact that for reasoning tasks, shorter traces are much more likely to be correct than longer ones. Motivated by this, we introduce First Finish Search (FFS), a training-free parallel decoding strategy that launches $n$ independent samples and returns as soon as any one completes. We evaluate FFS alongside simple decoding, beam search, majority voting, and budget forcing on four reasoning models (DeepSeek-R1, R1-Distill-Qwen-32B, QwQ-32B and Phi-4-Reasoning-Plus) and across four datasets (AIME24, AIME25-I, AIME25-II and GPQA Diamond). With DeepSeek-R1, FFS achieves $82.23\\%$ accuracy on the AIME datasets, a $15\\%$ improvement over DeepSeek-R1's standalone accuracy, nearly matching OpenAI's o4-mini performance. Our theoretical analysis explains why stopping at the shortest trace is likely to yield a correct answer and identifies the conditions under which early stopping may be suboptimal. The elegance and simplicity of FFS demonstrate that straightforward TTS strategies can perform remarkably well, revealing the untapped potential of simple approaches at inference time.",
+  "tldr": "First Finish Search is introduced, a training-free parallel decoding strategy that launches independent samples and returns as soon as any one completes that demonstrates that straightforward TTS strategies can perform remarkably well, revealing the untapped potential of simple approaches at inference time.",
+  "year": 2025,
+  "venue": "arXiv.org",
+  "publication_types": [
+   "JournalArticle"
+  ],
+  "authors": [
+   "Aradhye Agarwal",
+   "Ayan Sengupta",
+   "Tanmoy Chakraborty"
+  ],
+  "citations": 8,
+  "source": "semanticscholar",
+  "source_id": "7421c7342a15c24fc57832be4af7bd61d8b7927c",
+  "paper_id": "dblp:journals/corr/abs-2505-18149",
+  "doi": "10.48550/arXiv.2505.18149",
+  "arxiv_id": "2505.18149",
+  "dblp_key": "journals/corr/abs-2505-18149",
+  "paper_url": "https://www.semanticscholar.org/paper/7421c7342a15c24fc57832be4af7bd61d8b7927c",
+  "published_iso": "2025-05-23"
+ },
+ {
+  "title": "SpecBlock: Block-Iterative Speculative Decoding with Dynamic Tree Drafting",
+  "title_norm": "specblock block iterative speculative decoding with dynamic tree drafting",
+  "abstract": "Speculative decoding accelerates LLM inference by drafting a tree of candidate continuations and verifying it in one target forward. Existing drafters fall into two camps with opposite weaknesses. Autoregressive drafters such as EAGLE-3 preserve dependence along each draft path but call the drafter once per tree depth, making drafting a non-trivial share of per-iteration latency. Parallel drafters cut drafter calls by predicting multiple future positions in one forward, but each position is predicted without seeing the others, producing paths the verifier rejects. In this paper, we propose SpecBlock, a block-iterative drafter that combines path dependence with cheap drafting. Each drafter forward produces K dependent positions and we call this a block. The draft tree grows through repeated block expansions. Two mechanisms explicitly carry path dependence to keep later draft positions accurate. Within each block, a layer-wise shift carries the previous position's hidden state into every decoder layer. Across blocks, each new block can start from any position of the previous block, inheriting its hidden state to extend the path. To spend verifier budget where acceptance is likely, a co-trained rank head replaces the fixed top-k tree by allocating per-position branching during drafting. To avoid training the drafter on prefixes it never produces at inference, a valid-prefix mask drops the loss at later positions once an earlier one is wrong. Beyond static drafting, a cost-aware bandit at deployment uses free verifier feedback to update the drafter selectively, only when the expected throughput gain exceeds the update cost. Experiments show that SpecBlock improves mean speedup by 8-13% over EAGLE-3 at 44-52% of its drafting cost, and cost-aware adaptation extends this lead to 11-19%.",
+  "tldr": "This paper proposes SpecBlock, a block-iterative drafter that combines path dependence with cheap drafting, and shows that SpecBlock improves mean speedup by 8-13% over EAGLE-3 at 44-52% of its drafting cost, and cost-aware adaptation extends this lead to 11-19%.",
+  "year": 2026,
+  "venue": "arXiv.org",
+  "publication_types": [
+   "JournalArticle"
+  ],
+  "authors": [
+   "Weijie Shi",
+   "Qiang Xu",
+   "Fan Deng",
+   "Yaguang Wu",
+   "Jiaru Liu",
+   "Yehong Xu"
+  ],
+  "citations": 0,
+  "source": "semanticscholar",
+  "source_id": "1dcf07adad21710b4e394d185d40a7b030200f25",
+  "paper_id": "dblp:journals/corr/abs-2605-07243",
+  "doi": "10.48550/arXiv.2605.07243",
+  "arxiv_id": "2605.07243",
+  "dblp_key": "journals/corr/abs-2605-07243",
+  "paper_url": "https://www.semanticscholar.org/paper/1dcf07adad21710b4e394d185d40a7b030200f25",
+  "published_iso": "2026-05-08"
+ },
+ {
+  "title": "Simple Geometric Recentering Rivals Deep Sequence Models for Cross-Session EEG Motor-Imagery Decoding",
+  "title_norm": "simple geometric recentering rivals deep sequence models for cross session eeg m",
+  "abstract": "A large and growing body of work applies increasingly complex deep architectures to EEG motor-imagery (MI) decoding, yet rarely tests whether that complexity is justified against a strong, simple geometric baseline under identical conditions. We report a controlled benchmark across eight public MI datasets (3–128 channels, 2–3 classes, single- and multi-session) that holds the feature representation fixed and varies only the decoder. The central method — a compact tangent-space pipeline on the SPD manifold with unsupervised test-time recentering, here called Geometry-Aware — is compared against three classical Riemannian baselines (TS+SVM, FgMDM, MDM) and a family of deep models built from our own prior architecture (a bidirectional Mamba mixture-of-experts, BiMamba+MoE, with two reduced ablation variants, and an SPDNet-style network), all consuming the same single-band covariance features. Across N = 88 subject-level observations cross-session and N = 120 within-session, Geometry-Aware achieves the best average rank cross-session and is statistically tied for the best within-session (second by raw rank but indistinguishable from TS+SVM under the critical-difference test). Its cross-session advantage is large and statistically decisive — it beats every competitor after multiple-comparison correction with large effect sizes (Cohen’s d = 1.06–1.50; all pFDR < 1.1 × 10−12) — yet within session its advantage over its recentering-free twin (TS+SVM) is statistically indistinguishable (d = − 0.00, p = 0.54). This cross/within double dissociation points to recentering as the operative mechanism rather than generic capacity. The deep sequence models (the Mamba variants), despite matched features and a fair, fixed training budget, underperform every classical Riemannian method in both protocols by wide margins; the SPDNet baseline fares better — beating MDM — but still never beats the simple tangent-space pipeline on identical features. We argue this is a positive, well-controlled result that directly answers the reviewer-style question of whether architectural complexity is warranted. We state the limitations — fairness of the deep-model comparison, the absence of a direct mechanistic probe, and dataset scope — and outline how each becomes a concrete next step.",
+  "tldr": "A controlled benchmark across eight public MI datasets that holds the feature representation fixed and varies only the decoder is reported, arguing this is a positive, well-controlled result that directly answers the reviewer-style question of whether architectural complexity is warranted.",
+  "year": 2026,
+  "venue": "bioRxiv",
+  "publication_types": [
+   "Review"
+  ],
+  "authors": [
+   "Meysam Rahimipour",
+   "M. V. Van Hulle"
+  ],
+  "citations": 0,
+  "source": "semanticscholar",
+  "source_id": "998f9ac563771079dfb0c53bb90cd568db4ab448",
+  "paper_id": "doi:10.64898/2026.07.07.736991",
+  "doi": "10.64898/2026.07.07.736991",
+  "arxiv_id": "",
+  "dblp_key": "",
+  "paper_url": "https://www.biorxiv.org/content/biorxiv/early/2026/07/11/2026.07.07.736991.full.pdf",
+  "published_iso": "2026-07-11"
+ },
+ {
+  "title": "ConfPO: Exploiting Policy Model Confidence for Critical Token Selection in Preference Optimization",
+  "title_norm": "confpo exploiting policy model confidence for critical token selection in prefer",
+  "abstract": "We introduce ConfPO, a method for preference learning in Large Language Models (LLMs) that identifies and optimizes preference-critical tokens based solely on the training policy's confidence, without requiring any auxiliary models or compute. Unlike prior Direct Alignment Algorithms (DAAs) such as Direct Preference Optimization (DPO), which uniformly adjust all token probabilities regardless of their relevance to preference, ConfPO focuses optimization on the most impactful tokens. This targeted approach improves alignment quality while mitigating overoptimization (i.e., reward hacking) by using the KL divergence budget more efficiently. In contrast to recent token-level methods that rely on credit-assignment models or AI annotators, raising concerns about scalability and reliability, ConfPO is simple, lightweight, and model-free. Experimental results on challenging alignment benchmarks, including AlpacaEval 2 and Arena-Hard, demonstrate that ConfPO consistently outperforms uniform DAAs across various LLMs, delivering better alignment with zero additional computational overhead.",
+  "tldr": "Experimental results on challenging alignment benchmarks, including AlpacaEval 2 and Arena-Hard, demonstrate that ConfPO consistently outperforms uniform DAAs across various LLMs, delivering better alignment with zero additional computational overhead.",
+  "year": 2025,
+  "venue": "International Conference on Machine Learning",
+  "publication_types": [
+   "JournalArticle",
+   "Conference"
+  ],
+  "authors": [
+   "Hee Suk Yoon",
+   "Eunseop Yoon",
+   "M. Hasegawa-Johnson",
+   "Sungwoong Kim",
+   "C. Yoo"
+  ],
+  "citations": 11,
+  "source": "semanticscholar",
+  "source_id": "7985e019694318d12c52cc03ee2adef36845059c",
+  "paper_id": "dblp:journals/corr/abs-2506-08712",
+  "doi": "10.48550/arXiv.2506.08712",
+  "arxiv_id": "2506.08712",
+  "dblp_key": "journals/corr/abs-2506-08712",
+  "paper_url": "https://www.semanticscholar.org/paper/7985e019694318d12c52cc03ee2adef36845059c",
+  "published_iso": "2025-06-10"
+ },
+ {
+  "title": "Think in Parallel, Answer as One: Logit Averaging for Open-Ended Reasoning",
+  "title_norm": "think in parallel answer as one logit averaging for open ended reasoning",
+  "abstract": "Majority voting has proven effective for close-ended question answering by aggregating parallel reasoning traces. However, it is not directly applicable to open-ended reasoning, such as code generation and web-based deep research, where a\"majority\"over complete solutions is ill-defined. We introduce ThinkMerge, a training-free, plug-and-play decoding strategy that runs K parallel reasoning traces and averages their next-token logits at synchronization points to produce a single coherent output. ThinkMerge integrates seamlessly with vLLM/SGLang and remains compatible with standard decoding techniques such as Top-p/Top-k. Empirically, it matches or surpasses majority voting on AIME and GPQA, while delivering consistent gains on open-ended coding tasks: on LiveCodeBench (hard), pass@1 improves by +8.28% for DeepCoder-14B-Preview and +7.58% for Qwen3-8B. Beyond code, we further show that ThinkMerge improves web-based deep-research agents (e.g., WebSailor-7B/32B) across GAIA, BrowseComp-en/zh, and XbenchDeepSearch. These results demonstrate that parallel test-time scaling can benefit open-ended reasoning without relying on voting over complete outputs.",
+  "tldr": "ThinkMerge is introduced, a training-free, plug-and-play decoding strategy that runs K parallel reasoning traces and averages their next-token logits at synchronization points to produce a single coherent output, demonstrating that parallel test-time scaling can benefit open-ended reasoning without relying on voting over complete outputs.",
+  "year": 2025,
+  "venue": "arXiv.org",
+  "publication_types": [
+   "JournalArticle",
+   "Review"
+  ],
+  "authors": [
+   "Haonan Wang",
+   "Chao Du",
+   "Kenji Kawaguchi",
+   "Tianyu Pang"
+  ],
+  "citations": 2,
+  "source": "semanticscholar",
+  "source_id": "255501f3ab861418b62a8941c9fa843c9d57938d",
+  "paper_id": "dblp:journals/corr/abs-2512-02874",
+  "doi": "10.48550/arXiv.2512.02874",
+  "arxiv_id": "2512.02874",
+  "dblp_key": "journals/corr/abs-2512-02874",
+  "paper_url": "https://www.semanticscholar.org/paper/255501f3ab861418b62a8941c9fa843c9d57938d",
+  "published_iso": "2025-12-02"
+ },
+ {
+  "title": "Search-Augmented Masked Diffusion Models for Constrained Generation",
+  "title_norm": "search augmented masked diffusion models for constrained generation",
+  "abstract": "Discrete diffusion models generate sequences by iteratively denoising samples corrupted by categorical noise, offering an appealing alternative to autoregressive decoding for structured and symbolic generation. However, standard training targets a likelihood-based objective that primarily matches the data distribution and provides no native mechanism for enforcing hard constraints or optimizing non-differentiable properties at inference time. This work addresses this limitation and introduces Search-Augmented Masked Diffusion (SearchDiff), a training-free neurosymbolic inference framework that integrates informed search directly into the reverse denoising process. At each denoising step, the model predictions define a proposal set that is optimized under a user-specified property satisfaction, yielding a modified reverse transition that steers sampling toward probable and feasible solutions. Experiments in biological design and symbolic reasoning illustrate that SearchDiff substantially improves constraint satisfaction and property adherence, while consistently outperforming discrete diffusion and autoregressive baselines.",
+  "tldr": "Search-Augmented Masked Diffusion is introduced, a training-free neurosymbolic inference framework that integrates informed search directly into the reverse denoising process and substantially improves constraint satisfaction and property adherence, while consistently outperforming discrete diffusion and autoregressive baselines.",
+  "year": 2026,
+  "venue": "arXiv.org",
+  "publication_types": [
+   "JournalArticle"
+  ],
+  "authors": [
+   "Huu Binh Ta",
+   "Michael Cardei",
+   "Alvaro Velasquez",
+   "Ferdinando Fioretto"
+  ],
+  "citations": 1,
+  "source": "semanticscholar",
+  "source_id": "7f2c91bf92c05cb5ab321524d57163cb624939d9",
+  "paper_id": "dblp:journals/corr/abs-2602-02727",
+  "doi": "10.48550/arXiv.2602.02727",
+  "arxiv_id": "2602.02727",
+  "dblp_key": "journals/corr/abs-2602-02727",
+  "paper_url": "https://www.semanticscholar.org/paper/7f2c91bf92c05cb5ab321524d57163cb624939d9",
+  "published_iso": "2026-02-02"
+ },
+ {
+  "title": "Reliability-Aware Soft-Decision Beam Training for RIS-Assisted mmWave Systems",
+  "title_norm": "reliability aware soft decision beam training for ris assisted mmwave systems",
+  "abstract": "Millimeter-wave (mmWave) communications offer large bandwidth for high data rates, yet suffer from severe path loss and blockage, which makes highly directional beam alignment essential and training overhead a critical bottleneck. Reconfigurable intelligent surfaces (RISs), implemented as nearly passive programmable metasurfaces, can reshape the radio environment to create strong reflected paths and enhance mmWave coverage via controllable beamforming, but practical operation requires fast and reliable beam training over a large cascaded search space. To that end, coded beam training (CBT) was proposed to reduce training overhead by mapping hierarchical beam search to an error-control coding structure; however, existing RIS-CBT approaches mainly rely on hard decisions and fixed pilot allocation, which limits robustness under stringent overhead budgets and varying received signal-to-noise ratio (SNR) conditions. To deal with this challenge, this paper proposes a reliability-aware RIS beam training method that combines soft-information decoding with confidence-driven pilot reallocation. Specifically, we derive stage-wise soft metrics from the $2\\times 2$ pilot measurements and apply a soft maximum a posteriori (MAP) decoder to exploit measurement reliability rather than hard slicing. When decoding confidence is low, the remaining pilot budget is adaptively reallocated to repeat the most uncertain stages, improving overall decision reliability without increasing the nominal codebook depth. Simulation results for off-grid, RIS-assisted mmWave channels demonstrate that the proposed method achieves a higher success probability and improved achievable rate compared with binary hierarchical training and hard-decision CBT baselines across a wide range of SNRs and training overheads, and it approaches the oracle upper bound corresponding to perfect channel state information (CSI) with substantially reduced training overhead, while maintaining practical computational complexity.",
+  "tldr": "A reliability-aware RIS beam training method that combines soft-information decoding with confidence-driven pilot reallocation and approaches the oracle upper bound corresponding to perfect channel state information (CSI) with substantially reduced training overhead, while maintaining practical computational complexity.",
+  "year": 2026,
+  "venue": "IEEE Open Journal of the Communications Society",
+  "publication_types": [
+   "JournalArticle"
+  ],
+  "authors": [
+   "Zaid Albataineh",
+   "H. B. Salameh",
+   "M. Bataineh",
+   "A. Ababneh"
+  ],
+  "citations": 1,
+  "source": "semanticscholar",
+  "source_id": "d8d53eb44c34d61c59af7f55fc4b018c5dce2df0",
+  "paper_id": "dblp:journals/ojcs/AlbatainehSBA26",
+  "doi": "10.1109/OJCOMS.2026.3683760",
+  "arxiv_id": "",
+  "dblp_key": "journals/ojcs/AlbatainehSBA26",
+  "paper_url": "https://doi.org/10.1109/ojcoms.2026.3683760",
+  "published_iso": null
+ },
+ {
+  "title": "SimLens for Early Exit in Large Language Models: Eliciting Accurate Latent Predictions with One More Token",
+  "title_norm": "simlens for early exit in large language models eliciting accurate latent predic",
+  "abstract": "Intermediate-layer predictions in large language models (LLMs) are informative but hard to decode accurately, especially at early layers. Existing lens-style methods typically rely on direct linear readout, which is simple but often drifts away from the model's eventual prediction. We proposeSimLens, a simple training-free decoder for single-token decision tasks that keeps only the start token and a candidate answer token ([s] and [a]) and performs one lightweight continuation through the remaining upper layers. This surprisingly small modification recovers much more accurate latent predictions than direct linear decoding. We further introduce Linear SimLens, a lightweight linear approximation for entropy-based confidence estimation, and combine the two in SimExit, a hybrid early-exit mechanism. On ARC, BoolQ, and HeadQA with LLaMA-7B and Vicuna-7B, SimLens improves Iso-Compute accuracy in all six settings, with an average gain of +0.43 even when fair compute includes the extra two-token post-forward overhead. SimExit yields an average 1.15$\\times$ speedup at the best-accuracy operating points and 1.40$\\times$ when allowing up to a 1 percentage-point accuracy drop. Ablations show that [s] and [a] play distinct roles as global condition and semantic anchor, respectively.",
+  "tldr": "SimLens is proposed, a simple training-free decoder for single-token decision tasks that keeps only the start token and a candidate answer token and performs one lightweight continuation through the remaining upper layers and recovers much more accurate latent predictions than direct linear decoding.",
+  "year": 2025,
+  "venue": "",
+  "publication_types": [],
+  "authors": [
+   "M. Ma",
+   "Bowen Zheng",
+   "Zhongqiao Lin",
+   "Tianming Yang"
+  ],
+  "citations": 1,
+  "source": "semanticscholar",
+  "source_id": "c26b04a1f22e0dac26f2f8e3ff9b0f2b4f6b3301",
+  "paper_id": "arxiv:2507.17618",
+  "doi": "",
+  "arxiv_id": "2507.17618",
+  "dblp_key": "",
+  "paper_url": "https://www.semanticscholar.org/paper/c26b04a1f22e0dac26f2f8e3ff9b0f2b4f6b3301",
+  "published_iso": "2025-07-23"
+ },
+ {
+  "title": "LNE-Blocking: An Efficient Framework for Contamination Mitigation Evaluation on Large Language Models",
+  "title_norm": "lne blocking an efficient framework for contamination mitigation evaluation on l",
+  "abstract": "The problem of data contamination is now almost inevitable during the development of large language models (LLMs), with the training data commonly integrating those evaluation benchmarks even unintentionally. This problem subsequently makes it hard to benchmark LLMs fairly. Instead of constructing contamination-free datasets (quite hard), we propose a novel framework, \\textbf{LNE-Blocking}, to restore model performance prior to contamination on potentially leaked datasets. Our framework consists of two components: contamination detection and disruption operation. For the prompt, the framework first uses the contamination detection method, \\textbf{LNE}, to assess the extent of contamination in the model. Based on this, it adjusts the intensity of the disruption operation, \\textbf{Blocking}, to elicit non-memorized responses from the model. Our framework is the first to efficiently restore the model's greedy decoding performance. This comes with a strong performance on multiple datasets with potential leakage risks, and it consistently achieves stable recovery results across different models and varying levels of data contamination. We release the code at https://github.com/RuijieH/LNE-Blocking to facilitate research.",
+  "tldr": "A novel framework, \\textbf{LNE-Blocking}, to restore model performance prior to contamination on potentially leaked datasets, and is the first to efficiently restore the model's greedy decoding performance.",
+  "year": 2025,
+  "venue": "Conference on Empirical Methods in Natural Language Processing",
+  "publication_types": [
+   "JournalArticle",
+   "Conference"
+  ],
+  "authors": [
+   "Ruijie Hou",
+   "Yueyang Jiao",
+   "Hanxu Hu",
+   "Yingmin Li",
+   "Wai Lam",
+   "Huajian Zhang"
+  ],
+  "citations": 4,
+  "source": "semanticscholar",
+  "source_id": "4146660adf61c956bd1558ffa6cb1106fb5aaf02",
+  "paper_id": "dblp:conf/emnlp/HouYHLLZL25",
+  "doi": "10.48550/arXiv.2509.15218",
+  "arxiv_id": "2509.15218",
+  "dblp_key": "conf/emnlp/HouYHLLZL25",
+  "paper_url": "https://www.semanticscholar.org/paper/4146660adf61c956bd1558ffa6cb1106fb5aaf02",
+  "published_iso": "2025-09-18"
+ },
+ {
+  "title": "TokenSkipping: A Practical and Robust KV Cache Pruning Method for Long-Context LLM Inference",
+  "title_norm": "tokenskipping a practical and robust kv cache pruning method for long context ll",
+  "abstract": "Large Language Models (LLMs) have demonstrated remarkable capabilities, yet their deployment in long-context scenarios is severely hampered by the extensive memory and computational costs associated with the Key-Value (KV) cache. This paper introduces TokenSkipping, a practical and efficient KV cache pruning method designed to mitigate these challenges. TokenSkipping is a training-free, stateless, pre-storage method that employs a lightweight heuristic based on the L2 norm of key vectors, combined with a novel quota-based streaming algorithm for auto-regressive decoding. By deciding whether to admit or skip each token before writing to the cache, it eliminates cache-wide re-scoring and remains compatible with fused-attention kernels and Grouped Query Attention. A dual-mode design matches practical inference: during prefill, the policy retains the top-k highest-norm tokens under a fixed budget; during decoding, a streaming rule compares each new token’s norm to a reservoir-sampled percentile threshold, guaranteeing strict memory bounds with O(1) overhead. Anchor tokens are preserved to stabilize attention, and the policy operates independently per layer without retraining or kernel changes. Evaluated on Llama 3.1 8B (tested up to 128k tokens) and Mixtral-8 × 7B within their supported context windows, TokenSkipping substantially reduces KV cache memory while keeping throughput competitive with unpruned inference and cache-wide norm-based baselines. Our results reveal a distinct trade-off profile: aggressive pruning degrades fine-grained retrieval tasks (such as Needle-In-A-Haystack and QA), but TokenSkipping maintains robust performance on semantic summarization and coherence benchmarks, indicating that norm-based pruning can preserve global semantic context even when local precision is compressed. Compared to naive baselines like Sliding Window, TokenSkipping achieves better coherence under similar memory budgets and avoids global scoring, offering a simple, high-throughput optimization for memory-constrained long-context deployments.",
+  "tldr": "The results reveal a distinct trade-off profile: aggressive pruning degrades fine-grained retrieval tasks, but TokenSkipping maintains robust performance on semantic summarization and coherence benchmarks, indicating that norm-based pruning can preserve global semantic context even when local precision is compressed.",
+  "year": 2025,
+  "venue": "International Conference on Industrial Technology",
+  "publication_types": [
+   "Book",
+   "JournalArticle"
+  ],
+  "authors": [
+   "Narupol Hongthai",
+   "E. Chuangsuwanich"
+  ],
+  "citations": 0,
+  "source": "semanticscholar",
+  "source_id": "cccb03b8b6fc23ac4313fccaefff50da60b397e0",
+  "paper_id": "dblp:conf/icit/HongthaiC25",
+  "doi": "10.1145/3787330.3787361",
+  "arxiv_id": "",
+  "dblp_key": "conf/icit/HongthaiC25",
+  "paper_url": "https://doi.org/10.1145/3787330.3787361",
+  "published_iso": "2025-12-05"
+ }
+]

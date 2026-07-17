@@ -1,0 +1,1188 @@
+                                               Re-evaluating Confidence Remasking in Masked
+                                                         Diffusion Language Models
+
+
+                                                                  Stipe Frković1,∗ Metod Jazbec1,∗ Dan Zhang2
+                                                             Christian A. Naesseth1 Ilija Bogunovic3 Eric Nalisnick4
+                                                        1
+                                                          UvA-Bosch Delta Lab, University of Amsterdam 2 Bosch Center for AI
+                                                                   3
+                                                                     University of Basel 4 Johns Hopkins University
+
+
+
+
+arXiv:2606.12232v1 [cs.LG] 10 Jun 2026
+                                                                                         Abstract
+                                                     Masked diffusion language models (dLLMs) have recently emerged as a com-
+                                                     petitive alternative to autoregressive language models, with the promise of faster
+                                                     inference via parallel token generation. A notable limitation of the masked formu-
+                                                     lation, however, is that once a token has been unmasked it can no longer be revised,
+                                                     leaving dLLMs vulnerable to early sampling mistakes. To address this, a growing
+                                                     body of work has sought to extend masked dLLMs with self-correcting (remasking)
+                                                     capabilities. One appealing subset of these methods does so in a training-free, post-
+                                                     hoc manner based on token confidences, with encouraging early reported results.
+                                                     In this work, we revisit the empirical evaluation of a representative post-hoc re-
+                                                     masking method, WINO [Hong et al., 2026], and find that under standard decoding
+                                                     settings (shorter block lengths) it brings little-to-no benefit over confidence-based
+                                                     unmasking alone [Wu et al., 2025]. Extending the evaluation to non-greedy decod-
+                                                     ing, we find that while confidence-based remasking can mitigate errors introduced
+                                                     by increased stochasticity to some extent, it also exacerbates the diversity collapse
+                                                     previously reported for confidence-based unmasking. Overall, our results show that
+                                                     the benefits of post-hoc confidence-based remasking are highly setting-dependent,
+                                                     underscoring the need for a more comprehensive evaluation framework.
+
+
+                                         1     Introduction
+                                         Autoregressive (AR) language models have become the dominant paradigm for text generation,
+                                         but their sequential left-to-right decoding inherently limits inference throughput. Masked diffusion
+                                         language models (dLLMs; Sahoo et al. 2024, Shi et al. 2024) have recently emerged as a competitive
+                                         alternative: starting from a fully-masked sequence, dLLMs progressively unmask tokens in arbitrary
+                                         order, enabling parallel decoding within each step. Recent work has scaled dLLMs to billions of
+                                         parameters [Nie et al., 2025, Ye et al., 2025, Bie et al., 2025, Bethune et al., 2026] and shown that
+                                         they match AR models on a range of downstream tasks while offering the prospect of substantially
+                                         more efficient inference [Wu et al., 2025, Ben-Hamu et al., 2025, Kim et al., 2025b, Jazbec et al.,
+                                         2025].
+                                         A well-known limitation of the masked diffusion paradigm is that, once a token has been unmasked,
+                                         the model has no mechanism to revisit it [Wang et al., 2025, von Rütte, 2026], even if, later in the
+                                         generation process and with more context, another token would be a better fit. This stems directly
+                                         from the absorbing forward process used during training, and it makes masked dLLMs susceptible
+                                         to error propagation and limits their overall performance. To address this, a large body of work
+                                         has recently attempted to equip masked dLLMs with self-correcting capabilities, either through
+                                         finetuning/continual pre-training [Kim et al., 2025a, Schiff et al., 2026, Chen et al., 2026, Yu et al.,
+                                         2026], RL post-training [Huang et al., 2025], or post-hoc [Hong et al., 2026, Dong et al., 2025,
+                                             ∗ Equal contribution. Corresponding authors: < stipe.frkovic@student.uva.nl,m.jazbec@uva.nl>
+
+
+
+                                         Preprint.
+Xiang et al., 2026], i.e. in a training-free manner. The latter is particularly appealing as it can
+be applied off-the-shelf to any pretrained dLLM. A representative example is WINO [Hong et al.,
+2026], which complements confidence-based adaptive unmasking (Fast-dLLM; Wu et al. 2025) with
+a confidence-based remasking step that reverts already-decoded tokens deemed unlikely under their
+surrounding context.
+In this work, we do not propose a new remasking approach but instead aim to better understand when
+training-free, confidence-based remasking actually helps in masked dLLMs. To this end, we revisit
+the empirical evaluation of WINO [Hong et al., 2026], asking how much benefit remasking adds
+beyond strong confidence-based unmasking like Fast-dLLM [Wu et al., 2025] — a crucial comparison
+lacking in prior work (Section 3.1). We find that in the standard sampling setting (short block lengths,
+greedy decoding), WINO performs on par with Fast-dLLM, yielding negligible benefits, especially
+once the extra latency cost of remasking is accounted for. We trace this ineffectiveness to a failure
+of the underlying dLLM to propose alternative, ‘better’ tokens at positions flagged for remasking
+(Section 3.2).
+Extending the evaluation to stochastic generation (Section 3.3), we find that the picture becomes more
+nuanced. Under non-greedy decoding, confidence-based remasking helps mitigate some stochasticity-
+induced errors (indicated by improved pass@1 rates) but aggravates the diversity collapse previously
+reported for confidence-based unmasking [Ni et al., 2026, Olausson et al., 2026]. In contrast, when
+paired with recently proposed learned Bernoulli unmasking policies [Chen et al., 2025], WINO yields
+meaningfully larger gains than on top of deterministic Fast-dLLM. Together, these results highlight
+that the effectiveness of current post-hoc remasking is highly dependent on the decoding setting
+(block size, unmasking strategy, sampling temperature) and call for more comprehensive evaluation
+frameworks going forward.
+
+2     Background
+We denote a sequence of tokens by x = (x1 , . . . , xL ) ∈ V L , where V := {1, . . . , V } is the
+vocabulary and L is the sequence length. Given our focus on masked discrete diffusion, the vocabulary
+is extended with a special mask token denoted with M. Throughout, we use the notation [L] to represent
+the set {1, . . . , L} for brevity. With unmasking we refer to M → x transitions and with remasking to
+x → M (where x ∈ V/{M}).
+
+2.1   Masked Diffusion Language Models
+
+Masked Diffusion Models (MDMs) are a form of absorbing discrete diffusion [Austin et al., 2021a,
+Hoogeboom et al., 2021] whose noise distribution concentrates on a single absorbing state M. Under
+the continuous-time formulation of Campbell et al. [2022], the forward process independently replaces
+each token of x0 ∼ pdata with a mask token M:
+                                     L
+                                     Y
+                    pt|0 (xt |x0 ) =   α(t)1[xkt = M] + (1 − α(t))1[xkt = xk0 ]
+                                    k=1
+where α(t) is a masking probability governed by a monotonically increasing schedule α : [0, 1] →
+[0, 1] with α(0) = 0 and α(1) = 1. The reverse (generative) process is typically modeled by training
+a network qθ to approximate the true reverse conditional p0|t directly, since its ELBO admits the
+simple masked-prediction form [Sahoo et al., 2024, Shi et al., 2024, Ou et al., 2025]:
+                                        " L                                #
+                                          1X       k             k k
+                      −L(θ) ≜ Et,x0 ,xt         1[xt = M] log qθ (x0 | xt ) ,
+                                          t
+                                               k=1
+with t ∼ U [0, 1], x0 ∼ pdata , xt ∼ pt|0 , and qθk (· | xt ) denoting the model’s predicted marginal at
+position k. Recently, such models have been scaled to multi-billion parameters architecture on text
+data, [Nie et al., 2025, Ye et al., 2025] - we refer to such models as masked diffusion large language
+models (dLLMs) throughout the paper.
+
+2.2   Unmasking in dLLMs
+
+At test time, the reverse process is discretized and starting from a fully-masked sequence xT := ML
+new samples are obtained via progressive unmasking. Representing the current generation as xt ∈ V L
+
+
+                                                   2
+with still-masked positions Mt := {k ∈ [L] | xkt = M}, the next-step generation xt−1 is sampled via
+                                       x ∼ qθk (· | xt ; τ ), if k ∈ UtK ,
+                                     
+                            xkt−1 :=
+                                       xkt ,                  otherwise.
+where the set UtK of K ≥ 1 unmasking positions is sampled uniformly at random (without replace-
+ment) from Mt [Zheng et al., 2025, Nie et al., 2025] and the process is repeated until there are no
+masked positions left (Mt = ∅). Here τ denotes a sampling temperature, with higher temperatures
+yielding more diverse generated samples. In dLLMs, it is common to set τ = 0 which corresponds to
+greedy token selection.
+In practice, confidence-based unmasking is of- Algorithm 1 WINO sampling algorithm [Hong
+ten chosen over random unmasking due to better et al., 2026]. Differences to Fast-dLLM [Wu et al.,
+empirical performance. Two particularly popu- 2025] unmasking are denoted in blue .
+lar instantiations are high-confidence sampling
+[Chang et al., 2022, Nie et al., 2025] where 1: Input: xt , bt , qθ , τ , λ1 , λ2 ,
+                                                 2: Output: xt−1 , bt−1
+K positions with the highest token confidence2
+ k             k
+ct ≜ maxv qθ (v | xt ) are unmasked
+                                                 3: x̃t ← [xt , M, . . . , M] ∈ V L+BL
+                                 X
+           UtK := arg max           ckt      (1) 4: B ← [bt · BL : (btk+ 1) · BL]
+                    I⊆Mt , |I|=K k∈I                             5: Mt ← {k ∈ B | xt = M}
+                                                                 6: qtk ← qθk (· | x̃t )
+and Fast-dLLM [Wu et al., 2025] where all po-
+sitions with token confidence larger than a pre-                 7: xk0 ∼ qθk (· | x̃t ; τ )
+specified threshold λ1 are unmasked                              8: ckt ← qtk (xk0 )
+                                                                 9: Ut ← {k ∈ Mt | ckt > λ1 } ∪ {arg maxk∈Mt ckt }
+Utλ := {k ∈ Mt | ckt > λ1 } ∪ {arg max ckt }
+                                             k∈Mt
+                                                                       k
+                                                       (2) 10: c̃kt ← qt s (xkt ), ks = L + (k − bt · BL)
+                                                                           k
+with a fallback to the position with the highest 11: Rt ← {k ∈ B \ Mt | c̃t < λ2 }
+confidence to ensure progress is made in ev- 12: Rt ← Loop-guard(Rt , Ut+1 )
+ery sampling step. Due to its adaptive nature,               k
+Fast-dLLM was empirically shown to push the                 x0 , k ∈ Ut
+                                                            
+frontier of parallel-token generation in dLLMs. 13: xkt−1 := M , k ∈ Rt
+                                                             k
+                                                            
+Additionally, confidence-based samplers are of-               x , else
+                                                            ( t
+ten combined with semi-autoregressive (semi-                 bt + 1 , {k ∈ B|xkt−1 = M} = ∅
+AR; Arriola et al. 2025) sampling, which re- 14: bt−1 := b ,          else
+                                                              t
+stricts unmasking to a contiguous block of
+BL < L tokens at a time and proceeds block-
+by-block in a left-to-right order (i.e., once all
+positions in the current block are unmasked, generation moves to the next block). Empirically,
+semi-AR sampling has proved essential for confidence-based samplers, as using too large block
+length BL leads to compromised performance [Nie et al., 2025].
+
+2.3   Confidence-based Remasking in dLLMs
+
+In masked dLLMs, once a position has been predicted/unmasked, the model has no option to revisit
+it, even if at a later time step, and with additional context, another token would be a better fit. This
+makes masked models susceptible to early sampling mistakes from which they can not recover [Wang
+et al., 2025]. Note that the inability to remask stems from the absorbing (towards M) forward process
+used during training. To overcome this limitation, a growing body of literature has tried to extend
+masked dLLMs with self-correcting capabilities (Hong et al. 2026, Kim et al. 2025a, Huang et al.
+2025, Schiff et al. 2026; inter-alia). While most approaches require some form of retraining or
+finetuning, we focus here on methods that aim to achieve remasking in a post-hoc, i.e., training-free,
+manner.
+A representative post-hoc remasking approach is WINO [Hong et al., 2026], where the idea of
+confidence thresholding unmasking [Wu et al., 2025] is extended to remasking. To get informative
+remasking confidences efficiently, WINO attaches to the current generation xt an auxiliary block of
+  2 For non-greedy sampling, the confidence is defined instead as ck ≜ q k (x | x ), x ∼ q k (· | x ; τ ).
+                                                                   t    θ        t        θ        t
+
+
+
+                                                             3
+the so called shadow tokens x̃t = [xt , M, . . . , M] ∈ V L+BL , one per position in the active block bt .
+Crucially, each shadow position has the same positional embedding as its corresponding position in
+the original block but is prevented from attending to the (unmasked) token at the original position
+via a custom attention mask (see Figure 6). This ensures that the shadow output approximates a
+re-prediction (starting from M instead of the current token xkt ) of that position given the surrounding
+context without the cost of an additional forward pass:3
+                                           qθks (· | x̃t ) ≈ qθk (· | xt,−k )                                      (3)
+where ks = L + (k − bt · BL) is the shadow position corresponding to the k-th original position and
+xt,−k corresponds to current generation xt with the k-th token masked out (i.e., leave-one-out style
+prediction). Note that original positions do not attend to shadow positions, hence their predictive
+distribution is not affected by the presence of the shadow block: qθk (· | x̃t ) = qθk (· | xt ) for k ≤ L.
+All presently unmasked tokens in the active block whose shadow confidence falls below a fixed
+threshold λ2 are then remasked
+                                  Rt := {k ∈ B \ Mt | qθks (xkt | x̃t ) < λ2 }                                     (4)
+where B := [bt · BL : (bt + 1) · BL] denotes the set of indices in the active block bt ; see also
+Algorithm 1. The intuition is that if the current token xkt would not likely be predicted under the same
+surrounding context (captured by shadow predictive distribution qθks ), the position is set to M again so
+that the model can predict a new token for it in the future sampling steps under a new context.
+Note that once remasking is allowed, convergence (Mt = ∅) is no longer guaranteed: sampling can
+enter a loop in which a given set of positions is repeatedly unmasked to the same tokens after being
+remasked. WINO’s implementation4 addresses this with a loop-guard mechanism that whenever
+too many tokens get selected for remasking via confidence thresholding, i.e. |Rt | ≥ |Ut+1 |, only
+K = |Ut+1 | − 1 positions with the smallest shadow confidences are remasked, guaranteeing net
+progress at every step.
+
+3     Re-evaluation of WINO Remasking
+We next turn our attention to the question of whether post-hoc remasking methods such as WINO are
+effective in improving the performance of masked dLLMs. Note that we find the empirical evaluation
+in the WINO paper [Hong et al., 2026] insufficient for three main reasons: i) high-confidence sampling
+(Equation 1) is used as the main baseline, leaving it unclear whether the performance gains of WINO
+over high-confidence sampling come from adaptive unmasking (Fast-dLLM) or from remasking
+itself; ii) the evaluation focuses on larger block lengths (BL ≥ 128), which differs from the standard
+practice of using smaller block lengths (e.g., BL = 32). Moreover, confidence-based unmasking
+is known to struggle at larger block lengths, making the comparison potentially biased [Nie et al.,
+2025]; and iii) the impact of remasking is studied primarily under greedy decoding (τ = 0), leaving
+unanswered the question of how remasking affects performance under non-greedy decoding.
+
+3.1   WINO vs Fast-dLLM
+
+We start by investigating whether WINO remasking can bring meaningful performance gains over
+confidence-threshold unmasking alone [Wu et al., 2025].
+
+Experiment details We compare Fast-dLLM decoding with WINO decoding on two open-source
+dLLMs: LLaDA-8B-Instruct [Nie et al., 2025] and Dream-v0-Instruct-7B [Ye et al., 2025]. We
+evaluate on four standard benchmarks: GSM8k [Cobbe et al., 2021], MATH-500 [Hendrycks et al.,
+2021], HumanEval [Chen et al., 2021a], and MBPP [Austin et al., 2021b]. For both decoding
+methods, we vary the unmasking threshold λ1 ∈ {0.5, 0.6, 0.7, 0.8, 0.9} to obtain pareto-frontiers
+for each approach. For WINO, we set the remasking threshold λ2 = 0.8 and use greedy decoding
+(τ = 0). To understand the impact of different block lengths on the impact of remasking, we vary
+BL ∈ {32, 128}: BL = 32 is the current standard setting for LLaDA-style models [Ni et al., 2026,
+Wu et al., 2025], while BL = 128 is the primary setting reported in the WINO paper.
+   3 The approximation is exact for a single-layer transformer; for deeper models, the surrounding tokens’ hidden state
+
+representations still encode information about xkt via self-attention.
+   4 https://github.com/Feng-Hong/WINO-DLLM/blob/main/LLaDA/decoding.py
+
+
+
+
+                                                           4
+                                    GSM8k                                     MATH-500                                      HumanEval                                      MBPP
+                                                              37                                                                                      40
+                    ∆BL32 = +0.6                                   ∆BL32 = -0.2                                ∆BL32 = +1.2                                ∆BL32 = +0.0
+                    ∆BL128 = +3.6                                  ∆BL128 = +3.2                         45    ∆BL128 = -1.2                               ∆BL128 = -0.4
+                                                              35                                                                                      35
+               80
+
+  LLaDA
+                                                                                                         40
+                                                              32                                                                                      30
+                                                                                                         35
+               75
+
+
+Accuracy (%)
+                                                              30                                                                                      25
+                                                                                                         30
+
+               70                                             27                                                                                      20
+                                                                                                         25
+                                    WINO             BL32
+                                                              25
+                                    Fast-DLLM        BL128                                               20                                           15
+                            40            60          80           40          60         80     100          40       60      80    100        120        40         60        80   100
+
+                    ∆BL32 = +0.4                                   ∆BL32 = +0.6                                ∆BL32 = +1.2                           55   ∆BL32 = +0.0
+               80   ∆BL128 = +0.5                                  ∆BL128 = +1.6                         60    ∆BL128 = +1.8                               ∆BL128 = +2.0
+                                                              40                                                                                      50
+
+
+   Dream
+               70                                                                                        50
+                                                              35                                                                                      45
+
+
+
+Accuracy (%)
+               60                                                                                        40                                           40
+                                                              30
+
+               50                                                                                                                                     35
+                                                              25                                         30
+                                                                                                                                                      30
+               40
+                           40        60         80      100          40        60         80   100             20              40          60                   20         40        60
+                                     NFE                                            NFE                                        NFE                                         NFE
+
+
+Figure 1: Pareto fronts of accuracy vs. network function evaluations (NFEs) for WINO and Fast-
+dLLM, sweeping the unmasking threshold λ1 ∈ {0.5, 0.6, 0.7, 0.8, 0.9}, with block lengths BL ∈
+{32, 128} and WINO remasking threshold λ2 = 0.8 (greedy decoding, τ = 0). At the standard
+short block length (BL = 32), WINO yields only marginal and inconsistent improvements over
+Fast-dLLM; at BL = 128 WINO gains are larger; however since WINO BL = 128 underperforms
+Fast-dLLM BL = 32 this suggests it primarily compensates for Fast-dLLM’s known degradation at
+large block lengths rather than raising the underlying dLLM’s performance ceiling. When reporting
+∆, we take the difference between the best accuracy of WINO and the best accuracy of Fast-dLLM,
+each evaluated at its optimal point along its respective Pareto frontier.
+
+
+
+Focusing first on the BL = 32 results (Figure 1), we observe that remasking sometimes improves
+performance (e.g., see LLaDA’s performance on HumanEval), but the gains are generally marginal
+and inconsistent across datasets and along the Pareto frontier. Concretely, WINO improves over
+Fast-dLLM’s top performance by ∼0.4% and ∼0.5% on LLaDA and Dream models, respectively
+(averaged across the four datasets considered). Beyond the marginal size of these gains, comparing
+the efficiency of WINO and Fast-dLLM solely in terms of NFEs is potentially misleading: each
+WINO forward pass extends the sequence with an additional shadow block, thereby increasing both
+FLOPs and latency per step. To account for this, we also report results in terms of throughput
+(tokens/second). As shown in Figure 7, on most datasets WINO reaches its top performance at lower
+throughput than Fast-dLLM, which, combined with its marginal accuracy improvements, suggests
+that WINO’s gains may not justify its added computational overhead and implementation complexity.
+Additionally, in Appendix B.1 we ablate several of WINO’s design choices (confidence-thresholding
+mechanism, loop-guard variant, unmasking aggressiveness, etc.) and find that the lack of meaningful
+gains at BL = 32 persists across all configurations.
+We next turn to BL = 128, the main setting considered in the WINO paper [Hong et al., 2026]. Here
+remasking yields larger gains (Figure 1) when compared to Fast-dLLM, on average improving top
+performance by ∼1.3% and ∼1.5% on LLaDA and Dream, respectively. Possibly this is because a
+larger block length gives WINO more opportunity to correct mistakes over a longer range. However,
+masked dLLMs like LLaDA are known to degrade under confidence-based samplers like Fast-dLLM
+as block length grows, due to corrupted EOS confidences that produce degenerate generation orders
+[Jazbec et al., 2025]. The fact that WINO at BL = 128 underperforms Fast-dLLM at BL = 32 thus
+suggests that remasking is repairing Fast-dLLM’s specific failure mode at large block lengths rather
+than genuinely raising the underlying dLLM’s performance ceiling. Moreover, as seen in Figure 7,
+the latency overhead of WINO due to shadow tokens is, as expected, even larger for BL = 128.
+
+
+         Takeaway 1. While WINO can mitigate performance degradation of confidence-based
+         unmasking for larger block lengths (BL = 128), it fails to meaningfully increase the perfor-
+         mance ceiling of masked dLLMs for more commonly used smaller block lengths (BL = 32).
+
+
+                                                                                                     5
+3.2 Investigating WINO’s ineffectiveness for BL = 32
+Following our observation on WINO’s limited performance gains for shorter block lengths (BL = 32),
+we now aim to understand the potential reasons behind it.
+We first examine the quality of the shadow-                             45
+token approximation for the remasking confi-
+dence (Equation 3). Recall that, ideally, remask-                       40
+
+
+
+
+                                                         Accuracy (%)
+ing would be based on the oracle, leave-one-out
+confidence qθk (· | xt,−k ). However, computing
+                                                                        35
+such oracle confidences requires an additional
+forward pass for every candidate remasking posi-
+tion at each sampling step. We nevertheless com-                        30
+                                                                                            WINO
+pute it here to obtain an upper bound on remask-                                            Fast-DLLM
+ing performance via confidence-thresholding.                            25                  Native
+Interestingly, as reported in Figure 2, WINO’s                                              Oracle*
+shadow confidences match the performance of                                  60   80      100        120
+oracle confidences while being much cheaper                                       NFE
+(the oracle approach requires ∼14× as many
+NFEs). We further compare top-1 consistency          Figure 2: Quality of WINO’s shadow-token confi-
+between shadow and oracle predictive distribu-       dence as an approximation (Equation 3) to the ora-
+tions in Figure 9, finding it to be ∼100%, further   cle leave-one-out confidence (LLaDA-8B-Instruct,
+validating the quality of shadow token approxi-      HumanEval, BL = 32, λ2 = 0.8). WINO uses
+mation. Moreover, when relying on the original       the shadow prediction qθks (· | x̃t ); Oracle uses the
+dLLM’s confidence qθk (· | xt ) at the unmasked
+                                                     leave-one-out prediction qθk (· | xt,−k ), incurring
+position to decide on remasking, the approach
+                                                     one extra forward pass per candidate position; Na-
+fails to improve over unmasking alone, confirm-
+                                                     tive reuses the original dLLM confidence qθk (· | xt )
+ing the necessity of the shadow-tokens.
+                                                     at the already-unmasked position. Shadow confi-
+Since the shadow-token approximation does not        dences match oracle performance while requiring
+explain WINO’s limited gains, we next measure        ∼14× fewer NFEs, whereas the native confidence
+the flip-flop frequency of WINO, following the       yields no gain over unmasking alone. *Note that
+analysis proposed in [Xiang et al., 2026]. Con-      for oracle approach we plot here number of sam-
+cretely, the flip-flop frequency is defined as the   pling steps; actual NFEs are ∼14× larger.
+proportion of remasks that result in no token
+change, i.e., a position is remasked and then re-predicted to the same token at a later sampling step.
+As shown in Figure 3, flip-flops occur at high rates across the entire Pareto frontier: on average
+∼ 75–90% for LLaDA and ∼ 85–95% for Dream of remasked positions end up with the same token.
+Combined with the shadow-token result above, this shows that WINO is effective at identifying
+positions that need remasking (at least relative to the oracle confidence); the underlying dLLM,
+however, fails to propose better alternatives at those positions, as indicated by high flip-flop rates.
+One possible explanation for high flip-flop rates is that the later tokens were unmasked conditioned
+on xkt , so even after position k is remasked, the surrounding context still encodes xkt and pins the
+predictive distribution back to it. To test this cascading-dependency hypothesis, we run an ablation in
+Appendix B.2 in which, whenever a position is flagged for remasking, we additionally remask either
+i) tokens that were unmasked at the same or the next few sampling steps, or ii) its immediate left and
+right neighbors, giving the dLLM more flexibility to revise its prediction. Surprisingly, both variants
+degrade performance and fail to reduce the flip-flop rate relative to the default of remasking only
+the flagged position. This indicates that cascading dependencies are not the bottleneck: the dLLM’s
+inability to propose a better-fitting token persists even when the conditioning context around k is
+partially removed.
+
+      Takeaway 2. WINO’s shadow-token confidence is a good approximation of the oracle, leave-
+      one-out remasking confidence; however, the underlying masked dLLM fails to propose better
+      alternative tokens at the identified remasking positions indicated by high flip-flop rates.
+
+3.3    Impact of remasking for stochastic generation
+
+Lastly, we study whether post-hoc remasking is beneficial under stochastic generation. Although
+this setting is largely absent from the current literature on remasking in dLLMs, we believe it is
+
+
+                                                     6
+                                  GSM8k                                MATH-500                           HumanEval                                        MBPP
+                100                                      100                                 100                                     100
+
+                 95                                      95                                  95                                      95
+
+
+   LLaDA
+                 90                                      90                                  90                                      90
+
+                 85                                      85                                  85                                      85
+
+
+Flip-Flop (%)
+                 80                                      80                                  80                                      80
+
+                 75                             BL32
+                                                         75                                  75                                      75
+
+                 70                             BL128    70                                  70                                      70
+                      0.5   0.6    0.7    0.8      0.9         0.5   0.6   0.7   0.8   0.9         0.5   0.6   0.7       0.8   0.9         0.5       0.6    0.7   0.8   0.9
+                100                                      100                                 100                                     100
+
+                 95                                      95                                  95                                      95
+
+
+   Dream
+                 90                                      90                                  90                                      90
+
+                 85                                      85                                  85                                      85
+
+
+Flip-Flop (%)
+                 80                                      80                                  80                                      80
+
+                 75                                      75                                  75                                      75
+
+                 70                                      70                                  70                                      70
+                      0.5   0.6    0.7    0.8      0.9         0.5   0.6   0.7   0.8   0.9         0.5   0.6   0.7       0.8   0.9         0.5       0.6    0.7   0.8   0.9
+                                   λ1                                      λ1                                  λ1                                           λ1
+
+
+Figure 3: Flip-flop frequency along the WINO (λ2 = 0.8) Pareto frontier, defined as the fraction of
+remasking events in which the position is later re-predicted to the same token [Xiang et al., 2026].
+Across all four benchmarks, ∼75–90% of remasked positions on LLaDA-8B-Instruct and ∼85–95%
+on Dream-v0-Instruct-7B are restored to their original token. This indicates that the underlying
+masked dLLM consistently fails to propose alternative tokens for the positions flagged for remasking
+based on WINO’s shadow token confidences.
+
+
+particularly relevant for remasking approaches, as the increased stochasticity may produce more
+erroneous tokens that could benefit from revision. We consider two variants of stochastic generation:
+i) non-greedy decoding (τ > 0) with deterministic unmasking (Fast-dLLM) and ii) greedy decoding
+with stochastic unmasking (via learned Bernoulli policies; Jazbec et al. 2025, Chen et al. 2025).
+
+Non-greedy decoding (τ > 0) We compare Fast-dLLM (λ1 = 0.6) and WINO (λ1 = 0.6,
+λ2 = 0.8) on the LLaDA model with BL = 32 under non-greedy decoding. Concretely, we consider
+τ = 0.8, a standard temperature in RL post-training of dLLMs [Zhao et al., 2025, Tang et al.,
+2025], as well as τ = 1.5, motivated by the observation that dLLMs benefit from higher sampling
+temperatures than AR LLMs [Ni et al., 2026]. To measure performance, we report the commonly
+used pass@k metric5 , which tracks the probability that at least one of k generated solutions is
+correct. As shown in Figure 4, remasking yields decent improvements at pass@1, e.g., an average
+improvement of ∼2.6% across the four datasets at τ = 0.8. However, remasking also appears to
+hurt generation diversity: WINO scales worse than Fast-dLLM as k grows, with gains shrinking
+to ∼0.7% at pass@64 for τ = 0.8. This suggests that the previously observed diversity collapse
+of confidence-based unmasking [Ni et al., 2026, Olausson et al., 2026]—where greedily relying on
+confidence to decide which positions to sample constrains exploration of the solution space—may be
+further exacerbated by confidence-based remasking, warranting future investigation. Interestingly, we
+also observe that WINO’s performance improvements shrink slightly at larger τ = 1.5, with average
+improvements dropping to ∼1.6% and ∼0.3% for pass@1 and pass@64, respectively.
+
+          Takeaway 3. For non-greedy decoding, WINO yields decent improvements at pass@1 but
+          exacerbates the diversity collapse of confidence-based unmasking, with gains shrinking as the
+          number of samples k grows.
+
+
+Bernoulli unmasking We next consider the case where tokens are still chosen greedily (τ = 0)
+but the unmasking decisions are stochastic. Such stochastic unmaskers, implemented via learned
+Bernoulli policies, have recently gained traction as a scalable alternative to confidence-based unmask-
+ing heuristics like Fast-dLLM. As a concrete example, we consider dUltra [Chen et al., 2025], which
+during RL post-training of dLLMs jointly trains an unmasking head that predicts the unmasking
+                                                                                                                     h                           i
+       5 Following Chen et al. [2021b], we report the unbiased estimator pass@k := E 1 − n−c
+                                                                                             n
+                                                                                          k    k
+                                                                                                  , where n ≥ k is the
+number of samples generated per problem and c is the number of those that are correct.
+
+
+                                                                                       7
+                                  GSM8k                              MATH-500                                HumanEval                                     MBPP
+             100
+                   ∆@1 = +2.34                              ∆@1 = +1.66                             ∆@1 = +4.39                             ∆@1 = +1.89
+                   ∆@64 = +0.12                             ∆@64 = +0.99                       70   ∆@64 = +0.40                       70   ∆@64 = +1.56
+              95                                       70
+
+
+  τ = 0.8
+                                                       60                                      60                                      60
+              90
+
+                                                                                               50
+Pass@k (%)
+              85                                       50                                                                              50
+
+              80                                                                               40                                      40
+                                                       40
+                                          Fast-dLLM
+              75                          WINO                                                 30
+                                                       30                                                                              30
+                   1    2     4     8   16   32   64        1    2     4   8   16    32   64        1    2     4    8   16   32   64        1    2     4    8     16   32   64
+                                    k                                      k                                        k                                       k
+             100
+                   ∆@1 = +2.34                              ∆@1 = +1.41                             ∆@1 = +2.14                             ∆@1 = +0.94
+                   ∆@64 = −1.00                             ∆@64 = +1.20                       70   ∆@64 = +0.61                       70   ∆@64 = +0.50
+              95                                       70
+
+
+  τ = 1.5
+                                                       60                                      60                                      60
+              90
+
+                                                                                               50
+Pass@k (%)
+              85                                       50                                                                              50
+
+              80                                                                               40                                      40
+                                                       40
+
+              75                                                                               30
+                                                       30                                                                              30
+                   1    2     4     8   16   32   64        1    2     4   8   16    32   64        1    2     4    8   16   32   64        1    2     4    8     16   32   64
+                                    k                                      k                                        k                                       k
+
+
+
+Figure 4: pass@k for WINO and Fast-dLLM under non-greedy decoding (LLaDA-8B-Instruct,
+BL = 32, λ1 = 0.6, λ2 = 0.8) at temperatures τ ∈ {0.8, 1.5}. WINO improves pass@1 by ∼2.6%
+on average at τ = 0.8, but its advantage diminishes as k grows—shrinking to ∼0.7% on average at
+pass@64. This indicates that confidence-based remasking further constrains generation diversity on
+top of the diversity collapse already documented for confidence-based unmasking [Ni et al., 2026].
+
+probability of each still-masked position at every sampling step:
+                                                                                                                                       
+                                  Ut := {k ∈ Mt | bkt = 1},                         bkt ∼ Ber(skt ),               skt = σ fϕ (h1:L
+                                                                                                                                t   ) k
+
+where fϕ is the unmasking head, h1:L t   denotes the dLLM’s last-layer hidden states (before the
+unembedding matrix), and σ is the sigmoid function. Note that due to the Bernoulli sampling of
+unmasking decisions, dUltra gives rise to stochastic generation even at τ = 0.
+Results comparing dUltra with and without WINO remasking (λ2 = 0.8) at BL = 32 are shown in
+Figure 5; we report average accuracy and NFEs on test questions over 3 random seeds (with error
+bars). Promisingly, adding WINO remasking on top of dUltra improves accuracy by ∼3.2% on
+average across datasets, while increasing NFEs by only ∼2 on average. This highlights the potential
+of post-hoc remasking when paired with stochastic unmasking strategies: it appears effective at
+correcting low-quality tokens introduced by the randomness of Bernoulli unmasking. Moreover,
+dUltra produces faster generations than Fast-dLLM (e.g., it reaches ∼80% accuracy in only ∼20
+NFEs, versus ∼50 for Fast-dLLM; see Figure 1), which may further explain WINO’s stronger gains
+here—more aggressive generation yields more tokens in need of revision.
+
+       Takeaway 4. When paired with stochastic Bernoulli unmasking samplers, WINO remasking
+       proves more effective; suggesting that the added value of post-hoc remasking is sensitive to
+       the choice of unmasking strategy.
+
+
+4        Related work
+Remasking in dLLMs. Several recent works explore remasking in masked dLLMs. One direction
+focuses on train-time interventions: Kim et al. [2025a] fine-tune dLLMs for provable self-correction,
+Schiff et al. [2026] train models to identify and revise their own errors, Liu et al. [2026] train a
+separate correction head on top of a frozen dLLM, Bie et al. [2026] jointly train mask-to-token and
+token-to-token editing objectives at scale, Yu et al. [2026] introduce introspective objectives, and
+Huang et al. [2025] use RL post-training to learn when to remask. A related direction is to move
+away from purely absorbing (masked) diffusion to a uniform one that supports remasking ‘naturally’:
+Von Rütte et al. [2025] train hybrid mask+uniform diffusion models, Wang et al. [2026] simplify
+this with purely uniform transitions, and Chen et al. [2026] convert pretrained masked dLLMs into
+uniform diffusion models. Our work focuses on a complementary, training-free direction.
+
+
+                                                                                          8
+                                 GSM8K                             MATH-500                           HumanEval                              MBPP
+                                                      40                                                               40.5
+                     ∆ = +2.70                             ∆ = +4.80                        ∆ = +4.67                            ∆ = +0.47
+                                                      39                                                               40.0
+                                                                                       40
+                84
+                                                      38
+
+
+
+
+ Accuracy (%)
+                                                                                                                       39.5
+                                                                                       38
+                83                                    37                                                               39.0
+
+                                                      36                                                               38.5
+                                                                                       36
+                82
+                                                      35                                                               38.0
+                                                                                                                                              dUltra
+                                                                                       34
+                81                                    34                                                               37.5                   dUltra + WINO
+
+                       21.5      22.0   22.5   23.0           34       36     38               24.5      25.0   25.5          19.6    19.8    20.0   20.2
+                                   NFE                                 NFE                              NFE                                  NFE
+
+
+Figure 5: Accuracy and NFEs for dUltra with and without WINO remasking on LLaDA-8B-Instruct
+(BL = 32, λ2 = 0.8, τ = 0); means and error bars are over 3 seeds. Adding WINO remasking
+on top of dUltra’s Bernoulli unmasker yields an average accuracy gain of ∼3.2% across the four
+benchmarks at a cost of only ∼2 extra NFEs, suggesting that the value of post-hoc remasking depends
+on the unmasker choice.
+
+Post-hoc remasking. Several recent methods enable remasking without retraining, typically by
+applying a confidence-based criterion at inference time. WINO [Hong et al., 2026], the focus of
+our re-evaluation, computes remasking confidences via auxiliary shadow tokens that approximate
+a leave-one-out re-prediction without an additional forward pass. Although mainly proposed as a
+train-time intervention, Wang et al. [2025] also introduces a post-hoc variant that interpolates between
+the absorbing and uniform processes to enable revisions during generation in masked diffusion
+models. Saber [Dong et al., 2025] proposes to perform confidence-based remasking by tracking
+drops in the confidences at the unmasked positions. Most directly related to our analysis, Xiang
+et al. [2026] document the high flip-flop rates of confidence-based remasking, which we leverage in
+Section 3.2 to help characterize WINO’s failure mode for shorter block lengths. While these works
+each report empirical gains over static confidence-based unmasking (Equation 1), the question of
+how much these gains depend on the evaluation setting–particularly the choice of unmasking strategy
+and decoding setting–has not been carefully examined, which is a gap we aim to fill with our work.
+
+
+5                Conclusion
+
+To better understand the added value of confidence-based remasking in masked dLLMs, we re-
+evaluated WINO [Hong et al., 2026], a recently proposed training-free remasking approach. Our
+findings suggest that such post-hoc remasking offers little-to-no benefit over unmasking-only sampling
+(Fast-dLLM), particularly at shorter block lengths and once the latency overhead of remasking is
+properly accounted for. We further find that WINO’s self-correction yields larger gains under non-
+greedy sampling, though at the cost of generation diversity, and that its overall impact depends on
+the unmasking strategy it is paired with. Since our results suggest that remasking’s impact is highly
+setting-dependent (e.g., sampling temperature, unmasking strategy), we hope that future work adopts
+the evaluation framework outlined here to better understand the limits and potential of post-hoc
+confidence-based remasking in masked dLLMs.
+
+
+Limitations and future work While we believe WINO is representative of confidence-based
+remasking methods, future work should also re-evaluate other recent post-hoc remasking strategies
+such as ReMDM [Wang et al., 2025], Saber [Dong et al., 2025], and COVER [Xiang et al., 2026]
+under our proposed evaluation framework, to determine whether our findings are specific to WINO
+or hold more generally (see Figure 8 for results using Saber remasking, which we also find to be
+ineffective compared to Fast-dLLM). If the latter, this would suggest that effective remasking in
+masked dLLMs likely requires either some form of retraining or a shift to uniform discrete diffusion
+[von Rütte, 2026]. Moreover, while we deliberately focused on post-hoc remasking, it would be
+worthwhile to explore whether the negative impact of remasking on sampling diversity (Figure 4)
+also extends to approaches that incorporate remasking via retraining or finetuning [Schiff et al., 2026,
+Chen et al., 2026].
+
+
+                                                                                   9
+Acknowledgments and Disclosure of Funding
+We thank Theo X. Olausson, Apple MLR Paris team, and Guoxuan Xia for helpful discussions. This
+project was generously supported by the Bosch Center for Artificial Intelligence. Eric Nalisnick did
+not utilize resources from Johns Hopkins University for this project.
+
+References
+Marianne Arriola, Aaron Gokaslan, Justin T Chiu, Zhihan Yang, Zhixuan Qi, Jiaqi Han, Sub-
+ ham Sekhar Sahoo, and Volodymyr Kuleshov. Block diffusion: Interpolating between autoregres-
+ sive and diffusion language models. arXiv preprint arXiv:2503.09573, 2025.
+Jacob Austin, Daniel D. Johnson, Jonathan Ho, Daniel Tarlow, and Rianne van den Berg.
+  Structured denoising diffusion models in discrete state-spaces. In M. Ranzato, A. Beygelz-
+  imer, Y. Dauphin, P.S. Liang, and J. Wortman Vaughan, editors, Advances in Neu-
+  ral Information Processing Systems, volume 34, pages 17981–17993. Curran Associates,
+  Inc., 2021a. URL https://proceedings.neurips.cc/paper_files/paper/2021/file/
+  958c530554f78bcd8e97125b70e6973d-Paper.pdf.
+Jacob Austin, Augustus Odena, Maxwell Nye, Maarten Bosma, Henryk Michalewski, David Dohan,
+  Ellen Jiang, Carrie Cai, Michael Terry, Quoc Le, and Charles Sutton. Program synthesis with large
+  language models, 2021b. URL https://arxiv.org/abs/2108.07732.
+Heli Ben-Hamu, Itai Gat, Daniel Severo, Niklas Nolte, and Brian Karrer. Accelerated sampling from
+  masked diffusion models via entropy bounded unmasking. arXiv preprint arXiv:2505.24857, 2025.
+Louis Bethune, Victor Turrisi, Bruno Kacper Mlodozeniec, Pau Rodriguez Lopez, Lokesh Boomi-
+  nathan, Nikhil Bhendawade, Amitis Shidani, Joris Pelemans, Theo X. Olausson, Devon Hjelm,
+  Paul Dixon, Joao Monteiro, Pierre Ablin, Vishnu Banna, Arno Blaas, Nick Henderson, Kari
+  Noriy, Dan Busbridge, Josh Susskind, Marco Cuturi, Irina Belousova, Luca Zappella, Russ Webb,
+  and Jason Ramapuram. The design space of tri-modal masked diffusion models, 2026. URL
+  https://arxiv.org/abs/2602.21472.
+Tiwei Bie, Maosong Cao, Kun Chen, Lun Du, Mingliang Gong, Zhuochen Gong, Yanmei Gu, Jiaqi
+  Hu, Zenan Huang, Zhenzhong Lan, et al. Llada2. 0: Scaling up diffusion language models to 100b.
+  arXiv preprint arXiv:2512.15745, 2025.
+Tiwei Bie, Maosong Cao, Xiang Cao, Bingsen Chen, Fuyuan Chen, Kun Chen, Lun Du, Daozhuo
+  Feng, Haibo Feng, Mingliang Gong, et al. Llada2. 1: Speeding up text diffusion via token editing.
+  arXiv preprint arXiv:2602.08676, 2026.
+Andrew Campbell, Joe Benton, Valentin De Bortoli, Thomas Rainforth, George Deligianni-
+  dis, and Arnaud Doucet. A continuous time framework for discrete denoising models. In
+  S. Koyejo, S. Mohamed, A. Agarwal, D. Belgrave, K. Cho, and A. Oh, editors, Advances in
+ Neural Information Processing Systems, volume 35, pages 28266–28279. Curran Associates,
+  Inc., 2022. URL https://proceedings.neurips.cc/paper_files/paper/2022/file/
+  b5b528767aa35f5b1a60fe0aaeca0563-Paper-Conference.pdf.
+Huiwen Chang, Han Zhang, Lu Jiang, Ce Liu, and William T Freeman. Maskgit: Masked generative
+  image transformer. In Proceedings of the IEEE/CVF conference on computer vision and pattern
+  recognition, pages 11315–11325, 2022.
+Mark Chen, Jerry Tworek, Heewoo Jun, Qiming Yuan, Henrique Ponde de Oliveira Pinto, Jared
+ Kaplan, Harri Edwards, Yuri Burda, Nicholas Joseph, Greg Brockman, Alex Ray, Raul Puri,
+ Gretchen Krueger, Michael Petrov, Heidy Khlaaf, Girish Sastry, Pamela Mishkin, Brooke Chan,
+ Scott Gray, Nick Ryder, Mikhail Pavlov, Alethea Power, Lukasz Kaiser, Mohammad Bavarian,
+ Clemens Winter, Philippe Tillet, Felipe Petroski Such, Dave Cummings, Matthias Plappert, Fotios
+ Chantzis, Elizabeth Barnes, Ariel Herbert-Voss, William Hebgen Guss, Alex Nichol, Alex Paino,
+ Nikolas Tezak, Jie Tang, Igor Babuschkin, Suchir Balaji, Shantanu Jain, William Saunders,
+ Christopher Hesse, Andrew N. Carr, Jan Leike, Josh Achiam, Vedant Misra, Evan Morikawa,
+ Alec Radford, Matthew Knight, Miles Brundage, Mira Murati, Katie Mayer, Peter Welinder, Bob
+ McGrew, Dario Amodei, Sam McCandlish, Ilya Sutskever, and Wojciech Zaremba. Evaluating
+ large language models trained on code, 2021a. URL https://arxiv.org/abs/2107.03374.
+
+
+                                                10
+Mark Chen, Jerry Tworek, Heewoo Jun, Qiming Yuan, Henrique Ponde De Oliveira Pinto, Jared
+ Kaplan, Harri Edwards, Yuri Burda, Nicholas Joseph, Greg Brockman, et al. Evaluating large
+ language models trained on code. arXiv preprint arXiv:2107.03374, 2021b.
+
+Shirui Chen, Jiantao Jiao, Lillian J Ratliff, and Banghua Zhu. dultra: Ultra-fast diffusion language
+  models via reinforcement learning. arXiv preprint arXiv:2512.21446, 2025.
+
+Zigeng Chen, Gongfan Fang, Xinyin Ma, Ruonan Yu, and Xinchao Wang. Dmax: Aggressive parallel
+  decoding for dllms. arXiv preprint arXiv:2604.08302, 2026.
+
+Karl Cobbe, Vineet Kosaraju, Mohammad Bavarian, Mark Chen, Heewoo Jun, Lukasz Kaiser,
+  Matthias Plappert, Jerry Tworek, Jacob Hilton, Reiichiro Nakano, Christopher Hesse, and John
+  Schulman. Training verifiers to solve math word problems. arXiv preprint arXiv:2110.14168,
+  2021.
+
+Yihong Dong, Zhaoyu Ma, Xue Jiang, Zhiyuan Fan, Jiaru Qian, Yongmin Li, Jianha Xiao, Zhi
+  Jin, Rongyu Cao, Binhua Li, et al. Saber: An efficient sampling with adaptive acceleration and
+  backtracking enhanced remasking for diffusion language model. arXiv preprint arXiv:2510.18165,
+  2025.
+
+Dan Hendrycks, Collin Burns, Saurav Kadavath, Akul Arora, Steven Basart, Eric Tang, Dawn Song,
+  and Jacob Steinhardt. Measuring mathematical problem solving with the math dataset. NeurIPS,
+  2021.
+
+Feng Hong, Geng Yu, Yushi Ye, Haicheng Huang, Huangjie Zheng, Ya Zhang, Yanfeng Wang, and
+  Jiangchao Yao. Wide-in, narrow-out: Revokable decoding for efficient and effective DLLMs.
+  In The Fourteenth International Conference on Learning Representations, 2026. URL https:
+  //openreview.net/forum?id=XtLQHlNLxy.
+
+Emiel Hoogeboom, Didrik Nielsen, Priyank Jaini, Patrick Forré, and Max Welling. Argmax
+ flows and multinomial diffusion: Learning categorical distributions.   In M. Ranzato,
+ A. Beygelzimer, Y. Dauphin, P.S. Liang, and J. Wortman Vaughan, editors, Advances in
+ Neural Information Processing Systems, volume 34, pages 12454–12465. Curran Associates,
+ Inc., 2021. URL https://proceedings.neurips.cc/paper_files/paper/2021/file/
+ 67d96d458abdef21792e6d8e590244e7-Paper.pdf.
+
+Zemin Huang, Yuhang Wang, Zhiyang Chen, and Guo-Jun Qi. Don’t settle too early: Self-reflective
+  remasking for diffusion language models. arXiv preprint arXiv:2509.23653, 2025.
+
+Metod Jazbec, Theo X Olausson, Louis Béthune, Pierre Ablin, Michael Kirchhof, João Monteiro,
+ Victor Turrisi, Jason Ramapuram, and Marco Cuturi. Learning unmasking policies for diffusion
+ language models. arXiv preprint arXiv:2512.09106, 2025.
+
+Jaeyeon Kim, Seunggeun Kim, Taekyun Lee, David Z Pan, Hyeji Kim, Sham Kakade, and Sitan
+  Chen. Fine-tuning masked diffusion for provable self-correction. arXiv preprint arXiv:2510.01384,
+  2025a.
+
+Jaeyeon Kim, Kulin Shah, Vasilis Kontonis, Sham Kakade, and Sitan Chen. Train for the worst, plan
+  for the best: Understanding token ordering in masked diffusions. arXiv preprint arXiv:2502.06768,
+  2025b.
+
+Liming Liu, Binxuan Huang, Xin Liu, Bing Yin, and Tuo Zhao. Teach diffusion language models to
+  learn from their own mistakes. arXiv preprint arXiv:2601.06428, 2026.
+
+Zanlin Ni, Shenzhi Wang, Yang Yue, Tianyu Yu, Weilin Zhao, Yeguo Hua, Tianyi Chen, Jun Song,
+  Cheng Yu, Bo Zheng, et al. The flexibility trap: Why arbitrary order limits reasoning potential in
+  diffusion language models. arXiv preprint arXiv:2601.15165, 2026.
+
+Shen Nie, Fengqi Zhu, Zebin You, Xiaolu Zhang, Jingyang Ou, Jun Hu, Jun Zhou, Yankai Lin, Ji-
+  Rong Wen, and Chongxuan Li. Large language diffusion models. arXiv preprint arXiv:2502.09992,
+  2025.
+
+
+                                                11
+Theo X Olausson, Metod Jazbec, Xi Wang, Armando Solar-Lezama, Christian A Naesseth, Stephan
+  Mandt, and Eric Nalisnick. A tale of two temperatures: Simple, efficient, and diverse sampling
+  from diffusion language models. arXiv preprint arXiv:2604.09921, 2026.
+Jingyang Ou, Shen Nie, Kaiwen Xue, Fengqi Zhu, Jiacheng Sun, Zhenguo Li, and
+   Chongxuan Li. Your absorbing discrete diffusion secretly models the conditional dis-
+   tributions of clean data.    In Y. Yue, A. Garg, N. Peng, F. Sha, and R. Yu, edi-
+   tors, International Conference on Learning Representations, volume 2025, pages 64972–
+   65009, 2025. URL https://proceedings.iclr.cc/paper_files/paper/2025/file/
+   a365e37c18fb91af547a2f0012a89e98-Paper-Conference.pdf.
+Subham Sekhar Sahoo, Marianne Arriola, Aaron Gokaslan, Edgar Mariano Marroquin, Alexander M
+  Rush, Yair Schiff, Justin T Chiu, and Volodymyr Kuleshov. Simple and effective masked diffusion
+  language models. In ICML 2024 Workshop on Efficient and Accessible Foundation Models for
+  Biological Discovery, 2024. URL https://openreview.net/forum?id=DdU9gP4EXW.
+Yair Schiff, Omer Belhasin, Roy Uziel, Guanghan Wang, Marianne Arriola, Gilad Turok, Michael
+  Elad, and Volodymyr Kuleshov. Learn from your mistakes: Self-correcting masked diffusion
+  models. arXiv preprint arXiv:2602.11590, 2026.
+Jiaxin Shi, Kehang Han, Zhe Wang, Arnaud Doucet, and Michalis Titsias. Simplified and generalized
+   masked diffusion for discrete data. Advances in neural information processing systems, 37:
+   103131–103167, 2024.
+Xiaohang Tang, Rares Dolga, Sangwoong Yoon, and Ilija Bogunovic. wd1: Weighted policy
+  optimization for reasoning in diffusion language models. arXiv preprint arXiv:2507.08838, 2025.
+Dimitri Von Rütte, Janis Fluri, Yuhui Ding, Antonio Orvieto, Bernhard Schölkopf, and Thomas
+  Hofmann. Generalized interpolating discrete diffusion. arXiv preprint arXiv:2503.04482, 2025.
+Dimitri von Rütte. Why diffusion language models are the future, 2026. URL https://dimitri.
+  ml/posts/why-diffusion-language-models-are-the-future/.
+Guanghan Wang, Yair Schiff, Subham Sekhar Sahoo, and Volodymyr Kuleshov. Remasking discrete
+  diffusion models with inference-time scaling. arXiv preprint arXiv:2503.00307, 2025.
+Linxuan Wang, Ziyi Wang, Yikun Bai, Wei Deng, Guang Lin, and Qifan Song. Generalized discrete
+  diffusion with self-correction. arXiv preprint arXiv:2603.02230, 2026.
+Chengyue Wu, Hao Zhang, Shuchen Xue, Zhijian Liu, Shizhe Diao, Ligeng Zhu, Ping Luo, Song
+  Han, and Enze Xie. Fast-dllm: Training-free acceleration of diffusion llm by enabling kv cache
+  and parallel decoding, 2025. URL https://arxiv.org/abs/2505.22618.
+Yanzheng Xiang, Lan Wei, Yizhen Yao, Qinglin Zhu, Hanqi Yan, Chen Jin, Philip Alexander Teare,
+  Dandan Zhang, Lin Gui, Amrutha Saseendran, et al. Stop the flip-flop: Context-preserving
+  verification for fast revocable diffusion decoding. arXiv preprint arXiv:2602.06161, 2026.
+Jiacheng Ye, Zhihui Xie, Lin Zheng, Jiahui Gao, Zirui Wu, Xin Jiang, Zhenguo Li, and Lingpeng
+   Kong. Dream 7b: Diffusion large language models. arXiv preprint arXiv:2508.15487, 2025.
+Yifan Yu, Yuqing Jian, Junxiong Wang, Zhongzhu Zhou, Donglin Zhuang, Xinyu Fang, Sri Yana-
+  mandra, Xiaoxia Wu, Qingyang Wu, Shuaiwen Leon Song, et al. Introspective diffusion language
+  models. arXiv preprint arXiv:2604.11035, 2026.
+Siyan Zhao, Devaansh Gupta, Qinqing Zheng, and Aditya Grover. d1: Scaling reasoning in diffusion
+  large language models via reinforcement learning. arXiv preprint arXiv:2504.12216, 2025.
+Kaiwen Zheng, Yongxin Chen, Hanzi Mao, Ming-Yu Liu, Jun Zhu, and Qinsheng Zhang. Masked
+  Diffusion Models are Secretly Time-Agnostic Masked Models and Exploit Inaccurate Categorical
+  Sampling, April 2025.
+
+
+
+
+                                               12
+A              Additional Figures
+
+    Pos ID 0 1 2 3 4 5 6 7 8 3 4 5                                                                                Pos ID 0 1 2 3 4 5 6 7 8 2 3 4
+        0                                                                                                             0
+        1                                                                                                             1
+        2                                                                                                             2
+        3                                                                                                             3
+        4                                                                                                             4
+        5                                                                                                             5
+        6                                                                                                             6
+        7                                                                                                             7
+        8                                                                                                             8
+        3                                                                                                             2
+        4                                                                                                             3
+        5                                                                                                             4
+                                Yleft           Ycurr       Yright              Yshad                                                   Yleft            Ycurr            Yright         Yshad
+(a) WINO attention mask and position IDs for
+                                                                                                              (b) Adaption for Dream-7B model [Ye et al., 2025].
+LLaDA-8B [Nie et al., 2025].
+Figure 6: WINO attention masks and position IDs: LLaDA (left) vs. our adaptation for Dream (right).
+Note that adaptation is needed since Dream was converted into a dLLM starting from an AR model.
+Bold indices in (b) highlight the modified position IDs of Yshad . The shadow position IDs were shifted
+to obtain predictions for the current block, while the masking of main tokens is sub-diagonal and
+diagonal to prevent information leak due to Dream’s shifted predictions.
+
+                                    GSM8k                                   MATH-500                                      HumanEval                                           MBPP
+               85   ∆BL32 = +0.4                           37   ∆BL32 = +0.6                                  ∆BL32 = +1.8                               40   ∆BL32 = +0.8
+                    ∆BL128 = +2.6                               ∆BL128 = +3.2                            45   ∆BL128 = -1.2                                   ∆BL128 = -0.4
+
+               80                                          35                                                                                            35
+
+  LLaDA
+                                                                                                         40
+                                                           32                                                                                            30
+               75                                                                                        35
+
+
+Accuracy (%)
+                                                           30                                                                                            25
+                                                                                                         30
+               70
+                                                           27                                                                                            20
+                                                                                                         25
+                                    WINO           BL32
+               65                                          25
+                                    Fast-DLLM      BL128                                                 20                                              15
+                    1       2        3     4       5              2              4              6                    4          6        8          10          2             4          6
+
+                    ∆BL32 = +0.7                           45   ∆BL32 = -0.4                                  ∆BL32 = +1.8                                    ∆BL32 = +0.2
+                                                                                                                                                         55
+                    ∆BL128 = +0.3                               ∆BL128 = +1.6                            60   ∆BL128 = +1.8                                   ∆BL128 = +2.0
+               80
+                                                           40                                                                                            50
+
+   Dream       70
+                                                           35
+                                                                                                         50
+                                                                                                                                                         45
+
+
+
+Accuracy (%)
+               60                                                                                                                                        40
+                                                                                                         40
+                                                           30
+               50                                                                                                                                        35
+                                                           25                                            30
+                                                                                                                                                         30
+               40
+                                2          4                          2              4               6        1            2        3           4                   1             2           3
+                            Wall-clock time (s)                           Wall-clock time (s)                            Wall-clock time (s)                            Wall-clock time (s)
+
+
+Figure 7: Figure 1 replicated using latency (wall-clock time) as an efficiency measure instead of
+network function evaluations (NFEs). We see that once the additional overhead of using shadow
+tokens in WINO is taken into account, WINO’s performance gains diminish further.
+
+
+
+
+                                                                                                    13
+                              GSM8K                                                   MATH-500                                    HumanEval                                  MBPP
+                                                                      37                                                                                     40
+                                                                                                                      45
+                                                                      35                                                                                     35
+               80
+
+  LLaDA
+                                                                                                                      40
+                                                                      32                                                                                     30
+                                                                                                                      35
+               75
+
+
+Accuracy (%)
+                                                                      30                                                                                     25
+                                                                                                                      30
+
+               70             WINO
+                                                                      27                                                                                     20
+                                                                                                                      25
+                              Fast-DLLM         BL32
+                                                                      25
+                              Saber             BL128                                                                 20                                     15
+                    25   50    75     100       125                             50     75       100     125     150         50    75     100    125    150         50         100        150
+                                                                                                                                                             55
+                                                                                                                      60
+               80
+                                                                      40                                                                                     50
+
+
+   Dream
+               70                                                                                                     50
+                                                                      35                                                                                     45
+
+
+
+Accuracy (%)
+               60                                                                                                     40                                     40
+                                                                      30
+                                                                                                                                                             35
+               50
+                                                                      25                                              30
+                                                                                                                                                             30
+               40
+                    25   50     75        100      125                           50        75     100     125              20     40       60         80          20    40     60   80     100
+                               NFE                                                          NFE                                         NFE                                  NFE
+
+
+Figure 8: Figure 1 replicated with additional results for Saber remasking method [Dong et al., 2025].
+Similar to WINO, Saber fails to meaningfully improve over Fast-dLLM sampling under BL = 32.
+
+                                                                          100
+
+
+
+
+                                                   Top1 Consistency (%)
+                                                                           99
+
+
+
+                                                                           98
+
+
+
+                                                                           97                                                                  WINO
+
+                                                                                      60                      80                  100
+                                                                                                                   NFE
+
+Figure 9: Consistency rate ({arg maxv qθks (v | x̃t ) = arg maxv qθk (v | xt,−k )}) of the highest
+confidence tokens between the shadow and oracle predicted tokens without remasking (λ2 = 0,
+LLaDA-8B-Instruct, HumanEval, BL = 32). Notably, the consistency rate is very high (> 97%)
+across all five λ1 thresholds. Unmasking fewer tokens per step, i.e. increasing the threshold, further
+improves shadow predictions, potentially due to fewer approximations of KV matrices of other tokens
+at each step.
+
+
+B              Additional Experiments
+
+B.1                 WINO ablations
+
+To ensure that our findings in Section 3.1 are robust across various design choices of WINO, we
+perform the following ablations and report results in Figure 10:
+
+                    • Consistency-based remasking criteria (EQUAL) Recall that WINO selects positions for
+                      remasking via confidence thresholding based on shadow position confidences (Equation 4).
+                      To remove the effect of the exact choice of the remasking threshold λ2 , we instead consider
+                      here the consistency-based approach where the position is flagged for remasking if the max
+                      token under the shadow predictive distribution is not the same as the current token:
+
+                                                                      Rt := {k ∈ B \ Mt | arg max qθks (v | x̃t ) ̸= xkt } .
+                                                                                                                            v∈V
+
+
+
+                                                                                                              14
+                                 GSM8K                             HumanEval
+                       84
+                                                       45
+                       82                              42
+
+
+
+
+        Accuracy (%)
+                       80                              40
+
+                       78               WINO           37
+                                        WINO-MA
+                                                       35
+                       76               WINO-DIAG
+                                        WINO-MR1       32
+                       74               WINO-EQUAL
+
+                            40    60        80               60       80        100       120
+                                  NFE                                    NFE
+
+Figure 10: Ablations of four WINO design choices across GSM8k and HumanEval (LLaDA-8B-
+Instruct, BL = 32, τ = 0). The performance across all variants is similar with no variant showing
+clear performance gains.
+
+
+       • Loop-Guard (MR1) To measure the impact of the exact loop-guard implementation, we
+         consider here an alternative implementation where each position is allowed to be remasked
+         at most once.
+       • Shadow Attention Mask (DIAG) Instead of using a full attention mask for the shadow
+         region as originally proposed in WINO (Figure 6a), we use a diagonal mask which prevents
+         shadow positions from attending to each other.
+       • Max-Accept (MA) The original WINO implementation imposes a cap on the number of
+         positions that can be unmasked at each step.6 Since this cap is neither described in the
+         WINO paper nor part of the Fast-dLLM unmasking procedure [Wu et al., 2025], we disable
+         it for the experiments in the main paper and re-enable it here to study its impact.
+
+B.2   Flip-flop rates: impact of remasking expansions
+
+To better understand the high flip-flop rates observed in Figure 3, we perform additional ablations
+that vary the set of positions remasked at each sampling step. Beyond the position k flagged by
+confidence-thresholding (Equation 4), we additionally remask either its spatial or temporal neighbors.
+Spatial neighbors are positions at most S tokens to the left or right of k, while temporal neighbors
+are positions unmasked within T sampling steps starting from when k was unmasked (so T = 1
+refers to the same step, T = 2 to that step and the next, and so on). We denote the resulting variants
+WINO-SS and WINO-TT . In addition, to ensure convergence, we switch to the aforementioned MR1
+loop-guard, in which each position can be flagged for remasking only once, but can still be remasked
+as a neighbor of other positions.
+As shown in Figure 11, neither expansion method improves over default WINO: across the entire
+NFE range, both variants consistently degrade accuracy, with the gap widening as the neighborhood
+grows (T, S = 2 vs. T, S = 1). In addition, Figure 12 shows the flip-flop rate stays roughly the
+same for expanded remasking ablations. This rules out the cascading-dependency explanation: even
+when the surrounding context that would supposedly pin the prediction at xkt is partially removed,
+the dLLM still re-proposes the same token. The bottleneck therefore appears to lie in the model’s
+predictive distribution at position k itself, rather than in the conditioning structure of the unmasked
+context.
+
+
+
+
+  6 https://github.com/Feng-Hong/WINO-DLLM/blob/main/LLaDA/decoding.py
+
+
+
+
+                                                  15
+                                              GSM8k                                               HumanEval
+                       83
+                            ∆WINO−T1 = -0.1                                  45   ∆WINO−T1 = +0.0
+                            ∆WINO−T2 = -0.1                                       ∆WINO−T2 = +0.0
+                       82
+                                                                             42
+                       81
+
+
+
+
+       Accuracy (%)
+                                                                             40
+                       80
+                                                                             37
+                       79
+                                                                             35
+                       78
+                                                                 WINO                                                    WINO
+                       77                                                    32
+                                                                 WINO-T1                                                 WINO-T1
+                       76                                        WINO-T2     30                                          WINO-T2
+
+                              40       50      60     70          80                60            80         100          120
+                       83
+                            ∆WINO−S1 = -0.2                                  45   ∆WINO−S1 = +0.0
+                            ∆WINO−S2 = -0.2                                       ∆WINO−S2 = -1.2
+                       82
+                                                                             42
+                       81
+
+
+
+
+       Accuracy (%)
+                                                                             40
+                       80
+                                                                             37
+                       79
+                                                                             35
+                       78
+                                                                 WINO                                                    WINO
+                       77                                                    32
+                                                                 WINO-S1                                                 WINO-S1
+                       76                                        WINO-S2     30                                          WINO-S2
+
+                              40       50      60     70          80                60            80         100          120
+                                               NFE                                                     NFE
+
+Figure 11: Accuracy of expanded remasking ablations based on additional remasking either spatial or
+temporal neighbors (LLaDA-8B-Instruct, BL = 32).
+
+
+
+                                              GSM8k                                               HumanEval
+                       87                                                    88
+
+                       85
+                                                                             86
+
+
+
+
+       Flip-Flop (%)
+                       82
+
+                       80                                                    84
+
+                       77
+                                                                             82
+                       75                                        WINO                                                    WINO
+                                                                 WINO-T1                                                 WINO-T1
+                       72                                        WINO-T2     80                                          WINO-T2
+
+                            0.5        0.6      0.7        0.8         0.9        0.5       0.6        0.7         0.8          0.9
+
+                                                                             88
+                       85
+
+
+
+
+       Flip-Flop (%)
+                                                                             86
+                       80
+                                                                             84
+
+                       75
+                                                                             82
+                                                                 WINO                                                    WINO
+                                                                 WINO-S1                                                 WINO-S1
+                       70                                                    80
+                                                                 WINO-S2                                                 WINO-S2
+
+                            0.5        0.6      0.7        0.8         0.9        0.5       0.6        0.7         0.8          0.9
+                                                λ1                                                     λ1
+
+Figure 12: Flip-flop frequencies of expanded remasking ablations based on additional remasking
+either spatial or temporal neighbors (LLaDA-8B-Instruct, BL = 32).
+
+
+
+                                                                       16
+

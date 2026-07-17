@@ -1,0 +1,349 @@
+{
+  "trace_report": {
+    "formalized_procedure": [
+      {
+        "step": "S0",
+        "consumes": [
+          "direct call cap B: integer, or latency target T: positive real",
+          "model identifier, hardware identifier, canvas length L: integer",
+          "32 held-out profiling prompts when T is used"
+        ],
+        "produces": [
+          "call cap B: integer",
+          "profile maximum tau_max: seconds/forward-plus-sort when T is used"
+        ],
+        "note": "For the latency route, B=floor(T/tau_max) must be produced before decoding. The original numbered steps instead consumed B in step 1 and produced it in step 7, and did not define behavior when B=0."
+      },
+      {
+        "step": "S1",
+        "consumes": [
+          "L: positive integer not exceeding the frozen model's canvas limit",
+          "B: positive integer",
+          "MASK token"
+        ],
+        "produces": [
+          "x_B: length-L token canvas with every position MASK",
+          "b=B: integer calls remaining",
+          "U_B=empty set: committed-position set"
+        ],
+        "note": "The invariant at loop entry is |U_b|=L-m_b, where m_b=ceil(L*b/B)."
+      },
+      {
+        "step": "S2",
+        "consumes": [
+          "L: integer",
+          "B: positive integer",
+          "b: integer in {B,...,1}"
+        ],
+        "produces": [
+          "m_{b-1}=ceil(L*(b-1)/B): integer target mask count in [0,L]",
+          "K_{b-1}=L-m_{b-1}: integer target committed count in [0,L]"
+        ],
+        "note": "K is nondecreasing as b decreases, but it need not strictly increase when B>L."
+      },
+      {
+        "step": "S3",
+        "consumes": [
+          "x_b: length-L canvas over vocabulary union {MASK}",
+          "frozen denoiser f"
+        ],
+        "produces": [
+          "P=f(x_b): real tensor of shape [L, |V|] containing per-position vocabulary probabilities"
+        ],
+        "note": "Exactly one denoiser forward is used at each b."
+      },
+      {
+        "step": "S4",
+        "consumes": [
+          "P: [L, |V|] probabilities",
+          "x_b: length-L canvas"
+        ],
+        "produces": [
+          "R: L records (status_i, token_i, s_i, index_i)",
+          "for masked i, token_i=argmax_v P[i,v] and s_i=log P[i,token_i]",
+          "for committed i with current token z_i, token_i=z_i and s_i=log P[i,z_i]"
+        ],
+        "note": "All records use the same current forward; ties in token argmax require the model/sampler's deterministic vocabulary-order convention, while record-selection ties are resolved in S5."
+      },
+      {
+        "step": "S5",
+        "consumes": [
+          "R: L scored records",
+          "K_{b-1}: integer in [0,L]"
+        ],
+        "produces": [
+          "U_{b-1}: exactly K_{b-1} position indices with largest (s_i, -index_i)"
+        ],
+        "note": "Top-0 is the empty set and top-L is every position, so both endpoints are defined."
+      },
+      {
+        "step": "S6",
+        "consumes": [
+          "x_b: current canvas",
+          "U_b: old committed set",
+          "U_{b-1}: selected committed set",
+          "masked-position hypotheses from R"
+        ],
+        "produces": [
+          "x_{b-1}: updated length-L canvas",
+          "r_b=|U_b minus U_{b-1}|: nonnegative integer exchange count"
+        ],
+        "note": "Positions in U_{b-1} are committed (new masked entrants take their hypotheses); old commitments outside it become MASK. Thus the selected masked count is r_b+(K_{b-1}-K_b), |U_{b-1}|=K_{b-1}, and the next canvas has exactly m_{b-1} masks."
+      },
+      {
+        "step": "S7",
+        "consumes": [
+          "x_{b-1}",
+          "b"
+        ],
+        "produces": [
+          "b'=b-1 and either the next loop input or termination at b'=0"
+        ],
+        "note": "Induction through S2-S6 yields K_0=L and therefore zero masks after exactly B forwards."
+      },
+      {
+        "step": "S8",
+        "consumes": [
+          "x_0: fully committed length-L canvas"
+        ],
+        "produces": [
+          "detokenized task output",
+          "trace metrics including r_b, masks, task score, and measured latency"
+        ],
+        "note": "Matched-call comparisons are evaluation consumers, not producers needed by the decoding dataflow."
+      }
+    ],
+    "dry_run": {
+      "instance": "Vocabulary V={A,B,C,D}, L=4, profiled tau_max=0.10 s, latency target T=0.35 s, hence B=3. Start x_3=[MASK,MASK,MASK,MASK]. At b=3 the masked argmax probabilities by position are [A:0.70, B:0.55, C:0.45, D:0.40]. At b=2, on x_2=[A,MASK,MASK,MASK], the relevant probabilities are [P_1(A)=0.10, max P_2=B:0.80, max P_3=C:0.70, max P_4=D:0.60]. At b=1, on x_1=[MASK,B,C,MASK], they are [max P_1=A:0.65, P_2(B)=0.60, P_3(C)=0.50, max P_4=D:0.55].",
+      "computed_quantities": [
+        {
+          "quantity": "latency-derived call cap",
+          "value": "B=3",
+          "arithmetic": "floor(T/tau_max)=floor(0.35/0.10)=floor(3.5)=3; nominal profiled cost is 3*0.10=0.30 s <= 0.35 s"
+        },
+        {
+          "quantity": "b=3 schedule",
+          "value": "m_2=3, K_2=1",
+          "arithmetic": "m_2=ceil(4*2/3)=ceil(2.666...)=3; K_2=4-3=1"
+        },
+        {
+          "quantity": "b=3 support vector",
+          "value": "[-0.357,-0.598,-0.799,-0.916]",
+          "arithmetic": "[log(0.70),log(0.55),log(0.45),log(0.40)] rounded to three decimals"
+        },
+        {
+          "quantity": "b=3 projection",
+          "value": "U_2={1}, r_3=0, x_2=[A,MASK,MASK,MASK]",
+          "arithmetic": "top-1 selects position 1; |U_3 minus U_2|=|empty minus {1}|=0; masks=4-1=3"
+        },
+        {
+          "quantity": "b=2 schedule",
+          "value": "m_1=2, K_1=2",
+          "arithmetic": "m_1=ceil(4*1/3)=ceil(1.333...)=2; K_1=4-2=2"
+        },
+        {
+          "quantity": "b=2 support vector",
+          "value": "[-2.303,-0.223,-0.357,-0.511]",
+          "arithmetic": "[log P_1(A),log(0.80),log(0.70),log(0.60)]=[log(0.10),log(0.80),log(0.70),log(0.60)]"
+        },
+        {
+          "quantity": "b=2 projection and exchange invariant",
+          "value": "U_1={2,3}, r_2=1, x_1=[MASK,B,C,MASK]",
+          "arithmetic": "top-2 selects positions 2 and 3; r_2=|{1} minus {2,3}|=1; selected masked positions=2=r_2+(K_1-K_2)=1+(2-1); masks fall from 3 to 2"
+        },
+        {
+          "quantity": "b=1 schedule",
+          "value": "m_0=0, K_0=4",
+          "arithmetic": "m_0=ceil(4*0/3)=0; K_0=4-0=4"
+        },
+        {
+          "quantity": "b=1 support vector",
+          "value": "[-0.431,-0.511,-0.693,-0.598]",
+          "arithmetic": "[log(0.65),log P_2(B),log P_3(C),log(0.55)]=[log(0.65),log(0.60),log(0.50),log(0.55)]"
+        },
+        {
+          "quantity": "b=1 projection and output",
+          "value": "U_0={1,2,3,4}, r_1=0, x_0=[A,B,C,D]",
+          "arithmetic": "top-4 contains all four positions; r_1=|{2,3} minus {1,2,3,4}|=0; masks=4-4=0 after exactly 3 forwards"
+        },
+        {
+          "quantity": "full exchange trace",
+          "value": "(r_3,r_2,r_1)=(0,1,0)",
+          "arithmetic": "r_3=0+ r_2=1 + r_1=0 gives one intermediate repair while committed counts follow (K_2,K_1,K_0)=(1,2,4)"
+        }
+      ],
+      "anomalies": [
+        "The original statement that r_b may be nonzero at every step is impossible: in this run (r_3,r_2,r_1)=(0,1,0), and generally r_B=0 because U_B is empty while r_1=0 because U_0 contains all L positions.",
+        "No arithmetic anomaly occurs in the top-K exchange itself: at the only exchange, 2 selected masked positions equal r_2+(K_1-K_2)=1+1, so the committed count reaches 2 without an extra forward."
+      ]
+    },
+    "degenerate_probes": [
+      {
+        "probe": "Empty canvas: L=0, B=3",
+        "behavior": "Every m and K is 0, every top-K set is empty, and the loop halts after three forwards with an empty detokenized output.",
+        "finding": "The arithmetic halts but emits a meaningless task output; the original procedure omitted the required domain condition L>=1."
+      },
+      {
+        "probe": "Zero call cap: L=4, B=0",
+        "behavior": "m_{b-1}=ceil(L*(b-1)/B) divides by zero, and no forward can transform the four-mask initial canvas.",
+        "finding": "B=0 is undefined. This also occurs on the latency route whenever T<tau_max because floor(T/tau_max)=0."
+      },
+      {
+        "probe": "Top-k endpoint k=0 and schedule plateaus: L=1, B=3",
+        "behavior": "The target committed counts are K_2=0, K_1=0, K_0=1, so top-0 is selected on the first two calls; masks follow 1 -> 1 -> 1 -> 0 and the procedure still halts.",
+        "finding": "The procedure is defined, but the original claims that each call advances and that masks fall at every step are false when B>L; two of three calls have zero net progress."
+      },
+      {
+        "probe": "All-identical supports and ties at every selection boundary: L=4, B=3",
+        "behavior": "The index tie-break yields U_2={1}, U_1={1,2}, and U_0={1,2,3,4}; the procedure is deterministic and halts with zero masks.",
+        "finding": null
+      },
+      {
+        "probe": "Single element: L=1, B=1",
+        "behavior": "m_0=0 and K_0=1; the sole masked hypothesis is committed and detokenized after one forward.",
+        "finding": null
+      },
+      {
+        "probe": "Largest accepted canvas: L=L_max(model), finite B>=1",
+        "behavior": "The denoiser emits an [L_max,|V|] tensor and top-K remains finite, so the invariant is unchanged; for L>L_max the frozen denoiser has no defined input.",
+        "finding": "The original procedure did not state the model canvas bound, so its input domain appeared unbounded even though the frozen denoiser is not."
+      }
+    ],
+    "claim_step_map": [
+      {
+        "claim": "The projection reaches exactly zero masks after exactly B forwards.",
+        "established_by": "S2,S5,S6,S7"
+      },
+      {
+        "claim": "Commitment and repair use one cross-status projection and no separately budgeted denoiser call.",
+        "established_by": "S3,S4,S5,S6"
+      },
+      {
+        "claim": "The exchange count is induced without a threshold or rollback quota.",
+        "established_by": "S5,S6"
+      },
+      {
+        "claim": "Every exchange is paired with an additional masked commitment while net masks fall at every step.",
+        "established_by": "UNESTABLISHED"
+      },
+      {
+        "claim": "The completion induction remains valid even when r_b is nonzero at every step.",
+        "established_by": "UNESTABLISHED"
+      },
+      {
+        "claim": "Calls remaining are communicated to the frozen denoiser through the model-native corrupted canvas itself.",
+        "established_by": "UNESTABLISHED"
+      },
+      {
+        "claim": "The sampler's token-status decision directly uses calls remaining through K_{b-1}.",
+        "established_by": "S2,S5,S6"
+      },
+      {
+        "claim": "Architecture, weights, logits, and training data remain untouched and all scores come from the current frozen-model forward.",
+        "established_by": "S3,S4"
+      },
+      {
+        "claim": "B=floor(T/tau_max) from a 32-prompt maximum certifies a hard wall-clock cap T on future prompts.",
+        "established_by": "UNESTABLISHED"
+      },
+      {
+        "claim": "The updated canvas is the next denoiser input and can therefore affect the final token sequence.",
+        "established_by": "S6,S7,S8"
+      },
+      {
+        "claim": "C24 redesigns the frozen denoiser's conditioning path while the denoiser itself remains unmodified.",
+        "established_by": "UNESTABLISHED"
+      }
+    ]
+  },
+  "verdict": "patched",
+  "unrepaired": [],
+  "applied_revisions": [
+    {
+      "scope": "coherence",
+      "op": "replace",
+      "field": "core_mechanism",
+      "value": "The shared object is a budget-indexed mask-state path for a frozen masked diffusion language model. Require an integer output length 1 <= L <= L_max for the model and a positive integer allowance B of denoiser forwards. Let b in {B,...,1} be the calls remaining before the current forward and define the required masks after that forward as m_{b-1}=ceil(L(b-1)/B); initialize x_B to L masks, so m_B=L and m_0=0. One forward on the current canvas x_b returns vocabulary probabilities p_i at every position i; for a masked position its hypothesis is v_i=argmax_v p_i(v) with support s_i=log p_i(v_i), while for a committed position containing z_i its retained hypothesis has support s_i=log p_i(z_i), all taken from that same current forward with no oracle or auxiliary model. Let K_{b-1}=L-m_{b-1}; the next committed set U_{b-1} is the K_{b-1} positions with largest s_i, with lower position index breaking selection ties. A masked position entering U_{b-1} is filled with v_i, a committed position leaving it is remasked, and all other positions retain their status, so commitment and repair are one cross-status projection rather than separately budgeted actions. The exchange count r_b is the number of previously committed positions that leave U_{b-1}; it is induced by the ranking and has no threshold or quota. Exactly r_b+(K_{b-1}-K_b) masked positions enter U_{b-1}, so each exchange is budget-neutral, masks never increase, and they fall exactly on steps where K_{b-1}>K_b. Induction gives exactly zero masks after B forwards regardless of exchanges on intermediate steps; r_B and r_1 are necessarily zero. For a wall-clock target T, first measure tau_max as the maximum warmed-up end-to-end forward-plus-sort latency on 32 held-out prompts at the same model, canvas length, and hardware, then set B=floor(T/tau_max); if B<1, report the target infeasible and do not start decoding. This finite profile defines the experimental call budget but does not certify an out-of-sample hard wall-clock bound. The sampler reads b directly through K_{b-1}; the resulting projected canvas is what conditions the next frozen-denoiser forward, while architecture, weights, logits, and training data remain untouched. This does not claim the deferred value of an optional probe; it replaces the old choice among progress-only and recovery-only calls with a call-budget-feasible transition and compares against Saber, ADAS, and Fast-dLLM at identical B and measured latency.",
+      "outcome": "applied",
+      "delta_summary": "Repairs the T3 B=0/empty-domain failures, the T2 impossible all-step exchange statement, and the T4 unsupported strict-progress, direct-denoiser-budget, and hard-wall-clock claims without changing the top-K mechanism."
+    },
+    {
+      "scope": "coherence",
+      "op": "replace",
+      "field": "core_mechanism_steps",
+      "value": "1. Resolve the call budget before decoding: accept a direct positive integer B, or profile forward-plus-sort latency first and set B=floor(T/tau_max); if B<1, report infeasible. Validate 1 <= L <= L_max(model), initialize x_B to L masks, and set b=B.\n2. At loop entry compute m_{b-1}=ceil(L(b-1)/B) and K_{b-1}=L-m_{b-1} from L, B, and current calls remaining b.\n3. Run the unmodified LLaDA-8B or Dream-7B denoiser once on x_b and return per-position vocabulary probabilities p_i.\n4. Build one record per position containing current status, proposed token v_i or retained token z_i, support s_i, and position index.\n5. Select exactly the top K_{b-1} records by support with lower position index breaking selection ties, producing U_{b-1}.\n6. In one mask-update kernel, commit selected masked positions to v_i, remask old commitments outside U_{b-1}, and retain selected old commitments; log r_b=|U_b minus U_{b-1}| and assert that the resulting canvas has exactly m_{b-1} masks.\n7. Decrement b. If b>0, feed the updated canvas to step 2; otherwise detokenize the fully committed canvas as the task output.\n8. Evaluate the full projection, a no-exchange variant that pins prior commitments, and matched-call Saber, ADAS, Fast-dLLM, and Top-k on the specified reasoning and code datasets, logging r_b, unfinished masks, Pass@1 or exact match, and measured wall-clock latency per trace.",
+      "outcome": "applied",
+      "delta_summary": "Repairs the T1 producer-order defect in which the latency route consumed B before original step 7 produced it, and makes the initialization and valid input domain explicit."
+    },
+    {
+      "scope": "coherence",
+      "op": "replace",
+      "field": "gap_closure[0].how_closed",
+      "value": "C24 redesigns the frozen denoiser's corrupted-canvas trajectory so each call follows a prescribed nonincreasing mask-count path, while one cross-status projection can exchange weak commitments for stronger masked hypotheses without an extra denoiser call; when B>L, some scheduled calls may repair without reducing the mask count.",
+      "outcome": "applied",
+      "delta_summary": "Repairs the T3 plateau finding: for L=1 and B=3, two calls have K=0 and therefore do not advance the mask count."
+    },
+    {
+      "scope": "coherence",
+      "op": "replace",
+      "field": "gap_closure[1].how_closed",
+      "value": "C24 makes calls remaining determine the target committed-set cardinality used by the sampler's retain, commit, and remask projection; the resulting budget-indexed canvas is then consumed by the next frozen-denoiser forward, without claiming that the frozen denoiser directly receives b.",
+      "outcome": "applied",
+      "delta_summary": "Repairs the T4 mapping failure by aligning the budget-conditioning claim with S2-S6, where b is a sampler input and only the projected canvas reaches the frozen denoiser."
+    }
+  ],
+  "final_candidate": {
+    "title": "Deadline Paths for Training-Free Masked Diffusion Decoding",
+    "hook": "A masked diffusion decoder need not spend separate calls on progress and repair: one budget-indexed projection can perform both while reaching zero masks exactly at the deadline. Relative to Saber, it removes the separately controlled unmask threshold and rollback quota without adding training or denoiser calls.",
+    "hook_shape_rationale": "This is counter-intuitive minimalism: Saber is the strongest adaptive repair baseline, while the proposed controller is strictly smaller on free control axes because its only schedule is determined by canvas length and calls remaining. A surprising empirical reveal was also viable, but rejected because the direction of the Pass@1 gain should remain a falsifiable prediction rather than be asserted in the hook.",
+    "gap_closure": [
+      {
+        "gap": "Under a hard deadline, no retrieved frontier leaf ensures that unanticipated conservative steps or recovery steps do not consume the calls needed to finish the remaining masked positions with the best attainable terminal sequence quality.",
+        "main_pattern": "generative_process_redesign",
+        "sub_pattern": "C24 (Liberate a Fixed Generative Component)",
+        "companion_pattern": null,
+        "how_closed": "C24 redesigns the frozen denoiser's corrupted-canvas trajectory so each call follows a prescribed nonincreasing mask-count path, while one cross-status projection can exchange weak commitments for stronger masked hypotheses without an extra denoiser call; when B>L, some scheduled calls may repair without reducing the mask count."
+      },
+      {
+        "gap": "No retrieved frontier leaf tests whether the remaining global inference budget must stay an external stopping parameter rather than become part of the state used by every token-action decision.",
+        "main_pattern": "generative_process_redesign",
+        "sub_pattern": "C24 (Liberate a Fixed Generative Component)",
+        "companion_pattern": null,
+        "how_closed": "C24 makes calls remaining determine the target committed-set cardinality used by the sampler's retain, commit, and remask projection; the resulting budget-indexed canvas is then consumed by the next frozen-denoiser forward, without claiming that the frozen denoiser directly receives b."
+      }
+    ],
+    "core_mechanism": "The shared object is a budget-indexed mask-state path for a frozen masked diffusion language model. Require an integer output length 1 <= L <= L_max for the model and a positive integer allowance B of denoiser forwards. Let b in {B,...,1} be the calls remaining before the current forward and define the required masks after that forward as m_{b-1}=ceil(L(b-1)/B); initialize x_B to L masks, so m_B=L and m_0=0. One forward on the current canvas x_b returns vocabulary probabilities p_i at every position i; for a masked position its hypothesis is v_i=argmax_v p_i(v) with support s_i=log p_i(v_i), while for a committed position containing z_i its retained hypothesis has support s_i=log p_i(z_i), all taken from that same current forward with no oracle or auxiliary model. Let K_{b-1}=L-m_{b-1}; the next committed set U_{b-1} is the K_{b-1} positions with largest s_i, with lower position index breaking selection ties. A masked position entering U_{b-1} is filled with v_i, a committed position leaving it is remasked, and all other positions retain their status, so commitment and repair are one cross-status projection rather than separately budgeted actions. The exchange count r_b is the number of previously committed positions that leave U_{b-1}; it is induced by the ranking and has no threshold or quota. Exactly r_b+(K_{b-1}-K_b) masked positions enter U_{b-1}, so each exchange is budget-neutral, masks never increase, and they fall exactly on steps where K_{b-1}>K_b. Induction gives exactly zero masks after B forwards regardless of exchanges on intermediate steps; r_B and r_1 are necessarily zero. For a wall-clock target T, first measure tau_max as the maximum warmed-up end-to-end forward-plus-sort latency on 32 held-out prompts at the same model, canvas length, and hardware, then set B=floor(T/tau_max); if B<1, report the target infeasible and do not start decoding. This finite profile defines the experimental call budget but does not certify an out-of-sample hard wall-clock bound. The sampler reads b directly through K_{b-1}; the resulting projected canvas is what conditions the next frozen-denoiser forward, while architecture, weights, logits, and training data remain untouched. This does not claim the deferred value of an optional probe; it replaces the old choice among progress-only and recovery-only calls with a call-budget-feasible transition and compares against Saber, ADAS, and Fast-dLLM at identical B and measured latency.",
+    "core_mechanism_reasoning": "The deadline and internal-budget gaps share exactly the evolving mask set, so one conditioning-path redesign closes both without a separate value module. I considered a horizon-wide Q selector and an adjacent-time uncertainty probe, but rejected them because the former lacked a terminal-quality certificate and the latter could not identify same-state instability after a transition; I also avoided reducing the method to occupied constrained dynamic programming or static knapsack by using a repeated frozen-DLM projection whose scores and membership change after every denoising observation.",
+    "core_mechanism_steps": "1. Resolve the call budget before decoding: accept a direct positive integer B, or profile forward-plus-sort latency first and set B=floor(T/tau_max); if B<1, report infeasible. Validate 1 <= L <= L_max(model), initialize x_B to L masks, and set b=B.\n2. At loop entry compute m_{b-1}=ceil(L(b-1)/B) and K_{b-1}=L-m_{b-1} from L, B, and current calls remaining b.\n3. Run the unmodified LLaDA-8B or Dream-7B denoiser once on x_b and return per-position vocabulary probabilities p_i.\n4. Build one record per position containing current status, proposed token v_i or retained token z_i, support s_i, and position index.\n5. Select exactly the top K_{b-1} records by support with lower position index breaking selection ties, producing U_{b-1}.\n6. In one mask-update kernel, commit selected masked positions to v_i, remask old commitments outside U_{b-1}, and retain selected old commitments; log r_b=|U_b minus U_{b-1}| and assert that the resulting canvas has exactly m_{b-1} masks.\n7. Decrement b. If b>0, feed the updated canvas to step 2; otherwise detokenize the fully committed canvas as the task output.\n8. Evaluate the full projection, a no-exchange variant that pins prior commitments, and matched-call Saber, ADAS, Fast-dLLM, and Top-k on the specified reasoning and code datasets, logging r_b, unfinished masks, Pass@1 or exact match, and measured wall-clock latency per trace.",
+    "falsification_prediction": "Run LLaDA-8B on HumanEval at hard caps B in {16,32,64}, comparing the full projection with matched-call Saber, ADAS, Fast-dLLM, and the no-exchange mask-path ablation, and measure Pass@1, unfinished-mask rate, and end-to-end latency. If the mechanism works, unfinished-mask rate is exactly zero at every B and Pass@1 is higher than the strongest matched-call baseline, especially at B=16 and B=32. The one named load-bearing variable is the exchange count r_b. As a negative control, force r_b=0 by pinning every earlier commitment while preserving the same mask-count path, calls, and masked-position ranking; downstream HumanEval Pass@1 should return to the no-exchange baseline while completion remains unchanged, otherwise budget-neutral repair is not the source of the quality gain.",
+    "compute_budget": "72 80GB-GPU-days for two open 7B-8B masked DLMs, five datasets, three primary call caps, all matched baselines, ablations, profiling, and reruns; $0 paid-API cost because execution-based and exact-match metrics replace closed-model judging. This is tight but feasible within the default 150 GPU-day, five-month envelope.",
+    "differentiation_from_lit": [
+      {
+        "paper_id": "semanticscholar:4c95b1cef66cda6693fa6ab192698703dd3c070f",
+        "delta": "Saber separately chooses a history-thresholded unmask set and a fixed-size confidence-drop rollback set, whereas this candidate constructs one remaining-budget cardinality projection over both masked and committed positions that permits repair yet reaches zero masks in exactly B forwards."
+      },
+      {
+        "paper_id": "arxiv:2606.10829v2",
+        "delta": "ADAS reranks only currently masked positions and deliberately leaves stopping and remasking to the base sampler, whereas this candidate recomputes membership across both position statuses under a deadline-indexed mask count."
+      },
+      {
+        "paper_id": "semanticscholar:81f6858d2554b87fc3e639cdbef402a6e4656abb",
+        "delta": "Predict-then-Diffuse trains a CatBoost module to choose response length once before generation, whereas this candidate keeps the canvas and denoiser fixed and injects remaining budget online through every successive mask-state transition without auxiliary training or fallback reruns."
+      }
+    ],
+    "almost_prior_paper_id": "semanticscholar:4c95b1cef66cda6693fa6ab192698703dd3c070f",
+    "what_step_was_missed": "Saber would have needed to replace its independent adaptive-unmask threshold and rollback quota with a single cross-status projection whose cardinality is fixed by calls remaining, making every remask an exchange inside mandatory net progress rather than a separately scheduled recovery operation.",
+    "signature_terms": [
+      "budget-indexed mask-state projection",
+      "quota-free commit repair exchange",
+      "deadline-conditioned denoising path",
+      "training-free hard-budget decoding"
+    ],
+    "alias_terms": [
+      "receding-horizon active-set projection",
+      "anytime feasible-set refinement",
+      "resource-aware coordinate exchange"
+    ]
+  },
+  "falsification_rewritten": false
+}
