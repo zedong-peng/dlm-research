@@ -17,7 +17,6 @@ The active research project and wiki references use the following directories:
 | `reference/` | [[research/dlm/reference/index]] | Literature, PDFs, extracted text, search logs, and reusable technical maps |
 | `paper/` | [[research/dlm/paper/index]] | English ICML-style paper draft, TikZ figures, bibliography, and archived idea provenance |
 | `assets/` | [[research/dlm/reference/papers/index]] | Paper archives: citation records, PDF/text pairs, and notes with explicit historical reading scope |
-| `threads/` | [[research/dlm/reference/papers/index]] | Unread source records; retained files and historical summaries do not establish reading |
 
 Additional collaborator materials are retained in `reportfrom-wang/`:
 [document](<reportfrom-wang/CIR_Diffusion Doc.pdf>) and
