@@ -4,7 +4,7 @@ domain: research
 area: dlm
 type: project
 status: active
-updated: 2026-07-17
+updated: 2026-10-09
 tags: [research-foundation, icml, diffusion-language-models, optimization]
 ---
 
@@ -16,16 +16,16 @@ This directory holds the English ICML-style research foundation used for team di
 
 | File | Role |
 |---|---|
-| `main.pdf` | Start here: compiled five-page discussion foundation |
-| `main.tex` | ICML-style English source with numeric citations, transport equations, a resized 15-step DLM process diagram, optimization interface, and evaluation contract |
-| `research-foundation.md` | Short meeting checklist and shared notation |
-| `references.bib` | Verified bibliography used by the foundation |
+| [main.pdf](main.pdf) | Start here: compiled five-page discussion foundation |
+| [main.tex](main.tex) | ICML-style English source with numeric citations, transport equations, a resized 15-step DLM process diagram, optimization interface, and evaluation contract |
+| [[research/dlm/paper/research-foundation]] | Short meeting checklist and shared notation |
+| [references.bib](references.bib) | Verified bibliography used by the foundation |
 | `icml2026.sty`, `icml2026.bst` | Official ICML 2026 template files |
 
 ## Draft Position
 
 The current stage is foundation building, not novelty claiming. The paper follows one chain: probability path, governing equations, model backbone, masked-DLM lifecycle, sampler control variables, optimization surface, matched evaluation, and a one-box research gate. Flow matching and Mamba are placed on separate axes so later ideas do not conflate transport, model, sampler, and systems changes.
 
-Archived notes and generated idea artifacts live under `legacy/` for provenance only.
+Archived notes and generated idea artifacts live under [[research/dlm/paper/legacy/index]] for provenance only.
 
 返回 [[research/dlm/index]]。

@@ -4,18 +4,25 @@ domain: research
 area: dlm
 type: overview
 status: active
-updated: 2026-07-16
+updated: 2026-10-09
 tags: [diffusion-language-models, discrete-diffusion, flow-matching, optimization, inference]
 ---
 
 # Diffusion Language Models Research Base
 
-This area now has two active subdirectories only:
+The active research project and wiki references use the following directories:
 
 | Directory | Start here | Role |
 |---|---|---|
 | `reference/` | [[research/dlm/reference/index]] | Literature, PDFs, extracted text, search logs, and reusable technical maps |
 | `paper/` | [[research/dlm/paper/index]] | English ICML-style paper draft, TikZ figures, bibliography, and archived idea provenance |
+| `assets/` | [[research/dlm/reference/papers/index]] | Paper archives: citation records, PDF/text pairs, and notes with explicit historical reading scope |
+| `threads/` | [[research/dlm/reference/papers/index]] | Unread source records; retained files and historical summaries do not establish reading |
+
+Additional collaborator materials are retained in `reportfrom-wang/`:
+[document](<reportfrom-wang/CIR_Diffusion Doc.pdf>) and
+[slides](<reportfrom-wang/CIR_Diffusion Slide.pdf>). No reading record or canonical
+source metadata is recorded for these files; do not treat them as reviewed evidence.
 
 ## Current Working Position
 
@@ -26,7 +33,7 @@ No algorithmic direction is selected yet. The immediate deliverable is a shared 
 3. separate probability-path, training-target, backbone, sampler, length, and runtime changes;
 4. use optimization and operations-research language only after the changed interface and budget are explicit.
 
-The active discussion artifact is the compiled ICML-style foundation in `paper/main.pdf`.
+The active discussion artifact is the [compiled ICML-style foundation](paper/main.pdf).
 
 ## Workflow
 

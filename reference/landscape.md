@@ -153,5 +153,5 @@ Report accuracy/Pass@1 against `N_fwd`, median and p95 wall-clock latency, outpu
 
 - Runpeng Yu, Qi Li, and Xinchao Wang. [Discrete Diffusion in Large Language and Multimodal Models: A Survey](https://arxiv.org/abs/2506.13759), 2025.
 - Daehoon Gwak et al. [Accelerating Masked Diffusion Large Language Models: A Survey of Efficient Inference Techniques](https://arxiv.org/abs/2607.12829), 2026.
-- Local extracted texts are under `reference/papers/`; high-risk method notes are summarized in [[research/dlm/reference/reading-list]].
+- Local extracted texts are under `assets/<slug>/paper-pdf/`; [[research/dlm/reference/papers/index]] links the archives. High-risk method notes are summarized in [[research/dlm/reference/reading-list]].
 - The transport/backbone distinction and focused search evidence are in [[research/dlm/reference/transport-and-backbones]].

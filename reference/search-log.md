@@ -133,7 +133,7 @@ Generic `dynamic programming` or `optimal scheduling` terms are too ambiguous ac
 
 ## Full-Text Set
 
-Downloaded and extracted locally under `reference/papers/`:
+Downloaded and extracted locally under `reference/papers/` during the original pass; the PDF/text pairs were moved without modification to `assets/<slug>/paper-pdf/` on 2026-10-09. Current archive and reading-boundary links are in [[research/dlm/reference/papers/index]]. The historical set below is preserved:
 
 - Accelerating Masked Diffusion Large Language Models: A Survey of Efficient Inference Techniques (2026)
 - Discrete Diffusion in Large Language and Multimodal Models: A Survey (2025)

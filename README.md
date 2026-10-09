@@ -13,12 +13,27 @@ literature branches, and the evaluation contract for later algorithm design.
 
 ## Structure
 
-- [`reference/`](reference/): literature maps, reading order, search provenance,
+- [`reference/index.md`](reference/index.md): literature maps, reading order, search provenance,
   locally retained papers, and extracted text for search.
-- [`paper/`](paper/): the active English paper, TikZ figures, bibliography, and
+- [`paper/index.md`](paper/index.md): the active English paper, TikZ figures, bibliography, and
   archived idea provenance.
+- [`reference/papers/index.md`](reference/papers/index.md): the `assets/` archive
+  catalog and linked reading notes or `threads/` unread records.
+- `reportfrom-wang/`: locally retained collaborator materials:
+  [document](<reportfrom-wang/CIR_Diffusion Doc.pdf>) and
+  [slides](<reportfrom-wang/CIR_Diffusion Slide.pdf>). These have no reading record
+  or canonical source metadata in this repository.
 
 The detailed wiki entry is [`index.md`](index.md).
+
+This is an independent research project used as the parent wiki's `dlm`
+submodule. `paper/` retains the active research project; `reference/` retains
+literature maps and provenance. Paper archives follow the parent wiki's
+`assets/<slug>/citation.bib`, `paper-pdf/`, and evidence-based `note.md` layout;
+sources without explicit reading records are linked from `threads/`. For wiki queries, start
+with the reference maps, then consult the linked local PDF/text pairs; a retained
+file alone does not establish that it has been read. Wiki-style links use the
+parent wiki's `research/dlm/` namespace.
 
 ## Build
 
@@ -33,7 +48,7 @@ Use `latexmk -c main.tex` to remove intermediate build files. The compiled
 
 ## Sharing
 
-This repository is private because `reference/papers/` contains locally retained
+This repository is private because `assets/` contains locally retained
 paper PDFs. Give collaborators repository access instead of republishing the
 PDF collection. A public release should retain the notes, BibTeX records, and
 canonical URLs while excluding copyrighted full texts.

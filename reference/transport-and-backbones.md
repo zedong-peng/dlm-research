@@ -42,7 +42,7 @@ The main research implication is precise: a better "diffusion solver" may actual
 
 ## Mamba Verdict
 
-[[research/linear-attention/papers/mamba-2023/index|Mamba]] and [[research/linear-attention/papers/mamba-2-2024/index|Mamba-2]] are sequence-model backbones. They change the complexity, memory state, and parallelism of a denoiser evaluation; they do not define a diffusion or flow process.
+[[research/linear-attention/assets/mamba-2023/note|Mamba]] and [[research/linear-attention/assets/mamba-2-2024/note|Mamba-2]] are sequence-model backbones. They change the complexity, memory state, and parallelism of a denoiser evaluation; they do not define a diffusion or flow process.
 
 There is a real DLM connection: MDLM Section 5.2 fine-tunes a Mamba-based state-space backbone for biological sequences. This demonstrates compatibility between masked diffusion objectives and SSMs. It does not yet establish a large, general-text Mamba-DLM family comparable to Transformer-based LLaDA, Dream, or Block Diffusion.
 

@@ -10,7 +10,7 @@ tags: [papers, diffusion-language-models, reading-list]
 
 # DLM Curated Reading List
 
-This list is organized by what a paper teaches, not just by date. "Local" means the PDF and extracted text are stored under `reference/papers/`.
+This list is organized by what a paper teaches, not just by date. "Local" means the PDF and extracted text are stored under `assets/<slug>/paper-pdf/`; [[research/dlm/reference/papers/index]] links each archive and records its reading boundary.
 
 ## Tier 0: Survey Anchors
 
@@ -30,7 +30,7 @@ This list is organized by what a paper teaches, not just by date. "Local" means 
 | [Dirichlet Flow Matching](https://arxiv.org/abs/2402.05841) and [Fisher Flow Matching](https://arxiv.org/abs/2405.14664) (2024) | Simplex and Fisher-Rao geometries for categorical sequences | Clarify that continuous relaxations of discrete data have non-Euclidean design choices; local PDFs + text |
 | [Flow Matching with General Discrete Paths](https://arxiv.org/abs/2412.03487) (2024) | Decouples arbitrary categorical paths from probability velocities | Makes path selection itself an optimization surface; local PDF + text |
 | [DiffuSeq](https://arxiv.org/abs/2210.08933) (ICLR 2023) and [SSD-LM](https://arxiv.org/abs/2210.17432) (ACL 2023) | Conditional continuous diffusion and semi-AR simplex diffusion for text | Important pre-large-DLM branches with different state/length interfaces; local PDFs + text |
-| [[research/linear-attention/papers/mamba-2023/index|Mamba]] and [[research/linear-attention/papers/mamba-2-2024/index|Mamba-2]] | Linear-time selective SSM backbones | Backbone choice is orthogonal to diffusion/flow and sampler design; MDLM uses a Mamba-based SSM for DNA |
+| [[research/linear-attention/assets/mamba-2023/note|Mamba]] and [[research/linear-attention/assets/mamba-2-2024/note|Mamba-2]] | Linear-time selective SSM backbones | Backbone choice is orthogonal to diffusion/flow and sampler design; MDLM uses a Mamba-based SSM for DNA |
 | [DiffusionBERT](https://arxiv.org/abs/2211.15029) (2022) | Connects masked LMs and diffusion for text generation | Early absorbing-mask language model |
 | [Mask-Predict](https://arxiv.org/abs/1904.09324) (EMNLP 2019) | Iterative masked text decoding with a fixed iteration budget and linear confidence-remasking schedule | Canonical ancestor for any progress-indexed keep/remask policy; local PDF + text |
 | [MaskGIT](https://arxiv.org/abs/2202.04200) (CVPR 2022) | Keeps the most confident discrete tokens and remasks the rest under a decreasing schedule | Cross-modal canonical ancestor for fixed-cardinality confidence projection; local PDF + text |

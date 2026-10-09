@@ -4,7 +4,7 @@ domain: research
 area: dlm
 type: overview
 status: active
-updated: 2026-07-16
+updated: 2026-10-09
 tags: [references, literature, diffusion-language-models]
 ---
 
@@ -40,8 +40,10 @@ flowchart TD
 
 ## 本地材料规则
 
-- `papers/<slug>.pdf` 是下载的原文。
-- `papers/<slug>.txt` 是对应的 `pdftotext` 提取，仅用于检索与 passage-level 对照。
+- `../assets/<slug>/citation.bib` 记录引用，key 与历史 slug 一致。
+- `../assets/<slug>/paper-pdf/<slug>.pdf` 是下载的原文。
+- 同目录的 `<slug>.txt` 是对应的 `pdftotext` 提取，仅用于检索与 passage-level 对照。
+- `note.md` 只承载有明确历史阅读范围的记录；其余来源的未读记录放在 `../threads/`。迁移不构成重新阅读。
 - 不手改提取文本；长期总结写入本目录的 Markdown 页面。
 - 新论文进入本地库时，同步更新 [[research/dlm/reference/papers/index]] 和 [[research/dlm/reference/search-log]]。
 

@@ -20,6 +20,15 @@ This folder stores generated artifacts from research-idea runs. These files are 
 |---|---|---|
 | `budgeted-decoding/` | completed, then rejected by independent scoop check | Fixed-cardinality deadline-path decoding is useful as a baseline idea, but not a defensible headline contribution |
 
+### Retained Run Artifacts
+
+- [Literature evidence table](budgeted-decoding/phase0/lit_table.md)
+- [Detailed English idea card](budgeted-decoding/phase4/idea.detail.en.md)
+- [Standard English idea card](budgeted-decoding/phase4/idea.std.en.md) and [PDF](budgeted-decoding/phase4/idea.std.en.pdf)
+- [Standard Chinese idea card](budgeted-decoding/phase4/idea.std.zh.md) and [PDF](budgeted-decoding/phase4/idea.std.zh.pdf)
+
+These generated cards preserve the rejected proposal, not accepted research results.
+
 ## Current Convention
 
 - Keep raw phase JSON, LaTeX, markdown cards, and rendered PDFs inside the run folder.

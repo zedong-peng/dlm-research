@@ -4,7 +4,7 @@ domain: research
 area: dlm
 type: overview
 status: active
-updated: 2026-07-16
+updated: 2026-10-09
 tags: [briefing, visualization, discussion, diffusion-language-models]
 ---
 
@@ -24,8 +24,8 @@ tags: [briefing, visualization, discussion, diffusion-language-models]
 
 | File | 用法 |
 |---|---|
-| `dlm-foundation-for-optimization.pdf` | 和数学/运筹同学开会前先读的共同基础稿 |
-| `dlm-foundation-for-optimization.tex` | 可继续改 TikZ 图和数学定义的 LaTeX 源文件 |
+| [handout-ctex-dlm-foundation-for-optimization.tex](handout-ctex-dlm-foundation-for-optimization.tex) | 保留的历史中文 handout 源文件；当前目录没有对应的已编译 PDF |
+| [main.pdf](../main.pdf) | 当前用于讨论的英文基础稿；详情见 [[research/dlm/paper/index]] |
 
 ## 推荐组合
 
